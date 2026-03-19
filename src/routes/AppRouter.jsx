@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "../context/AppContext";
 import Navbar from "../components/Navbar";
 import Home from "../pages/Home";
@@ -13,7 +13,7 @@ import Register from "../pages/Register";
 export default function AppRouter() {
   return (
     <AppProvider>
-      <BrowserRouter>
+      <HashRouter>
         <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
@@ -26,7 +26,7 @@ export default function AppRouter() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </AppProvider>
   );
 }
