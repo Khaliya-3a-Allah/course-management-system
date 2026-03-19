@@ -204,12 +204,21 @@ export default function CourseDetails() {
                             </span>
                           </div>
                         ))}
-                        <Link
-                          to={`/courses/${course.id}/modules/${mod.id}`}
-                          style={styles.viewModuleBtn}
-                        >
-                          Open Module →
-                        </Link>
+                        {enrolled ? (
+                          <Link
+                            to={`/courses/${course.id}/modules/${mod.id}`}
+                            style={styles.viewModuleBtn}
+                          >
+                            Open Module →
+                          </Link>
+                        ) : (
+                          <button
+                            onClick={() => setModalOpen(true)}
+                            style={styles.lockedBtn}
+                          >
+                            🔒 Enroll to access
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -606,4 +615,19 @@ const styles = {
     fontWeight: 500,
     fontSize: "0.9rem",
   },
+
+  lockedBtn: {
+  display: "inline-block",
+  marginTop: "1rem",
+  padding: "0.4rem 1rem",
+  backgroundColor: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: "6px",
+  color: "#4b5563",
+  fontSize: "0.83rem",
+  fontWeight: 500,
+  cursor: "pointer",
+  fontFamily: "'DM Sans', sans-serif",
+},
+
 };
