@@ -6,19 +6,21 @@ import Modal from "../components/Modal";
 export default function ModuleDetails() {
   const { courseId, moduleId } = useParams();
   const navigate = useNavigate();
-  const { courses, updateCourse, currentUser } = useAppContext();
+  const { courses, updateCourse, currentUser, lessonProgress, markLessonComplete, markCourseComplete, completedCourses } = useAppContext();
 
   const course = courses.find((c) => c.id === courseId);
   const allModules = course?.modules || [];
   const currentModuleIndex = allModules.findIndex((m) => m.id === moduleId);
   const module = allModules[currentModuleIndex];
 
+  // Use context lesson progress for this course
+  const completedLessons = lessonProgress[courseId] || {};
+
   const [activeLesson, setActiveLesson] = useState(null);
   const [expandedModules, setExpandedModules] = useState({});
-  const [completedLessons, setCompletedLessons] = useState({});
   const [visible, setVisible] = useState(false);
 
-  // Completion modal state
+  // Completion modal
   const [showCompletion, setShowCompletion] = useState(false);
   const [completionShown, setCompletionShown] = useState(false);
   const [hoveredStar, setHoveredStar] = useState(0);
@@ -34,9 +36,7 @@ export default function ModuleDetails() {
   useEffect(() => {
     if (module) {
       setExpandedModules({ [module.id]: true });
-      if (module.lessons?.length > 0) {
-        setActiveLesson(module.lessons[0]);
-      }
+      if (module.lessons?.length > 0) setActiveLesson(module.lessons[0]);
     }
   }, [moduleId]);
 
@@ -69,14 +69,16 @@ export default function ModuleDetails() {
     setExpandedModules((prev) => ({ ...prev, [modId]: !prev[modId] }));
   };
 
-  const markComplete = (lessonId) => {
-    const newCompleted = { ...completedLessons, [lessonId]: true };
-    setCompletedLessons(newCompleted);
+  const handleMarkComplete = (lessonId) => {
+    markLessonComplete(courseId, lessonId);
 
-    // Check if all lessons are now complete
+    // Check if all lessons complete after this mark
+    const newCompleted = { ...completedLessons, [lessonId]: true };
     const newCount = Object.keys(newCompleted).filter((k) => newCompleted[k]).length;
     const newPct = totalLessons > 0 ? Math.round((newCount / totalLessons) * 100) : 0;
-    if (newPct === 100 && !completionShown) {
+
+    if (newPct === 100 && !completionShown && !completedCourses.has(courseId)) {
+      markCourseComplete(courseId);
       setTimeout(() => {
         setShowCompletion(true);
         setCompletionShown(true);
@@ -141,39 +143,12 @@ export default function ModuleDetails() {
         .lesson-btn:hover { background-color: rgba(217,119,6,0.05) !important; }
         .lesson-btn.active { background-color: rgba(217,119,6,0.07) !important; }
         .module-btn-active { background-color: rgba(217,119,6,0.06) !important; border-left: 3px solid #d97706 !important; }
-        .progress-fill {
-          height: 100%;
-          background: linear-gradient(90deg, #d97706, #f59e0b);
-          border-radius: 999px;
-          transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .star-btn {
-          background: none !important;
-          border: none !important;
-          cursor: pointer;
-          padding: 0 3px;
-          font-size: 2.2rem;
-          line-height: 1;
-          transition: transform 0.1s;
-        }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #d97706, #f59e0b); border-radius: 999px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        .mark-complete-btn:hover { background-color: rgba(34,197,94,0.15) !important; }
+        .star-btn { background: none !important; border: none !important; cursor: pointer; padding: 0 3px; font-size: 2.2rem; line-height: 1; transition: transform 0.1s; }
         .star-btn:hover { transform: scale(1.25); }
         .star-btn:disabled { cursor: default; }
-        .mark-complete-btn:hover { background-color: rgba(34,197,94,0.15) !important; }
-        .review-textarea {
-          width: 100%;
-          background: #0c0c0e;
-          border: 1px solid rgba(255,255,255,0.09);
-          border-radius: 8px;
-          color: #e8e6e0;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 0.9rem;
-          padding: 0.75rem 1rem;
-          resize: vertical;
-          min-height: 90px;
-          box-sizing: border-box;
-          outline: none;
-          transition: border-color 0.2s;
-        }
+        .review-textarea { width: 100%; background: #0c0c0e; border: 1px solid rgba(255,255,255,0.09); border-radius: 8px; color: #e8e6e0; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; padding: 0.75rem 1rem; resize: vertical; min-height: 90px; box-sizing: border-box; outline: none; transition: border-color 0.2s; }
         .review-textarea:focus { border-color: rgba(217,119,6,0.4); }
         .review-textarea::placeholder { color: #4b5563; }
         .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -196,8 +171,6 @@ export default function ModuleDetails() {
 
       {/* Layout */}
       <div className="module-layout" style={styles.layout}>
-
-        {/* Sidebar */}
         <aside className="module-sidebar" style={styles.sidebar}>
           <div style={styles.sidebarHeader}>
             <div style={styles.progressHeader}>
@@ -256,11 +229,7 @@ export default function ModuleDetails() {
                             onClick={() => setActiveLesson(lesson)}
                             style={styles.lessonBtn}
                           >
-                            <span style={{
-                              ...styles.lessonDot,
-                              backgroundColor: isDone ? "#22c55e" : isActiveLesson ? "#d97706" : "rgba(255,255,255,0.1)",
-                              boxShadow: isActiveLesson && !isDone ? "0 0 0 2px rgba(217,119,6,0.3)" : "none",
-                            }} />
+                            <span style={{ ...styles.lessonDot, backgroundColor: isDone ? "#22c55e" : isActiveLesson ? "#d97706" : "rgba(255,255,255,0.1)", boxShadow: isActiveLesson && !isDone ? "0 0 0 2px rgba(217,119,6,0.3)" : "none" }} />
                             <span style={styles.lessonBtnText}>
                               <span style={{ ...styles.lessonBtnTitle, color: isDone ? "#6b7280" : isActiveLesson ? "#f5f2ec" : "#9ca3af", textDecoration: isDone ? "line-through" : "none" }}>
                                 {lesson.title}
@@ -280,16 +249,12 @@ export default function ModuleDetails() {
           </nav>
         </aside>
 
-        {/* Main */}
         <main className="module-main" style={styles.main}>
           {activeLesson ? (
             <div key={activeLesson.id} style={{ animation: "fadeSlide 0.4s ease forwards" }}>
-
               <div style={styles.videoBox}>
                 {activeLesson.videoUrl ? (
-                  <video controls style={styles.videoEl} src={activeLesson.videoUrl}>
-                    Your browser does not support video.
-                  </video>
+                  <video controls style={styles.videoEl} src={activeLesson.videoUrl}>Your browser does not support video.</video>
                 ) : (
                   <div style={styles.videoPlaceholder}>
                     <span style={styles.playIcon}>▶</span>
@@ -301,26 +266,18 @@ export default function ModuleDetails() {
               <div style={styles.lessonMeta}>
                 <span style={styles.lessonMetaDuration}>⏱ {activeLesson.duration}</span>
                 <span style={styles.lessonMetaModule}>{module.title}</span>
-                {completedLessons[activeLesson.id] && (
-                  <span style={styles.lessonDoneBadge}>✓ Completed</span>
-                )}
+                {completedLessons[activeLesson.id] && <span style={styles.lessonDoneBadge}>✓ Completed</span>}
               </div>
 
               <h1 style={styles.lessonTitle}>{activeLesson.title}</h1>
 
               <div style={styles.contentCard}>
                 <p style={styles.contentLabel}>Lesson Preview</p>
-                <p style={styles.contentText}>
-                  {activeLesson.contentPreview || "No preview content available for this lesson."}
-                </p>
+                <p style={styles.contentText}>{activeLesson.contentPreview || "No preview content available for this lesson."}</p>
               </div>
 
               {!completedLessons[activeLesson.id] && (
-                <button
-                  className="mark-complete-btn"
-                  onClick={() => markComplete(activeLesson.id)}
-                  style={styles.markCompleteBtn}
-                >
+                <button className="mark-complete-btn" onClick={() => handleMarkComplete(activeLesson.id)} style={styles.markCompleteBtn}>
                   ✓ Mark as Complete
                 </button>
               )}
@@ -332,13 +289,9 @@ export default function ModuleDetails() {
                   </button>
                 )}
                 {!isLastLesson ? (
-                  <button onClick={goToNextLesson} style={{ ...styles.navBtn, ...styles.navBtnNext }}>
-                    Next Lesson →
-                  </button>
+                  <button onClick={goToNextLesson} style={{ ...styles.navBtn, ...styles.navBtnNext }}>Next Lesson →</button>
                 ) : nextModule ? (
-                  <button onClick={goToNextModule} style={{ ...styles.navBtn, ...styles.navBtnNext }}>
-                    Next Module →
-                  </button>
+                  <button onClick={goToNextModule} style={{ ...styles.navBtn, ...styles.navBtnNext }}>Next Module →</button>
                 ) : null}
               </div>
             </div>
@@ -351,85 +304,40 @@ export default function ModuleDetails() {
         </main>
       </div>
 
-      {/* ── Course Completion Modal ── */}
-      <Modal
-        isOpen={showCompletion}
-        onClose={() => setShowCompletion(false)}
-        title=""
-      >
+      {/* Completion Modal */}
+      <Modal isOpen={showCompletion} onClose={() => setShowCompletion(false)} title="">
         {!submitted ? (
           <div style={styles.completionInner}>
-            {/* Header */}
             <div style={styles.completionTop}>
               <span style={styles.completionEmoji}>🎉</span>
               <h2 style={styles.completionTitle}>Course Complete!</h2>
               <p style={styles.completionSub}>
-                You've finished <strong style={{ color: "#f5f2ec" }}>{course.title}</strong>.<br />
-                Share how it went!
+                You've finished <strong style={{ color: "#f5f2ec" }}>{course.title}</strong>.<br />Share how it went!
               </p>
             </div>
 
-            {/* Stars */}
             <div style={styles.starsSection}>
               <p style={styles.starsLabel}>Your Rating</p>
               <div style={styles.starsRow}>
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    className="star-btn"
-                    onClick={() => setSelectedRating(star)}
-                    onMouseEnter={() => setHoveredStar(star)}
-                    onMouseLeave={() => setHoveredStar(0)}
-                    aria-label={`Rate ${star} stars`}
-                  >
-                    <span style={{
-                      color: star <= (hoveredStar || selectedRating) ? "#f59e0b" : "#2d2d35",
-                      transition: "color 0.12s",
-                    }}>
-                      ★
-                    </span>
+                  <button key={star} className="star-btn" onClick={() => setSelectedRating(star)} onMouseEnter={() => setHoveredStar(star)} onMouseLeave={() => setHoveredStar(0)} aria-label={`Rate ${star} stars`}>
+                    <span style={{ color: star <= (hoveredStar || selectedRating) ? "#f59e0b" : "#2d2d35", transition: "color 0.12s" }}>★</span>
                   </button>
                 ))}
               </div>
-              {selectedRating > 0 && (
-                <p style={styles.ratingLabel}>
-                  {["", "Poor", "Fair", "Good", "Very Good", "Excellent"][selectedRating]}
-                </p>
-              )}
+              {selectedRating > 0 && <p style={styles.ratingLabel}>{["", "Poor", "Fair", "Good", "Very Good", "Excellent"][selectedRating]}</p>}
             </div>
 
-            {/* Message */}
             <div style={styles.messageSection}>
               <p style={styles.messageLabel}>Leave a review <span style={styles.optional}>(optional)</span></p>
-              <textarea
-                className="review-textarea"
-                placeholder="What did you think of this course? What was most valuable?"
-                value={reviewMessage}
-                onChange={(e) => setReviewMessage(e.target.value)}
-                rows={3}
-              />
+              <textarea className="review-textarea" placeholder="What did you think of this course? What was most valuable?" value={reviewMessage} onChange={(e) => setReviewMessage(e.target.value)} rows={3} />
             </div>
 
-            {/* Actions */}
             <div style={styles.completionActions}>
-              <button
-                className="submit-btn"
-                onClick={handleSubmitReview}
-                disabled={selectedRating === 0}
-                style={{
-                  ...styles.submitBtn,
-                  opacity: selectedRating === 0 ? 0.4 : 1,
-                  cursor: selectedRating === 0 ? "not-allowed" : "pointer",
-                }}
-              >
+              <button className="submit-btn" onClick={handleSubmitReview} disabled={selectedRating === 0} style={{ ...styles.submitBtn, opacity: selectedRating === 0 ? 0.4 : 1, cursor: selectedRating === 0 ? "not-allowed" : "pointer" }}>
                 Submit Review
               </button>
-              <button
-                onClick={() => setShowCompletion(false)}
-                style={styles.skipBtn}
-              >
-                Skip for now
-              </button>
+              <button onClick={() => setShowCompletion(false)} style={styles.skipBtn}>Skip for now</button>
             </div>
           </div>
         ) : (
@@ -438,29 +346,13 @@ export default function ModuleDetails() {
               <span style={styles.completionEmoji}>⭐</span>
               <h2 style={styles.completionTitle}>Thanks for your review!</h2>
               <p style={styles.completionSub}>
-                You rated <strong style={{ color: "#f5f2ec" }}>{course.title}</strong>{" "}
-                {selectedRating} star{selectedRating !== 1 ? "s" : ""}.
-                {reviewMessage && (
-                  <span style={{ display: "block", marginTop: "0.5rem", fontStyle: "italic", color: "#6b7280" }}>
-                    "{reviewMessage}"
-                  </span>
-                )}
+                You rated <strong style={{ color: "#f5f2ec" }}>{course.title}</strong> {selectedRating} star{selectedRating !== 1 ? "s" : ""}.
+                {reviewMessage && <span style={{ display: "block", marginTop: "0.5rem", fontStyle: "italic", color: "#6b7280" }}>"{reviewMessage}"</span>}
               </p>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              <Link
-                to="/courses"
-                style={styles.browseBtn}
-                onClick={() => setShowCompletion(false)}
-              >
-                Browse More Courses →
-              </Link>
-              <button
-                onClick={() => setShowCompletion(false)}
-                style={styles.closeBtn}
-              >
-                Close
-              </button>
+              <Link to="/courses" style={styles.browseBtn} onClick={() => setShowCompletion(false)}>Browse More Courses →</Link>
+              <button onClick={() => setShowCompletion(false)} style={styles.closeBtn}>Close</button>
             </div>
           </div>
         )}
@@ -528,7 +420,6 @@ const styles = {
   notFound: { minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: "#0c0c0e", gap: "1rem" },
   nfTitle: { fontFamily: "'Playfair Display', serif", color: "#f5f2ec", fontSize: "1.5rem" },
   backLink: { color: "#d97706", textDecoration: "none", fontWeight: 600 },
-  // Completion Modal
   completionInner: { display: "flex", flexDirection: "column", gap: "1.5rem" },
   completionTop: { textAlign: "center" },
   completionEmoji: { fontSize: "3rem", display: "block", marginBottom: "0.75rem" },
@@ -542,7 +433,7 @@ const styles = {
   messageLabel: { fontSize: "0.82rem", color: "#d1cfc8", fontWeight: 600, marginBottom: "0.5rem" },
   optional: { color: "#4b5563", fontWeight: 400 },
   completionActions: { display: "flex", flexDirection: "column", gap: "0.6rem" },
-  submitBtn: { width: "100%", padding: "0.85rem", backgroundColor: "#d97706", color: "#0c0c0e", border: "none", borderRadius: "8px", fontWeight: 700, fontSize: "0.92rem", fontFamily: "'DM Sans', sans-serif", transition: "opacity 0.2s" },
+  submitBtn: { width: "100%", padding: "0.85rem", backgroundColor: "#d97706", color: "#0c0c0e", border: "none", borderRadius: "8px", fontWeight: 700, fontSize: "0.92rem", fontFamily: "'DM Sans', sans-serif" },
   skipBtn: { width: "100%", padding: "0.75rem", backgroundColor: "transparent", color: "#6b7280", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", fontFamily: "'DM Sans', sans-serif", fontSize: "0.88rem", cursor: "pointer" },
   browseBtn: { display: "block", textAlign: "center", padding: "0.85rem", backgroundColor: "#d97706", color: "#0c0c0e", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "0.92rem" },
   closeBtn: { width: "100%", padding: "0.75rem", backgroundColor: "transparent", color: "#6b7280", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", fontFamily: "'DM Sans', sans-serif", fontSize: "0.88rem", cursor: "pointer" },
