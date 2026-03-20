@@ -5,7 +5,7 @@ import { useAppContext } from "../context/AppContext";
 export default function ModuleDetails() {
   const { courseId, moduleId } = useParams();
   const navigate = useNavigate();
-  const { courses } = useAppContext();
+  const { courses, updateCourse, currentUser } = useAppContext();
 
   const course = courses.find((c) => c.id === courseId);
   const allModules = course?.modules || [];
@@ -15,6 +15,9 @@ export default function ModuleDetails() {
   const [activeLesson, setActiveLesson] = useState(null);
   const [expandedModules, setExpandedModules] = useState({});
   const [visible, setVisible] = useState(false);
+  const [hoveredStar, setHoveredStar] = useState(0);
+  const [userRating, setUserRating] = useState(0);
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 50);
@@ -57,6 +60,7 @@ export default function ModuleDetails() {
   const isFirstLesson = activeLessonIndex === 0;
   const nextModule = allModules[currentModuleIndex + 1];
   const prevModule = allModules[currentModuleIndex - 1];
+  const isCourseComplete = isLastLesson && !nextModule;
 
   const goToNextLesson = () => {
     if (!isLastLesson) setActiveLesson(module.lessons[activeLessonIndex + 1]);
@@ -74,6 +78,15 @@ export default function ModuleDetails() {
     if (nextModule) navigate(`/courses/${courseId}/modules/${nextModule.id}`);
   };
 
+  const handleRating = (star) => {
+    if (ratingSubmitted) return;
+    setUserRating(star);
+    // Update course rating (simple average with new rating)
+    const newRating = ((course.rating || 0) + star) / 2;
+    updateCourse({ ...course, rating: Math.round(newRating * 10) / 10 });
+    setRatingSubmitted(true);
+  };
+
   return (
     <div
       style={{
@@ -88,27 +101,22 @@ export default function ModuleDetails() {
           from { opacity: 0; transform: translateY(12px); }
           to   { opacity: 1; transform: translateY(0); }
         }
+        @keyframes popIn {
+          from { opacity: 0; transform: scale(0.85); }
+          to   { opacity: 1; transform: scale(1); }
+        }
         @media (max-width: 640px) {
           .module-layout { grid-template-columns: 1fr !important; }
           .module-sidebar { border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.06); max-height: 240px; overflow-y: auto; }
           .module-main { padding: 1.25rem !important; }
         }
-        .module-sidebar button {
-          background-color: #111114 !important;
-        }
-        .lesson-btn {
-          background-color: #0e0e11 !important;
-        }
-        .lesson-btn:hover {
-          background-color: rgba(217,119,6,0.05) !important;
-        }
-        .lesson-btn.active {
-          background-color: rgba(217,119,6,0.07) !important;
-        }
-        .module-btn-active {
-          background-color: rgba(217,119,6,0.06) !important;
-          border-left: 3px solid #d97706 !important;
-        }
+        .module-sidebar button { background-color: #111114 !important; }
+        .lesson-btn { background-color: #0e0e11 !important; }
+        .lesson-btn:hover { background-color: rgba(217,119,6,0.05) !important; }
+        .lesson-btn.active { background-color: rgba(217,119,6,0.07) !important; }
+        .module-btn-active { background-color: rgba(217,119,6,0.06) !important; border-left: 3px solid #d97706 !important; }
+        .star-btn { background: none !important; border: none !important; cursor: pointer; padding: 0 4px; font-size: 2rem; transition: transform 0.1s; }
+        .star-btn:hover { transform: scale(1.2); }
       `}</style>
 
       {/* Top Bar */}
@@ -194,6 +202,7 @@ export default function ModuleDetails() {
         <main className="module-main" style={styles.main}>
           {activeLesson ? (
             <div key={activeLesson.id} style={{ animation: "fadeSlide 0.4s ease forwards" }}>
+
               <div style={styles.videoBox}>
                 {activeLesson.videoUrl ? (
                   <video controls style={styles.videoEl} src={activeLesson.videoUrl}>
@@ -221,7 +230,56 @@ export default function ModuleDetails() {
                 </p>
               </div>
 
-              <div style={styles.lessonNav}>
+              {/* Course Complete + Rating */}
+              {isCourseComplete && (
+                <div style={{ animation: "popIn 0.5s ease forwards", ...styles.completedCard }}>
+                  <div style={styles.completedHeader}>
+                    <span style={styles.completedEmoji}>🎉</span>
+                    <div>
+                      <h3 style={styles.completedTitle}>Course Complete!</h3>
+                      <p style={styles.completedSub}>You've finished <strong style={{ color: "#f5f2ec" }}>{course.title}</strong></p>
+                    </div>
+                  </div>
+
+                  {currentUser && (
+                    <div style={styles.ratingSection}>
+                      <p style={styles.ratingPrompt}>
+                        {ratingSubmitted ? "Thanks for your rating!" : "How would you rate this course?"}
+                      </p>
+                      <div style={styles.starsRow} aria-label="Rate this course">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            className="star-btn"
+                            onClick={() => handleRating(star)}
+                            onMouseEnter={() => !ratingSubmitted && setHoveredStar(star)}
+                            onMouseLeave={() => !ratingSubmitted && setHoveredStar(0)}
+                            aria-label={`Rate ${star} star${star !== 1 ? "s" : ""}`}
+                            disabled={ratingSubmitted}
+                          >
+                            <span style={{
+                              color: star <= (hoveredStar || userRating) ? "#f59e0b" : "#374151",
+                              transition: "color 0.15s",
+                            }}>
+                              ★
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                      {ratingSubmitted && (
+                        <p style={styles.ratingThanksSub}>
+                          You rated this course {userRating} star{userRating !== 1 ? "s" : ""}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <Link to="/courses" style={styles.browseMoreBtn}>Browse More Courses →</Link>
+                </div>
+              )}
+
+              {/* Nav buttons */}
+              <div style={{ ...styles.lessonNav, marginTop: isCourseComplete ? "1rem" : "0" }}>
                 {(!isFirstLesson || prevModule) && (
                   <button onClick={goToPrevLesson} style={styles.navBtn}>
                     ← {isFirstLesson && prevModule ? "Previous Module" : "Previous Lesson"}
@@ -236,9 +294,7 @@ export default function ModuleDetails() {
                   <button onClick={goToNextModule} style={{ ...styles.navBtn, ...styles.navBtnNext }}>
                     Next Module →
                   </button>
-                ) : (
-                  <div style={styles.completedBadge}>🎉 Course Complete!</div>
-                )}
+                ) : null}
               </div>
             </div>
           ) : (
@@ -290,10 +346,22 @@ const styles = {
   contentCard: { backgroundColor: "#16161a", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "10px", padding: "1.5rem", marginBottom: "2rem" },
   contentLabel: { fontSize: "0.65rem", letterSpacing: "0.12em", color: "#d97706", textTransform: "uppercase", fontWeight: 700, marginBottom: "0.75rem" },
   contentText: { color: "#9ca3af", lineHeight: 1.8, fontSize: "0.95rem", margin: 0 },
+  // Completed card
+  completedCard: { backgroundColor: "#16161a", border: "1px solid rgba(34,197,94,0.2)", borderRadius: "14px", padding: "1.75rem", marginBottom: "1.5rem" },
+  completedHeader: { display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" },
+  completedEmoji: { fontSize: "2.5rem" },
+  completedTitle: { fontFamily: "'Playfair Display', serif", fontSize: "1.3rem", color: "#22c55e", margin: "0 0 0.25rem" },
+  completedSub: { fontSize: "0.88rem", color: "#6b7280", margin: 0 },
+  // Rating
+  ratingSection: { borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "1.25rem", marginBottom: "1.25rem" },
+  ratingPrompt: { fontSize: "0.9rem", color: "#9ca3af", marginBottom: "0.75rem" },
+  starsRow: { display: "flex", gap: "0.25rem", marginBottom: "0.5rem" },
+  ratingThanksSub: { fontSize: "0.78rem", color: "#6b7280", margin: 0 },
+  browseMoreBtn: { display: "inline-block", padding: "0.65rem 1.25rem", backgroundColor: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.3)", borderRadius: "8px", color: "#d97706", textDecoration: "none", fontWeight: 600, fontSize: "0.85rem" },
+  // Nav
   lessonNav: { display: "flex", justifyContent: "space-between", gap: "1rem" },
   navBtn: { padding: "0.7rem 1.25rem", backgroundColor: "#1a1a1e", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", color: "#d1cfc8", fontFamily: "'DM Sans', sans-serif", fontWeight: 500, fontSize: "0.88rem", cursor: "pointer" },
   navBtnNext: { marginLeft: "auto", backgroundColor: "rgba(217,119,6,0.08)", borderColor: "rgba(217,119,6,0.3)", color: "#d97706" },
-  completedBadge: { marginLeft: "auto", padding: "0.7rem 1.25rem", backgroundColor: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: "8px", color: "#22c55e", fontSize: "0.88rem", fontWeight: 600 },
   selectPrompt: { height: "60vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1rem", color: "#4b5563", fontSize: "0.95rem" },
   selectIcon: { fontSize: "2.5rem" },
   notFound: { minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: "#0c0c0e", gap: "1rem" },
