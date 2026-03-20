@@ -1,15 +1,19 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 
 export default function ModuleDetails() {
   const { courseId, moduleId } = useParams();
+  const navigate = useNavigate();
   const { courses } = useAppContext();
 
   const course = courses.find((c) => c.id === courseId);
-  const module = course?.modules?.find((m) => m.id === moduleId);
+  const allModules = course?.modules || [];
+  const currentModuleIndex = allModules.findIndex((m) => m.id === moduleId);
+  const module = allModules[currentModuleIndex];
 
   const [activeLesson, setActiveLesson] = useState(null);
+  const [expandedModules, setExpandedModules] = useState({});
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -17,19 +21,19 @@ export default function ModuleDetails() {
     return () => clearTimeout(t);
   }, []);
 
-  // Auto-select first lesson
   useEffect(() => {
-    if (module?.lessons?.length > 0) {
-      setActiveLesson(module.lessons[0]);
+    if (module) {
+      setExpandedModules({ [module.id]: true });
+      if (module.lessons?.length > 0) {
+        setActiveLesson(module.lessons[0]);
+      }
     }
-  }, [module]);
+  }, [moduleId]);
 
   if (!course) {
     return (
       <div style={styles.notFound}>
-        <span style={styles.notFoundIcon}>⚠</span>
-        <h2 style={styles.notFoundTitle}>Course Not Found</h2>
-        <p style={styles.notFoundSub}>No course matches this ID.</p>
+        <h2 style={styles.nfTitle}>Course Not Found</h2>
         <Link to="/courses" style={styles.backLink}>← All Courses</Link>
       </div>
     );
@@ -38,17 +42,37 @@ export default function ModuleDetails() {
   if (!module) {
     return (
       <div style={styles.notFound}>
-        <span style={styles.notFoundIcon}>⚠</span>
-        <h2 style={styles.notFoundTitle}>Module Not Found</h2>
-        <p style={styles.notFoundSub}>
-          This module doesn't exist in the selected course.
-        </p>
-        <Link to={`/courses/${courseId}`} style={styles.backLink}>
-          ← Back to Course
-        </Link>
+        <h2 style={styles.nfTitle}>Module Not Found</h2>
+        <Link to={`/courses/${courseId}`} style={styles.backLink}>← Back to Course</Link>
       </div>
     );
   }
+
+  const toggleModule = (modId) => {
+    setExpandedModules((prev) => ({ ...prev, [modId]: !prev[modId] }));
+  };
+
+  const activeLessonIndex = module.lessons?.indexOf(activeLesson);
+  const isLastLesson = activeLessonIndex === (module.lessons?.length - 1);
+  const isFirstLesson = activeLessonIndex === 0;
+  const nextModule = allModules[currentModuleIndex + 1];
+  const prevModule = allModules[currentModuleIndex - 1];
+
+  const goToNextLesson = () => {
+    if (!isLastLesson) setActiveLesson(module.lessons[activeLessonIndex + 1]);
+  };
+
+  const goToPrevLesson = () => {
+    if (!isFirstLesson) {
+      setActiveLesson(module.lessons[activeLessonIndex - 1]);
+    } else if (prevModule) {
+      navigate(`/courses/${courseId}/modules/${prevModule.id}`);
+    }
+  };
+
+  const goToNextModule = () => {
+    if (nextModule) navigate(`/courses/${courseId}/modules/${nextModule.id}`);
+  };
 
   return (
     <div
@@ -60,19 +84,37 @@ export default function ModuleDetails() {
       }}
     >
       <style>{`
+        @keyframes fadeSlide {
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
         @media (max-width: 640px) {
           .module-layout { grid-template-columns: 1fr !important; }
           .module-sidebar { border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.06); max-height: 240px; overflow-y: auto; }
           .module-main { padding: 1.25rem !important; }
+        }
+        .module-sidebar button {
+          background-color: #111114 !important;
+        }
+        .lesson-btn {
+          background-color: #0e0e11 !important;
+        }
+        .lesson-btn:hover {
+          background-color: rgba(217,119,6,0.05) !important;
+        }
+        .lesson-btn.active {
+          background-color: rgba(217,119,6,0.07) !important;
+        }
+        .module-btn-active {
+          background-color: rgba(217,119,6,0.06) !important;
+          border-left: 3px solid #d97706 !important;
         }
       `}</style>
 
       {/* Top Bar */}
       <div style={styles.topBar}>
         <div style={styles.topBarInner}>
-          <Link to={`/courses/${courseId}`} style={styles.backBtn}>
-            ← {course.title}
-          </Link>
+          <Link to={`/courses/${courseId}`} style={styles.backBtn}>← {course.title}</Link>
           <span style={styles.topBarDivider}>/</span>
           <span style={styles.topBarModule}>{module.title}</span>
         </div>
@@ -80,129 +122,122 @@ export default function ModuleDetails() {
 
       {/* Layout */}
       <div className="module-layout" style={styles.layout}>
-        {/* Sidebar — lesson list */}
+
+        {/* Sidebar */}
         <aside className="module-sidebar" style={styles.sidebar}>
           <div style={styles.sidebarHeader}>
-            <p style={styles.sidebarLabel}>MODULE</p>
-            <h2 style={styles.sidebarTitle}>{module.title}</h2>
-            <p style={styles.sidebarCount}>
-              {module.lessons?.length || 0} Lessons
-            </p>
+            <p style={styles.sidebarLabel}>Course Content</p>
+            <p style={styles.sidebarCount}>{allModules.length} Modules</p>
           </div>
 
-          <nav aria-label="Lesson list">
-            {module.lessons?.length === 0 && (
-              <p style={styles.noLessons}>No lessons in this module yet.</p>
-            )}
-            {module.lessons?.map((lesson, idx) => {
-              const isActive = activeLesson?.id === lesson.id;
+          <nav aria-label="Course modules">
+            {allModules.map((mod, modIdx) => {
+              const isCurrentModule = mod.id === moduleId;
+              const isExpanded = expandedModules[mod.id];
+
               return (
-                <button
-                  key={lesson.id}
-                  onClick={() => setActiveLesson(lesson)}
-                  style={{
-                    ...styles.lessonBtn,
-                    ...(isActive ? styles.lessonBtnActive : {}),
-                  }}
-                  aria-current={isActive ? "true" : undefined}
-                >
-                  <span
-                    style={{
-                      ...styles.lessonNum,
-                      color: isActive ? "#d97706" : "rgba(217,119,6,0.3)",
+                <div key={mod.id} style={styles.moduleGroup}>
+                  <button
+                    className={isCurrentModule ? "module-btn-active" : ""}
+                    onClick={() => {
+                      toggleModule(mod.id);
+                      if (!isCurrentModule) navigate(`/courses/${courseId}/modules/${mod.id}`);
                     }}
+                    style={styles.moduleBtn}
                   >
-                    {String(idx + 1).padStart(2, "0")}
-                  </span>
-                  <span style={styles.lessonBtnText}>
-                    <span style={styles.lessonBtnTitle}>{lesson.title}</span>
-                    <span style={styles.lessonBtnDuration}>{lesson.duration}</span>
-                  </span>
-                  {isActive && <span style={styles.activeIndicator}>▶</span>}
-                </button>
+                    <span style={{ ...styles.modNum, color: isCurrentModule ? "#d97706" : "rgba(217,119,6,0.3)" }}>
+                      {String(modIdx + 1).padStart(2, "0")}
+                    </span>
+                    <span style={styles.modTitle}>{mod.title}</span>
+                    <span style={styles.modChevron}>{isExpanded ? "▲" : "▼"}</span>
+                  </button>
+
+                  {isExpanded && (
+                    <div style={styles.lessonDropdown}>
+                      {mod.lessons?.map((lesson, lesIdx) => {
+                        const isActiveLesson = isCurrentModule && activeLesson?.id === lesson.id;
+                        return (
+                          <button
+                            key={lesson.id}
+                            className={`lesson-btn${isActiveLesson ? " active" : ""}`}
+                            onClick={() => {
+                              if (!isCurrentModule) {
+                                navigate(`/courses/${courseId}/modules/${mod.id}`);
+                              } else {
+                                setActiveLesson(lesson);
+                              }
+                            }}
+                            style={styles.lessonBtn}
+                          >
+                            <span style={{ ...styles.lessonNum, color: isActiveLesson ? "#d97706" : "rgba(217,119,6,0.25)" }}>
+                              {String(lesIdx + 1).padStart(2, "0")}
+                            </span>
+                            <span style={styles.lessonBtnText}>
+                              <span style={{ ...styles.lessonBtnTitle, color: isActiveLesson ? "#f5f2ec" : "#9ca3af" }}>
+                                {lesson.title}
+                              </span>
+                              <span style={styles.lessonBtnDuration}>{lesson.duration}</span>
+                            </span>
+                            {isActiveLesson && <span style={styles.activeIndicator}>▶</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </nav>
         </aside>
 
-        {/* Main — lesson preview */}
+        {/* Main */}
         <main className="module-main" style={styles.main}>
           {activeLesson ? (
-            <div
-              key={activeLesson.id}
-              style={{
-                animation: "fadeSlide 0.4s ease forwards",
-              }}
-            >
-              <style>{`
-                @keyframes fadeSlide {
-                  from { opacity: 0; transform: translateY(12px); }
-                  to   { opacity: 1; transform: translateY(0); }
-                }
-              `}</style>
-
-              {/* Video placeholder / embed */}
-              <div style={styles.videoBox} aria-label="Video preview area">
+            <div key={activeLesson.id} style={{ animation: "fadeSlide 0.4s ease forwards" }}>
+              <div style={styles.videoBox}>
                 {activeLesson.videoUrl ? (
-                  <iframe
-                    src={activeLesson.videoUrl}
-                    title={activeLesson.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
-                    allowFullScreen
-                    style={styles.iframe}
-                  />
+                  <video controls style={styles.videoEl} src={activeLesson.videoUrl}>
+                    Your browser does not support video.
+                  </video>
                 ) : (
                   <div style={styles.videoPlaceholder}>
                     <span style={styles.playIcon}>▶</span>
-                    <p style={styles.videoPlaceholderText}>
-                      No video available for this lesson
-                    </p>
+                    <p style={styles.videoPlaceholderText}>No video available for this lesson</p>
                   </div>
                 )}
               </div>
 
-              {/* Lesson info */}
               <div style={styles.lessonMeta}>
-                <span style={styles.lessonMetaDuration}>
-                  ⏱ {activeLesson.duration}
-                </span>
+                <span style={styles.lessonMetaDuration}>⏱ {activeLesson.duration}</span>
+                <span style={styles.lessonMetaModule}>{module.title}</span>
               </div>
 
               <h1 style={styles.lessonTitle}>{activeLesson.title}</h1>
 
-              {/* Content Preview */}
               <div style={styles.contentCard}>
                 <p style={styles.contentLabel}>Lesson Preview</p>
                 <p style={styles.contentText}>
-                  {activeLesson.contentPreview ||
-                    "No preview content available for this lesson."}
+                  {activeLesson.contentPreview || "No preview content available for this lesson."}
                 </p>
               </div>
 
-              {/* Prev / Next navigation */}
               <div style={styles.lessonNav}>
-                {module.lessons.indexOf(activeLesson) > 0 && (
-                  <button
-                    onClick={() => {
-                      const idx = module.lessons.indexOf(activeLesson);
-                      setActiveLesson(module.lessons[idx - 1]);
-                    }}
-                    style={styles.navBtn}
-                  >
-                    ← Previous Lesson
+                {(!isFirstLesson || prevModule) && (
+                  <button onClick={goToPrevLesson} style={styles.navBtn}>
+                    ← {isFirstLesson && prevModule ? "Previous Module" : "Previous Lesson"}
                   </button>
                 )}
-                {module.lessons.indexOf(activeLesson) <
-                  module.lessons.length - 1 && (
-                  <button
-                    onClick={() => {
-                      const idx = module.lessons.indexOf(activeLesson);
-                      setActiveLesson(module.lessons[idx + 1]);
-                    }}
-                    style={{ ...styles.navBtn, ...styles.navBtnNext }}
-                  >
+
+                {!isLastLesson ? (
+                  <button onClick={goToNextLesson} style={{ ...styles.navBtn, ...styles.navBtnNext }}>
                     Next Lesson →
                   </button>
+                ) : nextModule ? (
+                  <button onClick={goToNextModule} style={{ ...styles.navBtn, ...styles.navBtnNext }}>
+                    Next Module →
+                  </button>
+                ) : (
+                  <div style={styles.completedBadge}>🎉 Course Complete!</div>
                 )}
               </div>
             </div>
@@ -219,213 +254,49 @@ export default function ModuleDetails() {
 }
 
 const styles = {
-  page: {
-    minHeight: "100vh",
-    backgroundColor: "#0c0c0e",
-    color: "#e8e6e0",
-    fontFamily: "'DM Sans', sans-serif",
-  },
-  // Top Bar
-  topBar: {
-    backgroundColor: "#111114",
-    borderBottom: "1px solid rgba(255,255,255,0.06)",
-    padding: "0.875rem 1.5rem",
-  },
-  topBarInner: {
-    maxWidth: "1280px",
-    margin: "0 auto",
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-    fontSize: "0.85rem",
-  },
-  backBtn: {
-    color: "#d97706",
-    textDecoration: "none",
-    fontWeight: 600,
-    letterSpacing: "0.01em",
-  },
+  page: { minHeight: "100vh", backgroundColor: "#0c0c0e", color: "#e8e6e0", fontFamily: "'DM Sans', sans-serif" },
+  topBar: { backgroundColor: "#111114", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "0.875rem 1.5rem" },
+  topBarInner: { maxWidth: "1280px", margin: "0 auto", display: "flex", alignItems: "center", gap: "0.75rem", fontSize: "0.85rem" },
+  backBtn: { color: "#d97706", textDecoration: "none", fontWeight: 600 },
   topBarDivider: { color: "#374151" },
   topBarModule: { color: "#9ca3af", fontWeight: 400 },
-  // Layout
-  layout: {
-    maxWidth: "1280px",
-    margin: "0 auto",
-    display: "grid",
-    gridTemplateColumns: "min(300px, 38%) 1fr",
-    minHeight: "calc(100vh - 53px)",
-  },
-  // Sidebar
-  sidebar: {
-    borderRight: "1px solid rgba(255,255,255,0.06)",
-    backgroundColor: "#111114",
-    overflowY: "auto",
-  },
-  sidebarHeader: {
-    padding: "1.75rem 1.25rem 1.25rem",
-    borderBottom: "1px solid rgba(255,255,255,0.05)",
-  },
-  sidebarLabel: {
-    fontSize: "0.65rem",
-    letterSpacing: "0.12em",
-    color: "#4b5563",
-    fontWeight: 700,
-    marginBottom: "0.4rem",
-    textTransform: "uppercase",
-  },
-  sidebarTitle: {
-    fontFamily: "'Playfair Display', serif",
-    fontSize: "1.1rem",
-    color: "#f5f2ec",
-    margin: "0 0 0.4rem",
-    lineHeight: 1.3,
-  },
+  layout: { maxWidth: "1280px", margin: "0 auto", display: "grid", gridTemplateColumns: "300px 1fr", minHeight: "calc(100vh - 53px)" },
+  sidebar: { borderRight: "1px solid rgba(255,255,255,0.06)", backgroundColor: "#111114", overflowY: "auto" },
+  sidebarHeader: { padding: "1.5rem 1.25rem 1rem", borderBottom: "1px solid rgba(255,255,255,0.05)" },
+  sidebarLabel: { fontSize: "0.65rem", letterSpacing: "0.12em", color: "#4b5563", fontWeight: 700, marginBottom: "0.2rem", textTransform: "uppercase" },
   sidebarCount: { fontSize: "0.8rem", color: "#6b7280", margin: 0 },
-  noLessons: {
-    padding: "1.25rem",
-    color: "#4b5563",
-    fontStyle: "italic",
-    fontSize: "0.88rem",
-  },
-  lessonBtn: {
-    width: "100%",
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-    padding: "0.9rem 1.25rem",
-    background: "none",
-    border: "none",
-    borderBottom: "1px solid rgba(255,255,255,0.04)",
-    cursor: "pointer",
-    textAlign: "left",
-    transition: "background 0.15s",
-  },
-  lessonBtnActive: {
-    backgroundColor: "rgba(217,119,6,0.07)",
-    borderLeft: "3px solid #d97706",
-  },
-  lessonNum: {
-    fontFamily: "'Playfair Display', serif",
-    fontSize: "1.1rem",
-    minWidth: "2rem",
-    transition: "color 0.15s",
-  },
-  lessonBtnText: { flex: 1, display: "flex", flexDirection: "column", gap: "2px" },
-  lessonBtnTitle: { fontSize: "0.88rem", color: "#d1cfc8", fontWeight: 500 },
-  lessonBtnDuration: { fontSize: "0.73rem", color: "#6b7280" },
-  activeIndicator: { fontSize: "0.6rem", color: "#d97706" },
-  // Main
-  main: { padding: "2rem 2.5rem", overflowY: "auto" },
-  videoBox: {
-    width: "100%",
-    aspectRatio: "16 / 9",
-    backgroundColor: "#16161a",
-    borderRadius: "12px",
-    overflow: "hidden",
-    marginBottom: "1.25rem",
-    border: "1px solid rgba(255,255,255,0.07)",
-  },
-  iframe: { width: "100%", height: "100%", border: "none" },
-  videoPlaceholder: {
-    height: "100%",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "0.75rem",
-    color: "#374151",
-  },
+  moduleGroup: { borderBottom: "1px solid rgba(255,255,255,0.04)" },
+  moduleBtn: { width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.9rem 1.25rem", border: "none", cursor: "pointer", textAlign: "left" },
+  modNum: { fontFamily: "'Playfair Display', serif", fontSize: "1.1rem", minWidth: "2rem" },
+  modTitle: { flex: 1, fontSize: "0.88rem", color: "#d1cfc8", fontWeight: 500 },
+  modChevron: { fontSize: "0.6rem", color: "#6b7280" },
+  lessonDropdown: { borderTop: "1px solid rgba(255,255,255,0.03)" },
+  lessonBtn: { width: "100%", display: "flex", alignItems: "center", gap: "0.65rem", padding: "0.65rem 1.25rem 0.65rem 2rem", border: "none", borderBottom: "1px solid rgba(255,255,255,0.03)", cursor: "pointer", textAlign: "left" },
+  lessonNum: { fontFamily: "'Playfair Display', serif", fontSize: "0.85rem", minWidth: "1.5rem" },
+  lessonBtnText: { flex: 1, display: "flex", flexDirection: "column", gap: "1px" },
+  lessonBtnTitle: { fontSize: "0.82rem", fontWeight: 500 },
+  lessonBtnDuration: { fontSize: "0.7rem", color: "#6b7280" },
+  activeIndicator: { fontSize: "0.55rem", color: "#d97706" },
+  main: { padding: "2rem 2.5rem", overflowY: "auto", backgroundColor: "#0c0c0e" },
+  videoBox: { width: "100%", aspectRatio: "16 / 9", backgroundColor: "#16161a", borderRadius: "12px", overflow: "hidden", marginBottom: "1.25rem", border: "1px solid rgba(255,255,255,0.07)" },
+  videoEl: { width: "100%", height: "100%", objectFit: "cover" },
+  videoPlaceholder: { height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.75rem", color: "#374151" },
   playIcon: { fontSize: "2.5rem" },
   videoPlaceholderText: { fontSize: "0.88rem", color: "#4b5563" },
-  lessonMeta: {
-    display: "flex",
-    gap: "1rem",
-    marginBottom: "0.75rem",
-  },
+  lessonMeta: { display: "flex", gap: "1rem", marginBottom: "0.75rem", alignItems: "center" },
   lessonMetaDuration: { fontSize: "0.8rem", color: "#6b7280" },
-  lessonTitle: {
-    fontFamily: "'Playfair Display', serif",
-    fontSize: "1.6rem",
-    color: "#f5f2ec",
-    margin: "0 0 1.5rem",
-    lineHeight: 1.25,
-  },
-  contentCard: {
-    backgroundColor: "#16161a",
-    border: "1px solid rgba(255,255,255,0.06)",
-    borderRadius: "10px",
-    padding: "1.5rem",
-    marginBottom: "2rem",
-  },
-  contentLabel: {
-    fontSize: "0.65rem",
-    letterSpacing: "0.12em",
-    color: "#d97706",
-    textTransform: "uppercase",
-    fontWeight: 700,
-    marginBottom: "0.75rem",
-  },
-  contentText: {
-    color: "#9ca3af",
-    lineHeight: 1.8,
-    fontSize: "0.95rem",
-    margin: 0,
-  },
-  // Prev/Next
-  lessonNav: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "1rem",
-  },
-  navBtn: {
-    padding: "0.7rem 1.25rem",
-    backgroundColor: "#1a1a1e",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "8px",
-    color: "#d1cfc8",
-    fontFamily: "'DM Sans', sans-serif",
-    fontWeight: 500,
-    fontSize: "0.88rem",
-    cursor: "pointer",
-    transition: "border-color 0.2s, color 0.2s",
-  },
-  navBtnNext: {
-    marginLeft: "auto",
-    backgroundColor: "rgba(217,119,6,0.08)",
-    borderColor: "rgba(217,119,6,0.3)",
-    color: "#d97706",
-  },
-  // Select prompt
-  selectPrompt: {
-    height: "60vh",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "1rem",
-    color: "#4b5563",
-    fontSize: "0.95rem",
-  },
+  lessonMetaModule: { fontSize: "0.75rem", color: "#4b5563", backgroundColor: "rgba(255,255,255,0.04)", padding: "0.15rem 0.6rem", borderRadius: "999px", border: "1px solid rgba(255,255,255,0.06)" },
+  lessonTitle: { fontFamily: "'Playfair Display', serif", fontSize: "1.6rem", color: "#f5f2ec", margin: "0 0 1.5rem", lineHeight: 1.25 },
+  contentCard: { backgroundColor: "#16161a", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "10px", padding: "1.5rem", marginBottom: "2rem" },
+  contentLabel: { fontSize: "0.65rem", letterSpacing: "0.12em", color: "#d97706", textTransform: "uppercase", fontWeight: 700, marginBottom: "0.75rem" },
+  contentText: { color: "#9ca3af", lineHeight: 1.8, fontSize: "0.95rem", margin: 0 },
+  lessonNav: { display: "flex", justifyContent: "space-between", gap: "1rem" },
+  navBtn: { padding: "0.7rem 1.25rem", backgroundColor: "#1a1a1e", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", color: "#d1cfc8", fontFamily: "'DM Sans', sans-serif", fontWeight: 500, fontSize: "0.88rem", cursor: "pointer" },
+  navBtnNext: { marginLeft: "auto", backgroundColor: "rgba(217,119,6,0.08)", borderColor: "rgba(217,119,6,0.3)", color: "#d97706" },
+  completedBadge: { marginLeft: "auto", padding: "0.7rem 1.25rem", backgroundColor: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: "8px", color: "#22c55e", fontSize: "0.88rem", fontWeight: 600 },
+  selectPrompt: { height: "60vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1rem", color: "#4b5563", fontSize: "0.95rem" },
   selectIcon: { fontSize: "2.5rem" },
-  // Not Found
-  notFound: {
-    minHeight: "80vh",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#0c0c0e",
-    color: "#9ca3af",
-    padding: "2rem",
-    textAlign: "center",
-  },
-  notFoundIcon: { fontSize: "3rem", marginBottom: "1rem" },
-  notFoundTitle: {
-    fontFamily: "'Playfair Display', serif",
-    fontSize: "1.75rem",
-    color: "#f5f2ec",
-    marginBottom: "0.5rem",
-  },
-  notFoundSub: { marginBottom: "1.5rem", color: "#6b7280" },
+  notFound: { minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: "#0c0c0e", gap: "1rem" },
+  nfTitle: { fontFamily: "'Playfair Display', serif", color: "#f5f2ec", fontSize: "1.5rem" },
   backLink: { color: "#d97706", textDecoration: "none", fontWeight: 600 },
 };
