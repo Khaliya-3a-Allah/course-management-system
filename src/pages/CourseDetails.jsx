@@ -6,7 +6,8 @@ import Modal from "../components/Modal";
 export default function CourseDetails() {
   const { courseId } = useParams();
   const navigate = useNavigate();
-const { courses, currentUser, enrollCourse, saveCourse, unenrollCourse, unsaveCourse } = useAppContext();
+  const { courses, currentUser, enrollCourse, unenrollCourse, saveCourse, unsaveCourse } = useAppContext();
+
   const course = courses.find((c) => c.id === courseId);
 
   const [enrolled, setEnrolled] = useState(false);
@@ -17,7 +18,6 @@ const { courses, currentUser, enrollCourse, saveCourse, unenrollCourse, unsaveCo
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // Trigger entrance animation
     const t = setTimeout(() => setVisible(true), 50);
     return () => clearTimeout(t);
   }, []);
@@ -26,6 +26,9 @@ const { courses, currentUser, enrollCourse, saveCourse, unenrollCourse, unsaveCo
     if (currentUser && course) {
       setEnrolled(currentUser.enrolledCourseIds?.includes(course.id));
       setSaved(currentUser.savedCourseIds?.includes(course.id));
+    } else {
+      setEnrolled(false);
+      setSaved(false);
     }
   }, [currentUser, course]);
 
@@ -53,6 +56,12 @@ const { courses, currentUser, enrollCourse, saveCourse, unenrollCourse, unsaveCo
     setEnrolled(true);
   };
 
+  const handleUnenroll = () => {
+    unenrollCourse(course.id);
+    setEnrolled(false);
+    setUnenrollModal(false);
+  };
+
   const handleSave = () => {
     if (!currentUser) {
       setModalOpen(true);
@@ -60,6 +69,11 @@ const { courses, currentUser, enrollCourse, saveCourse, unenrollCourse, unsaveCo
     }
     saveCourse(course.id);
     setSaved(true);
+  };
+
+  const handleUnsave = () => {
+    unsaveCourse(course.id);
+    setSaved(false);
   };
 
   const levelColors = {
@@ -107,8 +121,7 @@ const { courses, currentUser, enrollCourse, saveCourse, unenrollCourse, unsaveCo
 
             <h1 style={styles.heroTitle}>{course.title}</h1>
             <p style={styles.heroInstructor}>
-              By{" "}
-              <span style={styles.instructorName}>{course.instructorName}</span>
+              By <span style={styles.instructorName}>{course.instructorName}</span>
             </p>
 
             <div style={styles.ratingRow}>
@@ -144,9 +157,7 @@ const { courses, currentUser, enrollCourse, saveCourse, unenrollCourse, unsaveCo
                 <h2 style={styles.sectionTitle}>Topics</h2>
                 <div style={styles.tagList}>
                   {course.tags.map((tag) => (
-                    <span key={tag} style={styles.tag}>
-                      {tag}
-                    </span>
+                    <span key={tag} style={styles.tag}>{tag}</span>
                   ))}
                 </div>
               </section>
@@ -162,9 +173,7 @@ const { courses, currentUser, enrollCourse, saveCourse, unenrollCourse, unsaveCo
               </h2>
 
               {course.modules?.length === 0 && (
-                <p style={styles.emptyModules}>
-                  No modules available yet.
-                </p>
+                <p style={styles.emptyModules}>No modules available yet.</p>
               )}
 
               <div style={styles.moduleList}>
@@ -173,9 +182,7 @@ const { courses, currentUser, enrollCourse, saveCourse, unenrollCourse, unsaveCo
                     <button
                       style={styles.moduleHeader}
                       onClick={() =>
-                        setExpandedModule(
-                          expandedModule === mod.id ? null : mod.id
-                        )
+                        setExpandedModule(expandedModule === mod.id ? null : mod.id)
                       }
                       aria-expanded={expandedModule === mod.id}
                     >
@@ -196,33 +203,30 @@ const { courses, currentUser, enrollCourse, saveCourse, unenrollCourse, unsaveCo
                         {mod.lessons?.map((lesson) => (
                           <div key={lesson.id} style={styles.lessonRow}>
                             <span style={styles.lessonIcon}>▶</span>
-                            <span style={styles.lessonTitle}>
-                              {lesson.title}
-                            </span>
-                            <span style={styles.lessonDuration}>
-                              {lesson.duration}
-                            </span>
+                            <span style={styles.lessonTitle}>{lesson.title}</span>
+                            <span style={styles.lessonDuration}>{lesson.duration}</span>
                           </div>
                         ))}
-                       {enrolled ? (
-                        <Link
-                          to={`/courses/${course.id}/modules/${mod.id}`}
-                          style={styles.viewModuleBtn}
-                        >
-                          Open Module →
-                        </Link>
-                      ) : currentUser ? (
-                        <p style={styles.lockedMsg}>
-                          🔒 Enroll in this course to access modules
-                        </p>
-                      ) : (
-                        <button
-                          onClick={() => setModalOpen(true)}
-                          style={styles.lockedBtn}
-                        >
-                          🔒 Sign in to access modules
-                        </button>
-                      )}
+
+                        {enrolled ? (
+                          <Link
+                            to={`/courses/${course.id}/modules/${mod.id}`}
+                            style={styles.viewModuleBtn}
+                          >
+                            Open Module →
+                          </Link>
+                        ) : currentUser ? (
+                          <p style={styles.lockedMsg}>
+                            🔒 Enroll in this course to access modules
+                          </p>
+                        ) : (
+                          <button
+                            onClick={() => setModalOpen(true)}
+                            style={styles.lockedBtn}
+                          >
+                            🔒 Sign in to access modules
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -234,11 +238,7 @@ const { courses, currentUser, enrollCourse, saveCourse, unenrollCourse, unsaveCo
           {/* Right — Sticky Card */}
           <aside style={styles.sideCard}>
             {course.thumbnail && (
-              <img
-                src={course.thumbnail}
-                alt=""
-                style={styles.cardThumb}
-              />
+              <img src={course.thumbnail} alt="" style={styles.cardThumb} />
             )}
 
             <div style={styles.cardBody}>
@@ -254,26 +254,22 @@ const { courses, currentUser, enrollCourse, saveCourse, unenrollCourse, unsaveCo
                 </span>
               </div>
 
+              {/* Enroll / Unenroll */}
               <button
-                onClick={handleEnroll}
-                disabled={enrolled}
+                onClick={enrolled ? () => setUnenrollModal(true) : handleEnroll}
                 style={enrolled ? styles.enrolledBtn : styles.enrollBtn}
-                aria-label={
-                  enrolled ? "Already enrolled" : `Enroll in ${course.title}`
-                }
+                aria-label={enrolled ? "Unenroll from course" : `Enroll in ${course.title}`}
               >
-                {enrolled ? "✓ Enrolled" : "Enroll Now"}
+                {enrolled ? "✓ Enrolled — Unenroll?" : "Enroll Now"}
               </button>
 
+              {/* Save / Unsave */}
               <button
-                onClick={handleSave}
-                disabled={saved}
+                onClick={saved ? handleUnsave : handleSave}
                 style={saved ? styles.savedBtn : styles.saveBtn}
-                aria-label={
-                  saved ? "Already saved" : `Save ${course.title}`
-                }
+                aria-label={saved ? "Unsave course" : `Save ${course.title}`}
               >
-                {saved ? "♥ Saved" : "♡ Save Course"}
+                {saved ? "♥ Saved — Unsave?" : "♡ Save Course"}
               </button>
 
               <div style={styles.divider} />
@@ -312,6 +308,28 @@ const { courses, currentUser, enrollCourse, saveCourse, unenrollCourse, unsaveCo
           </Link>
         </div>
       </Modal>
+
+      {/* Unenroll Confirmation Modal */}
+      <Modal
+        isOpen={unenrollModal}
+        onClose={() => setUnenrollModal(false)}
+        title="Unenroll from Course?"
+      >
+        <p style={styles.modalText}>
+          Are you sure you want to unenroll from <strong style={{ color: "#f5f2ec" }}>{course.title}</strong>? You will lose access to all modules.
+        </p>
+        <div style={styles.modalActions}>
+          <button onClick={handleUnenroll} style={styles.modalLoginBtn}>
+            Yes, Unenroll
+          </button>
+          <button
+            onClick={() => setUnenrollModal(false)}
+            style={{ ...styles.modalRegisterBtn, cursor: "pointer", border: "1px solid rgba(255,255,255,0.12)" }}
+          >
+            Cancel
+          </button>
+        </div>
+      </Modal>
     </>
   );
 }
@@ -323,7 +341,6 @@ const styles = {
     color: "#e8e6e0",
     fontFamily: "'DM Sans', sans-serif",
   },
-  // Hero
   hero: {
     position: "relative",
     minHeight: "420px",
@@ -342,8 +359,7 @@ const styles = {
   heroOverlay: {
     position: "absolute",
     inset: 0,
-    background:
-      "linear-gradient(to top, #0c0c0e 40%, rgba(12,12,14,0.5) 100%)",
+    background: "linear-gradient(to top, #0c0c0e 40%, rgba(12,12,14,0.5) 100%)",
     zIndex: 1,
   },
   heroContent: {
@@ -395,7 +411,6 @@ const styles = {
   ratingRow: { display: "flex", alignItems: "center", gap: "2px" },
   star: { fontSize: "1.1rem" },
   ratingNum: { color: "#9ca3af", fontSize: "0.9rem", marginLeft: "0.5rem" },
-  // Body Layout
   body: {
     maxWidth: "1200px",
     margin: "0 auto",
@@ -426,11 +441,7 @@ const styles = {
     marginLeft: "auto",
     letterSpacing: "0.05em",
   },
-  description: {
-    color: "#9ca3af",
-    lineHeight: 1.75,
-    fontSize: "0.97rem",
-  },
+  description: { color: "#9ca3af", lineHeight: 1.75, fontSize: "0.97rem" },
   tagList: { display: "flex", flexWrap: "wrap", gap: "0.5rem" },
   tag: {
     backgroundColor: "rgba(217,119,6,0.1)",
@@ -441,7 +452,6 @@ const styles = {
     fontSize: "0.78rem",
     fontWeight: 500,
   },
-  // Modules
   moduleList: { display: "flex", flexDirection: "column", gap: "0.6rem" },
   emptyModules: { color: "#6b7280", fontStyle: "italic" },
   moduleCard: {
@@ -493,9 +503,26 @@ const styles = {
     fontSize: "0.85rem",
     fontWeight: 600,
     letterSpacing: "0.03em",
-    transition: "opacity 0.2s",
   },
-  // Side Card
+  lockedBtn: {
+    display: "inline-block",
+    marginTop: "1rem",
+    padding: "0.4rem 1rem",
+    backgroundColor: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "6px",
+    color: "#4b5563",
+    fontSize: "0.83rem",
+    fontWeight: 500,
+    cursor: "pointer",
+    fontFamily: "'DM Sans', sans-serif",
+  },
+  lockedMsg: {
+    marginTop: "1rem",
+    fontSize: "0.83rem",
+    color: "#4b5563",
+    fontStyle: "italic",
+  },
   sideCard: {
     backgroundColor: "#16161a",
     border: "1px solid rgba(255,255,255,0.07)",
@@ -525,6 +552,7 @@ const styles = {
     cursor: "pointer",
     marginBottom: "0.75rem",
     letterSpacing: "0.04em",
+    fontFamily: "'DM Sans', sans-serif",
   },
   enrolledBtn: {
     width: "100%",
@@ -535,8 +563,9 @@ const styles = {
     borderRadius: "8px",
     fontWeight: 700,
     fontSize: "0.9rem",
-    cursor: "not-allowed",
+    cursor: "pointer",
     marginBottom: "0.75rem",
+    fontFamily: "'DM Sans', sans-serif",
   },
   saveBtn: {
     width: "100%",
@@ -548,7 +577,7 @@ const styles = {
     fontWeight: 500,
     fontSize: "0.88rem",
     cursor: "pointer",
-    transition: "border-color 0.2s, color 0.2s",
+    fontFamily: "'DM Sans', sans-serif",
   },
   savedBtn: {
     width: "100%",
@@ -559,7 +588,8 @@ const styles = {
     borderRadius: "8px",
     fontWeight: 500,
     fontSize: "0.88rem",
-    cursor: "not-allowed",
+    cursor: "pointer",
+    fontFamily: "'DM Sans', sans-serif",
   },
   divider: {
     height: "1px",
@@ -567,7 +597,6 @@ const styles = {
     margin: "1.25rem 0",
   },
   cardNote: { fontSize: "0.78rem", color: "#4b5563", textAlign: "center" },
-  // Not Found
   notFound: {
     minHeight: "80vh",
     display: "flex",
@@ -588,7 +617,6 @@ const styles = {
   },
   notFoundSub: { marginBottom: "1.5rem", color: "#6b7280" },
   backLink: { color: "#d97706", textDecoration: "none", fontWeight: 600 },
-  // Modal content
   modalText: {
     color: "#9ca3af",
     marginBottom: "1.5rem",
@@ -606,12 +634,14 @@ const styles = {
     textDecoration: "none",
     fontWeight: 700,
     fontSize: "0.9rem",
+    border: "none",
+    cursor: "pointer",
+    fontFamily: "'DM Sans', sans-serif",
   },
   modalRegisterBtn: {
     flex: 1,
     padding: "0.75rem",
     backgroundColor: "transparent",
-    border: "1px solid rgba(255,255,255,0.12)",
     color: "#e8e6e0",
     borderRadius: "8px",
     textAlign: "center",
@@ -619,26 +649,4 @@ const styles = {
     fontWeight: 500,
     fontSize: "0.9rem",
   },
-
-  lockedBtn: {
-  display: "inline-block",
-  marginTop: "1rem",
-  padding: "0.4rem 1rem",
-  backgroundColor: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  borderRadius: "6px",
-  color: "#4b5563",
-  fontSize: "0.83rem",
-  fontWeight: 500,
-  cursor: "pointer",
-  fontFamily: "'DM Sans', sans-serif",
-},
-
-lockedMsg: {
-  marginTop: "1rem",
-  fontSize: "0.83rem",
-  color: "#4b5563",
-  fontStyle: "italic",
-},
-
 };
