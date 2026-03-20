@@ -1,97 +1,113 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
+import Modal from "./Modal";
 
 export default function Navbar() {
   const { currentUser, setCurrentUser } = useAppContext();
   const location = useLocation();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [logoutModal, setLogoutModal] = useState(false);
 
   const isActive = (path) => location.pathname === path;
 
-  const handleLogout = () => {
+  const confirmLogout = () => {
     setCurrentUser(null);
-    navigate("/");
+    setLogoutModal(false);
     setMenuOpen(false);
+    navigate("/");
   };
 
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <header style={styles.navbar}>
-      <style>{`
-        @media (max-width: 600px) {
-          .nav-links-desktop { display: none !important; }
-          .nav-auth-desktop { display: none !important; }
-          .nav-hamburger { display: flex !important; }
-        }
-        @media (min-width: 601px) {
-          .nav-mobile-menu { display: none !important; }
-          .nav-hamburger { display: none !important; }
-        }
-      `}</style>
+    <>
+      <header style={styles.navbar}>
+        <style>{`
+          @media (max-width: 600px) {
+            .nav-links-desktop { display: none !important; }
+            .nav-auth-desktop { display: none !important; }
+            .nav-hamburger { display: flex !important; }
+          }
+          @media (min-width: 601px) {
+            .nav-mobile-menu { display: none !important; }
+            .nav-hamburger { display: none !important; }
+          }
+        `}</style>
 
-      <nav style={styles.inner} aria-label="Main navigation">
-        <Link to="/" style={styles.logo} aria-label="Home" onClick={closeMenu}>
-          <span style={styles.logoMark}>◈</span>
-          <span style={styles.logoText}>Courseware</span>
-        </Link>
+        <nav style={styles.inner} aria-label="Main navigation">
+          <Link to="/" style={styles.logo} aria-label="Home" onClick={closeMenu}>
+            <span style={styles.logoMark}>◈</span>
+            <span style={styles.logoText}>Courseware</span>
+          </Link>
 
-        {/* Desktop links */}
-        <div className="nav-links-desktop" style={styles.links}>
-          <Link to="/" style={isActive("/") ? { ...styles.link, ...styles.linkActive } : styles.link}>Home</Link>
-          <Link to="/courses" style={isActive("/courses") ? { ...styles.link, ...styles.linkActive } : styles.link}>Courses</Link>
-          {currentUser && (
-            <Link to="/dashboard" style={isActive("/dashboard") ? { ...styles.link, ...styles.linkActive } : styles.link}>Dashboard</Link>
-          )}
+          {/* Desktop links */}
+          <div className="nav-links-desktop" style={styles.links}>
+            <Link to="/" style={isActive("/") ? { ...styles.link, ...styles.linkActive } : styles.link}>Home</Link>
+            <Link to="/courses" style={isActive("/courses") ? { ...styles.link, ...styles.linkActive } : styles.link}>Courses</Link>
+            {currentUser && (
+              <Link to="/dashboard" style={isActive("/dashboard") ? { ...styles.link, ...styles.linkActive } : styles.link}>Dashboard</Link>
+            )}
+          </div>
+
+          {/* Desktop auth */}
+          <div className="nav-auth-desktop" style={styles.authArea}>
+            {currentUser ? (
+              <>
+                <span style={styles.userName}>{currentUser.name.split(" ")[0]}</span>
+                <button onClick={() => setLogoutModal(true)} style={styles.logoutBtn}>Log out</button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" style={styles.loginLink}>Sign in</Link>
+                <Link to="/register" style={styles.registerBtn}>Get Started</Link>
+              </>
+            )}
+          </div>
+
+          {/* Hamburger */}
+          <button
+            className="nav-hamburger"
+            onClick={() => setMenuOpen((v) => !v)}
+            style={styles.hamburger}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+          >
+            <span style={{ fontSize: "1.3rem", color: "#e8e6e0" }}>{menuOpen ? "✕" : "☰"}</span>
+          </button>
+        </nav>
+
+        {/* Mobile dropdown */}
+        {menuOpen && (
+          <div className="nav-mobile-menu" style={styles.mobileMenu} role="navigation">
+            <Link to="/" style={styles.mobileLink} onClick={closeMenu}>Home</Link>
+            <Link to="/courses" style={styles.mobileLink} onClick={closeMenu}>Courses</Link>
+            {currentUser && <Link to="/dashboard" style={styles.mobileLink} onClick={closeMenu}>Dashboard</Link>}
+            <div style={styles.mobileDivider} />
+            {currentUser ? (
+              <button onClick={() => { setMenuOpen(false); setLogoutModal(true); }} style={styles.mobileLogout}>
+                Log out
+              </button>
+            ) : (
+              <>
+                <Link to="/login" style={styles.mobileLink} onClick={closeMenu}>Sign in</Link>
+                <Link to="/register" style={{ ...styles.mobileLink, color: "#d97706", fontWeight: 700 }} onClick={closeMenu}>Get Started →</Link>
+              </>
+            )}
+          </div>
+        )}
+      </header>
+
+      {/* Logout Confirmation Modal */}
+      <Modal isOpen={logoutModal} onClose={() => setLogoutModal(false)} title="Log Out?">
+        <p style={styles.modalText}>Are you sure you want to log out?</p>
+        <div style={styles.modalActions}>
+          <button onClick={confirmLogout} style={styles.modalConfirmBtn}>Yes, Log Out</button>
+          <button onClick={() => setLogoutModal(false)} style={styles.modalCancelBtn}>Cancel</button>
         </div>
-
-        {/* Desktop auth */}
-        <div className="nav-auth-desktop" style={styles.authArea}>
-          {currentUser ? (
-            <>
-              <span style={styles.userName}>{currentUser.name.split(" ")[0]}</span>
-              <button onClick={handleLogout} style={styles.logoutBtn}>Log out</button>
-            </>
-          ) : (
-            <>
-              <Link to="/login" style={styles.loginLink}>Sign in</Link>
-              <Link to="/register" style={styles.registerBtn}>Get Started</Link>
-            </>
-          )}
-        </div>
-
-        {/* Hamburger */}
-        <button
-          className="nav-hamburger"
-          onClick={() => setMenuOpen((v) => !v)}
-          style={styles.hamburger}
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
-          aria-expanded={menuOpen}
-        >
-          <span style={{ fontSize: "1.3rem", color: "#e8e6e0" }}>{menuOpen ? "✕" : "☰"}</span>
-        </button>
-      </nav>
-
-      {/* Mobile dropdown */}
-      {menuOpen && (
-        <div className="nav-mobile-menu" style={styles.mobileMenu} role="navigation">
-          <Link to="/" style={styles.mobileLink} onClick={closeMenu}>Home</Link>
-          <Link to="/courses" style={styles.mobileLink} onClick={closeMenu}>Courses</Link>
-          {currentUser && <Link to="/dashboard" style={styles.mobileLink} onClick={closeMenu}>Dashboard</Link>}
-          <div style={styles.mobileDivider} />
-          {currentUser ? (
-            <button onClick={handleLogout} style={styles.mobileLogout}>Log out</button>
-          ) : (
-            <>
-              <Link to="/login" style={styles.mobileLink} onClick={closeMenu}>Sign in</Link>
-              <Link to="/register" style={{ ...styles.mobileLink, color: "#d97706", fontWeight: 700 }} onClick={closeMenu}>Get Started →</Link>
-            </>
-          )}
-        </div>
-      )}
-    </header>
+      </Modal>
+    </>
   );
 }
 
@@ -114,4 +130,8 @@ const styles = {
   mobileLink: { display: "block", padding: "0.75rem 0.5rem", textDecoration: "none", color: "#d1cfc8", fontSize: "0.95rem", fontFamily: "'DM Sans', sans-serif", fontWeight: 500, borderBottom: "1px solid rgba(255,255,255,0.04)" },
   mobileDivider: { height: "1px", backgroundColor: "rgba(255,255,255,0.06)", margin: "0.5rem 0" },
   mobileLogout: { padding: "0.75rem 0.5rem", background: "none", border: "none", color: "#6b7280", fontFamily: "'DM Sans', sans-serif", fontSize: "0.95rem", cursor: "pointer", textAlign: "left" },
+  modalText: { color: "#9ca3af", marginBottom: "1.5rem", fontSize: "0.95rem", lineHeight: 1.6 },
+  modalActions: { display: "flex", gap: "0.75rem" },
+  modalConfirmBtn: { flex: 1, padding: "0.75rem", backgroundColor: "#ef4444", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" },
+  modalCancelBtn: { flex: 1, padding: "0.75rem", backgroundColor: "transparent", color: "#e8e6e0", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "8px", fontWeight: 500, fontSize: "0.9rem", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" },
 };

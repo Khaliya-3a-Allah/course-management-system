@@ -11,6 +11,7 @@ export default function CourseDetails() {
     enrollCourse, unenrollCourse,
     saveCourse, unsaveCourse,
     completedCourses, getCourseProgress,
+    updateCourse,
   } = useAppContext();
 
   const course = courses.find((c) => c.id === courseId);
@@ -21,6 +22,12 @@ export default function CourseDetails() {
   const [unenrollModal, setUnenrollModal] = useState(false);
   const [expandedModule, setExpandedModule] = useState(null);
   const [visible, setVisible] = useState(false);
+
+  // Rating state
+  const [hoveredStar, setHoveredStar] = useState(0);
+  const [selectedRating, setSelectedRating] = useState(0);
+  const [reviewMessage, setReviewMessage] = useState("");
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 50);
@@ -50,6 +57,7 @@ export default function CourseDetails() {
 
   const isCompleted = completedCourses.has(course.id);
   const progress = getCourseProgress(course.id);
+  const canRate = isCompleted && enrolled && currentUser && !ratingSubmitted;
 
   const handleEnroll = () => {
     if (!currentUser) { setModalOpen(true); return; }
@@ -63,8 +71,15 @@ export default function CourseDetails() {
 
   const handleSaveToggle = () => {
     if (!currentUser) { setModalOpen(true); return; }
-    if (saved) { unsaveCourse(course.id); }
-    else { saveCourse(course.id); }
+    if (saved) unsaveCourse(course.id);
+    else saveCourse(course.id);
+  };
+
+  const handleSubmitRating = () => {
+    if (selectedRating === 0) return;
+    const newRating = ((course.rating || 0) + selectedRating) / 2;
+    updateCourse({ ...course, rating: Math.round(newRating * 10) / 10 });
+    setRatingSubmitted(true);
   };
 
   const levelColors = { Beginner: "#22c55e", Intermediate: "#f59e0b", Advanced: "#ef4444" };
@@ -79,6 +94,15 @@ export default function CourseDetails() {
           transition: "opacity 0.6s ease, transform 0.6s ease",
         }}
       >
+        <style>{`
+          .star-rate-btn { background: none !important; border: none !important; cursor: pointer; padding: 0 3px; font-size: 1.8rem; line-height: 1; transition: transform 0.1s; }
+          .star-rate-btn:hover { transform: scale(1.2); }
+          .star-rate-btn:disabled { cursor: default; }
+          .review-ta { width: 100%; background: #0c0c0e; border: 1px solid rgba(255,255,255,0.09); border-radius: 8px; color: #e8e6e0; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; padding: 0.65rem 0.9rem; resize: vertical; min-height: 80px; box-sizing: border-box; outline: none; transition: border-color 0.2s; }
+          .review-ta:focus { border-color: rgba(217,119,6,0.4); }
+          .review-ta::placeholder { color: #4b5563; }
+        `}</style>
+
         {/* Hero */}
         <div style={styles.hero}>
           <div style={styles.heroOverlay} />
@@ -115,6 +139,77 @@ export default function CourseDetails() {
                 <div style={styles.tagList}>
                   {course.tags.map((tag) => <span key={tag} style={styles.tag}>{tag}</span>)}
                 </div>
+              </section>
+            )}
+
+            {/* Rating section — only if completed and enrolled */}
+            {isCompleted && enrolled && currentUser && (
+              <section style={styles.section}>
+                <h2 style={styles.sectionTitle}>Rate This Course</h2>
+                {ratingSubmitted ? (
+                  <div style={styles.ratingDone}>
+                    <span style={styles.ratingDoneIcon}>⭐</span>
+                    <div>
+                      <p style={styles.ratingDoneTitle}>Thanks for your review!</p>
+                      <p style={styles.ratingDoneSub}>
+                        You rated this course {selectedRating} star{selectedRating !== 1 ? "s" : ""}.
+                        {reviewMessage && (
+                          <span style={{ display: "block", marginTop: "0.25rem", fontStyle: "italic", color: "#6b7280" }}>
+                            "{reviewMessage}"
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={styles.ratingBox}>
+                    <p style={styles.ratingPrompt}>You've completed this course. How would you rate it?</p>
+                    <div style={styles.starsRow}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          className="star-rate-btn"
+                          onClick={() => setSelectedRating(star)}
+                          onMouseEnter={() => setHoveredStar(star)}
+                          onMouseLeave={() => setHoveredStar(0)}
+                          aria-label={`Rate ${star} stars`}
+                        >
+                          <span style={{ color: star <= (hoveredStar || selectedRating) ? "#f59e0b" : "#374151", transition: "color 0.12s" }}>★</span>
+                        </button>
+                      ))}
+                      {selectedRating > 0 && (
+                        <span style={styles.ratingWordLabel}>
+                          {["", "Poor", "Fair", "Good", "Very Good", "Excellent"][selectedRating]}
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={styles.reviewFieldWrap}>
+                      <label style={styles.reviewLabel}>
+                        Leave a review <span style={styles.optional}>(optional)</span>
+                      </label>
+                      <textarea
+                        className="review-ta"
+                        placeholder="What did you think? What was most valuable?"
+                        value={reviewMessage}
+                        onChange={(e) => setReviewMessage(e.target.value)}
+                        rows={3}
+                      />
+                    </div>
+
+                    <button
+                      onClick={handleSubmitRating}
+                      disabled={selectedRating === 0}
+                      style={{
+                        ...styles.submitRatingBtn,
+                        opacity: selectedRating === 0 ? 0.4 : 1,
+                        cursor: selectedRating === 0 ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      Submit Review
+                    </button>
+                  </div>
+                )}
               </section>
             )}
 
@@ -174,7 +269,6 @@ export default function CourseDetails() {
                 <span>🎯 {course.modules?.reduce((acc, m) => acc + (m.lessons?.length || 0), 0)} Lessons</span>
               </div>
 
-              {/* Progress bar if enrolled */}
               {enrolled && !isCompleted && progress > 0 && (
                 <div style={styles.progressWrap}>
                   <div style={styles.progressBarBg}>
@@ -184,11 +278,8 @@ export default function CourseDetails() {
                 </div>
               )}
 
-              {/* Enroll / Unenroll / Completed button */}
               {isCompleted ? (
-                <button style={styles.completedBtn} disabled>
-                  ✓ Completed
-                </button>
+                <button style={styles.completedBtn} disabled>✓ Completed</button>
               ) : (
                 <button
                   onClick={enrolled ? () => setUnenrollModal(true) : handleEnroll}
@@ -257,6 +348,20 @@ const styles = {
   description: { color: "#9ca3af", lineHeight: 1.75, fontSize: "0.97rem" },
   tagList: { display: "flex", flexWrap: "wrap", gap: "0.5rem" },
   tag: { backgroundColor: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.25)", color: "#d97706", padding: "0.25rem 0.75rem", borderRadius: "999px", fontSize: "0.78rem", fontWeight: 500 },
+  // Rating section
+  ratingBox: { backgroundColor: "#16161a", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "12px", padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" },
+  ratingPrompt: { fontSize: "0.9rem", color: "#9ca3af", margin: 0 },
+  starsRow: { display: "flex", alignItems: "center", gap: "0.1rem", flexWrap: "wrap" },
+  ratingWordLabel: { fontSize: "0.82rem", color: "#d97706", fontWeight: 600, marginLeft: "0.75rem" },
+  reviewFieldWrap: { display: "flex", flexDirection: "column", gap: "0.4rem" },
+  reviewLabel: { fontSize: "0.82rem", color: "#d1cfc8", fontWeight: 600 },
+  optional: { color: "#4b5563", fontWeight: 400 },
+  submitRatingBtn: { padding: "0.75rem 1.5rem", backgroundColor: "#d97706", color: "#0c0c0e", border: "none", borderRadius: "8px", fontWeight: 700, fontSize: "0.88rem", fontFamily: "'DM Sans', sans-serif", transition: "opacity 0.2s", alignSelf: "flex-start" },
+  ratingDone: { display: "flex", alignItems: "flex-start", gap: "1rem", backgroundColor: "#16161a", border: "1px solid rgba(34,197,94,0.15)", borderRadius: "12px", padding: "1.25rem" },
+  ratingDoneIcon: { fontSize: "1.5rem", flexShrink: 0 },
+  ratingDoneTitle: { fontSize: "0.9rem", color: "#22c55e", fontWeight: 600, margin: "0 0 0.25rem" },
+  ratingDoneSub: { fontSize: "0.85rem", color: "#6b7280", margin: 0, lineHeight: 1.5 },
+  // Modules
   moduleList: { display: "flex", flexDirection: "column", gap: "0.6rem" },
   emptyModules: { color: "#6b7280", fontStyle: "italic" },
   moduleCard: { backgroundColor: "#16161a", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "10px", overflow: "hidden" },
@@ -273,6 +378,7 @@ const styles = {
   viewModuleBtn: { display: "inline-block", marginTop: "1rem", color: "#d97706", textDecoration: "none", fontSize: "0.85rem", fontWeight: 600 },
   lockedBtn: { display: "inline-block", marginTop: "1rem", padding: "0.4rem 1rem", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "6px", color: "#4b5563", fontSize: "0.83rem", fontWeight: 500, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" },
   lockedMsg: { marginTop: "1rem", fontSize: "0.83rem", color: "#4b5563", fontStyle: "italic" },
+  // Side card
   sideCard: { backgroundColor: "#16161a", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "14px", overflow: "hidden", position: "sticky", top: "75px" },
   cardThumb: { width: "100%", height: "175px", objectFit: "cover" },
   cardBody: { padding: "1.5rem" },
