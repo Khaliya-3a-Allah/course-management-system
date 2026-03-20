@@ -1,8 +1,222 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import Modal from "../components/Modal";
 
+// ── Custom Video Player ──────────────────────────────────────────────────────
+function VideoPlayer({ src, title, moduleName, duration }) {
+  const videoRef = useRef(null);
+  const wrapRef = useRef(null);
+  const timerRef = useRef(null);
+  const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [totalDuration, setTotalDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [muted, setMuted] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.load();
+      setCurrentTime(0);
+      setTotalDuration(0);
+      setPlaying(false);
+    }
+  }, [src]);
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (playing) { videoRef.current.pause(); setPlaying(false); }
+    else { videoRef.current.play(); setPlaying(true); }
+  };
+
+  const handleMouseMove = () => {
+    setShowControls(true);
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => { if (playing) setShowControls(false); }, 2500);
+  };
+
+  const handleSeek = (e) => {
+    if (!videoRef.current || !totalDuration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    videoRef.current.currentTime = pct * totalDuration;
+  };
+
+  const toggleMute = () => {
+    if (!videoRef.current) return;
+    const m = !muted;
+    videoRef.current.muted = m;
+    setMuted(m);
+  };
+
+  const handleVolume = (e) => {
+    const v = parseFloat(e.target.value);
+    setVolume(v);
+    if (videoRef.current) { videoRef.current.volume = v; videoRef.current.muted = v === 0; }
+    setMuted(v === 0);
+  };
+
+  const toggleFS = () => {
+    if (!document.fullscreenElement) wrapRef.current?.requestFullscreen?.();
+    else document.exitFullscreen?.();
+  };
+
+  const fmt = (s) => {
+    if (!s || isNaN(s)) return "0:00";
+    return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
+  };
+
+  const pct = totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0;
+
+  if (!src) {
+    return (
+      <div style={vStyles.wrap}>
+        <div style={vStyles.overlay}>
+          <span style={vStyles.overlayBadge}>{moduleName}</span>
+          <span style={vStyles.overlayTitle}>{title}</span>
+        </div>
+        <div style={vStyles.noVideo}>
+          <span style={{ fontSize: "3rem", color: "#374151" }}>▶</span>
+          <p style={{ fontSize: "1rem", color: "#4b5563", margin: 0 }}>No video available for this lesson</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={wrapRef}
+      style={vStyles.wrap}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => playing && setShowControls(false)}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      <style>{`
+        .vp-seek:hover .vp-track { height: 7px !important; }
+        .vp-vol {
+          accent-color: #d97706;
+          width: 90px;
+          cursor: pointer;
+          -webkit-appearance: none;
+          height: 5px;
+          background: rgba(255,255,255,0.2);
+          border-radius: 999px;
+          outline: none;
+        }
+        .vp-vol::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: #d97706;
+          cursor: pointer;
+        }
+        .vp-vol::-moz-range-thumb {
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: #d97706;
+          cursor: pointer;
+          border: none;
+        }
+        .vp-ctrl-btn {
+          background: none !important;
+          border: none !important;
+          cursor: pointer;
+          color: #e8e6e0;
+          padding: 0.3rem;
+          font-size: 1.2rem;
+          line-height: 1;
+          display: flex;
+          align-items: center;
+        }
+      `}</style>
+
+      <video
+        ref={videoRef}
+        style={vStyles.video}
+        src={src}
+        controlsList="nodownload nofullscreen noremoteplayback"
+        disablePictureInPicture
+        onTimeUpdate={() => videoRef.current && setCurrentTime(videoRef.current.currentTime)}
+        onLoadedMetadata={() => videoRef.current && setTotalDuration(videoRef.current.duration)}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+        onClick={togglePlay}
+      />
+
+      {/* Title overlay */}
+      <div style={vStyles.overlay}>
+        <span style={vStyles.overlayBadge}>{moduleName}</span>
+        <span style={vStyles.overlayTitle}>{title}</span>
+      </div>
+
+      {/* Big play button */}
+      {!playing && (
+        <button onClick={togglePlay} style={vStyles.bigPlay} aria-label="Play">
+          <span style={{ fontSize: "1.8rem", color: "#d97706", marginLeft: "5px" }}>▶</span>
+        </button>
+      )}
+
+      {/* Controls bar */}
+      <div style={{ ...vStyles.controls, opacity: showControls ? 1 : 0, transition: "opacity 0.3s" }}>
+        {/* Seek bar */}
+        <div className="vp-seek" style={vStyles.seekWrap} onClick={handleSeek}>
+          <div className="vp-track" style={vStyles.seekBg}>
+            <div style={{ ...vStyles.seekFill, width: `${pct}%` }} />
+            <div style={{ ...vStyles.seekThumb, left: `calc(${pct}% - 7px)` }} />
+          </div>
+        </div>
+
+        {/* Controls row */}
+        <div style={vStyles.ctrlRow}>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <button className="vp-ctrl-btn" onClick={togglePlay} aria-label={playing ? "Pause" : "Play"}>
+              {playing ? "⏸" : "▶"}
+            </button>
+            <span style={vStyles.time}>{fmt(currentTime)} / {fmt(totalDuration)}</span>
+            <button className="vp-ctrl-btn" onClick={toggleMute} aria-label="Toggle mute">
+              {muted || volume === 0 ? "🔇" : volume < 0.5 ? "🔉" : "🔊"}
+            </button>
+            <input
+              type="range" min="0" max="1" step="0.05"
+              value={muted ? 0 : volume}
+              onChange={handleVolume}
+              className="vp-vol"
+              aria-label="Volume"
+            />
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <span style={vStyles.durBadge}>⏱ {duration}</span>
+            <button className="vp-ctrl-btn" onClick={toggleFS} aria-label="Fullscreen">⛶</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const vStyles = {
+  wrap: { position: "relative", width: "100%", aspectRatio: "16/9", backgroundColor: "#0a0a0c", borderRadius: "12px", overflow: "hidden", marginBottom: "1.25rem", cursor: "pointer", userSelect: "none" },
+  video: { width: "100%", height: "100%", objectFit: "contain", display: "block", backgroundColor: "#0a0a0c" },
+  overlay: { position: "absolute", top: 0, left: 0, right: 0, padding: "1.25rem 1.5rem", background: "linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%)", display: "flex", flexDirection: "column", gap: "0.3rem", pointerEvents: "none" },
+  overlayBadge: { fontSize: "0.75rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#d97706", fontWeight: 700 },
+  overlayTitle: { fontSize: "1.2rem", fontFamily: "'Playfair Display', serif", color: "#f5f2ec", fontWeight: 700, lineHeight: 1.3 },
+  bigPlay: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "80px", height: "80px", borderRadius: "50%", background: "rgba(0,0,0,0.35)", border: "2px solid rgba(217,119,6,0.5)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" },
+  controls: { position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%)", padding: "2rem 1.25rem 1rem" },
+  seekWrap: { width: "100%", height: "20px", display: "flex", alignItems: "center", cursor: "pointer", marginBottom: "0.6rem" },
+  seekBg: { width: "100%", height: "5px", backgroundColor: "rgba(255,255,255,0.2)", borderRadius: "999px", position: "relative", transition: "height 0.15s" },
+  seekFill: { height: "100%", backgroundColor: "#d97706", borderRadius: "999px", transition: "width 0.1s linear" },
+  seekThumb: { position: "absolute", top: "50%", transform: "translateY(-50%)", width: "15px", height: "15px", borderRadius: "50%", backgroundColor: "#d97706", boxShadow: "0 0 6px rgba(217,119,6,0.7)" },
+  ctrlRow: { display: "flex", alignItems: "center", justifyContent: "space-between" },
+  time: { fontSize: "0.92rem", color: "#9ca3af", fontFamily: "monospace", letterSpacing: "0.05em" },
+  durBadge: { fontSize: "0.88rem", color: "#9ca3af", backgroundColor: "rgba(255,255,255,0.08)", padding: "0.25rem 0.75rem", borderRadius: "999px" },
+  noVideo: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem" },
+};
+
+// ── Main Page ────────────────────────────────────────────────────────────────
 export default function ModuleDetails() {
   const { courseId, moduleId } = useParams();
   const navigate = useNavigate();
@@ -12,15 +226,11 @@ export default function ModuleDetails() {
   const allModules = course?.modules || [];
   const currentModuleIndex = allModules.findIndex((m) => m.id === moduleId);
   const module = allModules[currentModuleIndex];
-
-  // Use context lesson progress for this course
   const completedLessons = lessonProgress[courseId] || {};
 
   const [activeLesson, setActiveLesson] = useState(null);
   const [expandedModules, setExpandedModules] = useState({});
   const [visible, setVisible] = useState(false);
-
-  // Completion modal
   const [showCompletion, setShowCompletion] = useState(false);
   const [completionShown, setCompletionShown] = useState(false);
   const [hoveredStar, setHoveredStar] = useState(0);
@@ -65,24 +275,17 @@ export default function ModuleDetails() {
   const isModuleComplete = (mod) =>
     mod.lessons?.length > 0 && mod.lessons?.every((l) => completedLessons[l.id]);
 
-  const toggleModule = (modId) => {
+  const toggleModule = (modId) =>
     setExpandedModules((prev) => ({ ...prev, [modId]: !prev[modId] }));
-  };
 
   const handleMarkComplete = (lessonId) => {
     markLessonComplete(courseId, lessonId);
-
-    // Check if all lessons complete after this mark
     const newCompleted = { ...completedLessons, [lessonId]: true };
     const newCount = Object.keys(newCompleted).filter((k) => newCompleted[k]).length;
     const newPct = totalLessons > 0 ? Math.round((newCount / totalLessons) * 100) : 0;
-
     if (newPct === 100 && !completionShown && !completedCourses.has(courseId)) {
       markCourseComplete(courseId);
-      setTimeout(() => {
-        setShowCompletion(true);
-        setCompletionShown(true);
-      }, 600);
+      setTimeout(() => { setShowCompletion(true); setCompletionShown(true); }, 600);
     }
   };
 
@@ -92,24 +295,13 @@ export default function ModuleDetails() {
   const nextModule = allModules[currentModuleIndex + 1];
   const prevModule = allModules[currentModuleIndex - 1];
 
-  const goToNextLesson = () => {
-    if (!isLastLesson) setActiveLesson(module.lessons[activeLessonIndex + 1]);
-  };
-
+  const goToNextLesson = () => { if (!isLastLesson) setActiveLesson(module.lessons[activeLessonIndex + 1]); };
   const goToPrevLesson = () => {
-    if (!isFirstLesson) {
-      setActiveLesson(module.lessons[activeLessonIndex - 1]);
-    } else if (prevModule) {
-      navigate(`/courses/${courseId}/modules/${prevModule.id}`);
-    }
+    if (!isFirstLesson) setActiveLesson(module.lessons[activeLessonIndex - 1]);
+    else if (prevModule) navigate(`/courses/${courseId}/modules/${prevModule.id}`);
   };
-
   const goToNextModule = () => {
-    if (nextModule) {
-      setExpandedModules({ [nextModule.id]: true });
-      setActiveLesson(null);
-      navigate(`/courses/${courseId}/modules/${nextModule.id}`);
-    }
+    if (nextModule) { setExpandedModules({ [nextModule.id]: true }); setActiveLesson(null); navigate(`/courses/${courseId}/modules/${nextModule.id}`); }
   };
 
   const handleSubmitReview = () => {
@@ -120,19 +312,9 @@ export default function ModuleDetails() {
   };
 
   return (
-    <div
-      style={{
-        ...styles.page,
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(16px)",
-        transition: "opacity 0.55s ease, transform 0.55s ease",
-      }}
-    >
+    <div style={{ ...styles.page, opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(16px)", transition: "opacity 0.55s ease, transform 0.55s ease" }}>
       <style>{`
-        @keyframes fadeSlide {
-          from { opacity: 0; transform: translateY(12px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeSlide { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 640px) {
           .module-layout { grid-template-columns: 1fr !important; }
           .module-sidebar { border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.06); max-height: 300px; overflow-y: auto; }
@@ -147,11 +329,10 @@ export default function ModuleDetails() {
         .mark-complete-btn:hover { background-color: rgba(34,197,94,0.15) !important; }
         .star-btn { background: none !important; border: none !important; cursor: pointer; padding: 0 3px; font-size: 2.2rem; line-height: 1; transition: transform 0.1s; }
         .star-btn:hover { transform: scale(1.25); }
-        .star-btn:disabled { cursor: default; }
+        .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .review-textarea { width: 100%; background: #0c0c0e; border: 1px solid rgba(255,255,255,0.09); border-radius: 8px; color: #e8e6e0; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; padding: 0.75rem 1rem; resize: vertical; min-height: 90px; box-sizing: border-box; outline: none; transition: border-color 0.2s; }
         .review-textarea:focus { border-color: rgba(217,119,6,0.4); }
         .review-textarea::placeholder { color: #4b5563; }
-        .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
       `}</style>
 
       {/* Top Bar */}
@@ -162,24 +343,22 @@ export default function ModuleDetails() {
           <span style={styles.topBarModule}>{module.title}</span>
           <div style={styles.topBarProgress}>
             <span style={styles.topBarPct}>{progressPct}%</span>
-            <div style={styles.topBarBarWrap}>
-              <div className="progress-fill" style={{ width: `${progressPct}%` }} />
-            </div>
+            <div style={styles.topBarBarWrap}><div className="progress-fill" style={{ width: `${progressPct}%` }} /></div>
           </div>
         </div>
       </div>
 
       {/* Layout */}
       <div className="module-layout" style={styles.layout}>
+
+        {/* Sidebar */}
         <aside className="module-sidebar" style={styles.sidebar}>
           <div style={styles.sidebarHeader}>
             <div style={styles.progressHeader}>
               <p style={styles.sidebarLabel}>Course Content</p>
               <span style={styles.progressPctBig}>{progressPct}%</span>
             </div>
-            <div style={styles.progressBarWrap}>
-              <div className="progress-fill" style={{ width: `${progressPct}%` }} />
-            </div>
+            <div style={styles.progressBarWrap}><div className="progress-fill" style={{ width: `${progressPct}%` }} /></div>
             <p style={styles.progressSub}>{completedCount} of {totalLessons} lessons completed</p>
           </div>
 
@@ -188,18 +367,15 @@ export default function ModuleDetails() {
               const isCurrentModule = mod.id === moduleId;
               const isExpanded = expandedModules[mod.id];
               const modComplete = isModuleComplete(mod);
-              const modCompletedCount = mod.lessons?.filter((l) => completedLessons[l.id]).length || 0;
+              const modDone = mod.lessons?.filter((l) => completedLessons[l.id]).length || 0;
               const modTotal = mod.lessons?.length || 0;
-              const modPct = modTotal > 0 ? Math.round((modCompletedCount / modTotal) * 100) : 0;
+              const modPct = modTotal > 0 ? Math.round((modDone / modTotal) * 100) : 0;
 
               return (
                 <div key={mod.id} style={styles.moduleGroup}>
                   <button
                     className={isCurrentModule ? "module-btn-active" : ""}
-                    onClick={() => {
-                      toggleModule(mod.id);
-                      if (!isCurrentModule) navigate(`/courses/${courseId}/modules/${mod.id}`);
-                    }}
+                    onClick={() => { toggleModule(mod.id); if (!isCurrentModule) navigate(`/courses/${courseId}/modules/${mod.id}`); }}
                     style={styles.moduleBtn}
                   >
                     <span style={{ ...styles.modNum, color: modComplete ? "#22c55e" : isCurrentModule ? "#d97706" : "rgba(217,119,6,0.3)" }}>
@@ -211,7 +387,7 @@ export default function ModuleDetails() {
                         <span style={styles.modProgressBarWrap}>
                           <span style={{ ...styles.modProgressFill, width: `${modPct}%`, backgroundColor: modComplete ? "#22c55e" : "#d97706" }} />
                         </span>
-                        <span style={styles.modProgressText}>{modCompletedCount}/{modTotal}</span>
+                        <span style={styles.modProgressText}>{modDone}/{modTotal}</span>
                       </span>
                     </span>
                     <span style={styles.modChevron}>{isExpanded ? "▲" : "▼"}</span>
@@ -219,7 +395,7 @@ export default function ModuleDetails() {
 
                   {isExpanded && (
                     <div style={styles.lessonDropdown}>
-                      {mod.lessons?.map((lesson, lesIdx) => {
+                      {mod.lessons?.map((lesson) => {
                         const isActiveLesson = isCurrentModule && activeLesson?.id === lesson.id;
                         const isDone = completedLessons[lesson.id];
                         return (
@@ -249,19 +425,17 @@ export default function ModuleDetails() {
           </nav>
         </aside>
 
+        {/* Main */}
         <main className="module-main" style={styles.main}>
           {activeLesson ? (
             <div key={activeLesson.id} style={{ animation: "fadeSlide 0.4s ease forwards" }}>
-              <div style={styles.videoBox}>
-                {activeLesson.videoUrl ? (
-                  <video controls style={styles.videoEl} src={activeLesson.videoUrl}>Your browser does not support video.</video>
-                ) : (
-                  <div style={styles.videoPlaceholder}>
-                    <span style={styles.playIcon}>▶</span>
-                    <p style={styles.videoPlaceholderText}>No video available for this lesson</p>
-                  </div>
-                )}
-              </div>
+
+              <VideoPlayer
+                src={activeLesson.videoUrl}
+                title={activeLesson.title}
+                moduleName={module.title}
+                duration={activeLesson.duration}
+              />
 
               <div style={styles.lessonMeta}>
                 <span style={styles.lessonMetaDuration}>⏱ {activeLesson.duration}</span>
@@ -311,32 +485,25 @@ export default function ModuleDetails() {
             <div style={styles.completionTop}>
               <span style={styles.completionEmoji}>🎉</span>
               <h2 style={styles.completionTitle}>Course Complete!</h2>
-              <p style={styles.completionSub}>
-                You've finished <strong style={{ color: "#f5f2ec" }}>{course.title}</strong>.<br />Share how it went!
-              </p>
+              <p style={styles.completionSub}>You've finished <strong style={{ color: "#f5f2ec" }}>{course.title}</strong>.<br />Share how it went!</p>
             </div>
-
             <div style={styles.starsSection}>
               <p style={styles.starsLabel}>Your Rating</p>
               <div style={styles.starsRow}>
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <button key={star} className="star-btn" onClick={() => setSelectedRating(star)} onMouseEnter={() => setHoveredStar(star)} onMouseLeave={() => setHoveredStar(0)} aria-label={`Rate ${star} stars`}>
+                  <button key={star} className="star-btn" onClick={() => setSelectedRating(star)} onMouseEnter={() => setHoveredStar(star)} onMouseLeave={() => setHoveredStar(0)}>
                     <span style={{ color: star <= (hoveredStar || selectedRating) ? "#f59e0b" : "#2d2d35", transition: "color 0.12s" }}>★</span>
                   </button>
                 ))}
               </div>
               {selectedRating > 0 && <p style={styles.ratingLabel}>{["", "Poor", "Fair", "Good", "Very Good", "Excellent"][selectedRating]}</p>}
             </div>
-
             <div style={styles.messageSection}>
               <p style={styles.messageLabel}>Leave a review <span style={styles.optional}>(optional)</span></p>
               <textarea className="review-textarea" placeholder="What did you think of this course? What was most valuable?" value={reviewMessage} onChange={(e) => setReviewMessage(e.target.value)} rows={3} />
             </div>
-
             <div style={styles.completionActions}>
-              <button className="submit-btn" onClick={handleSubmitReview} disabled={selectedRating === 0} style={{ ...styles.submitBtn, opacity: selectedRating === 0 ? 0.4 : 1, cursor: selectedRating === 0 ? "not-allowed" : "pointer" }}>
-                Submit Review
-              </button>
+              <button className="submit-btn" onClick={handleSubmitReview} disabled={selectedRating === 0} style={{ ...styles.submitBtn, opacity: selectedRating === 0 ? 0.4 : 1, cursor: selectedRating === 0 ? "not-allowed" : "pointer" }}>Submit Review</button>
               <button onClick={() => setShowCompletion(false)} style={styles.skipBtn}>Skip for now</button>
             </div>
           </div>
@@ -398,11 +565,6 @@ const styles = {
   activeIndicator: { fontSize: "0.55rem", color: "#d97706", flexShrink: 0 },
   doneCheck: { fontSize: "0.7rem", color: "#22c55e", flexShrink: 0 },
   main: { padding: "2rem 2.5rem", overflowY: "auto", backgroundColor: "#0c0c0e" },
-  videoBox: { width: "100%", aspectRatio: "16 / 9", backgroundColor: "#16161a", borderRadius: "12px", overflow: "hidden", marginBottom: "1.25rem", border: "1px solid rgba(255,255,255,0.07)" },
-  videoEl: { width: "100%", height: "100%", objectFit: "cover" },
-  videoPlaceholder: { height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.75rem", color: "#374151" },
-  playIcon: { fontSize: "2.5rem" },
-  videoPlaceholderText: { fontSize: "0.88rem", color: "#4b5563" },
   lessonMeta: { display: "flex", gap: "0.75rem", marginBottom: "0.75rem", alignItems: "center", flexWrap: "wrap" },
   lessonMetaDuration: { fontSize: "0.8rem", color: "#6b7280" },
   lessonMetaModule: { fontSize: "0.75rem", color: "#4b5563", backgroundColor: "rgba(255,255,255,0.04)", padding: "0.15rem 0.6rem", borderRadius: "999px", border: "1px solid rgba(255,255,255,0.06)" },
