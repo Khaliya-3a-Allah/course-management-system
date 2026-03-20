@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import CourseCard from "../components/CourseCard";
+import Modal from "../components/Modal";
 
 export default function Dashboard() {
-  const { currentUser, courses } = useAppContext();
+  const { currentUser, courses, unenrollCourse, unsaveCourse, completedCourses, getCourseProgress } = useAppContext();
   const navigate = useNavigate();
   const [visible, setVisible] = useState(false);
   const [activeTab, setActiveTab] = useState("enrolled");
+  const [unenrollTarget, setUnenrollTarget] = useState(null);
 
   useEffect(() => {
     if (!currentUser) { navigate("/login"); return; }
@@ -17,19 +19,40 @@ export default function Dashboard() {
 
   if (!currentUser) return null;
 
-  const enrolled = courses.filter((c) => currentUser.enrolledCourseIds?.includes(c.id));
-  const saved = courses.filter((c) => currentUser.savedCourseIds?.includes(c.id));
-  const created = courses.filter((c) => currentUser.createdCourseIds?.includes(c.id));
+  const isInstructor = currentUser.role === "instructor";
+
+  const enrolledCourses = courses.filter((c) =>
+    currentUser.enrolledCourseIds?.includes(c.id) && !completedCourses.has(c.id)
+  );
+  const completedCoursesList = courses.filter((c) => completedCourses.has(c.id));
+  const savedCourses = courses.filter((c) => currentUser.savedCourseIds?.includes(c.id));
+  const createdCourses = courses.filter((c) => currentUser.createdCourseIds?.includes(c.id));
 
   const tabs = [
-    { id: "enrolled", label: "Enrolled", count: enrolled.length, data: enrolled },
-    { id: "saved", label: "Saved", count: saved.length, data: saved },
-    { id: "created", label: "Created", count: created.length, data: created },
+    { id: "enrolled", label: "Enrolled", count: enrolledCourses.length },
+    { id: "completed", label: "Completed", count: completedCoursesList.length },
+    { id: "saved", label: "Saved", count: savedCourses.length },
+    ...(isInstructor ? [{ id: "created", label: "Created", count: createdCourses.length }] : []),
   ];
 
-  const activeData = tabs.find((t) => t.id === activeTab)?.data || [];
+  const getTabData = () => {
+    switch (activeTab) {
+      case "enrolled": return enrolledCourses;
+      case "completed": return completedCoursesList;
+      case "saved": return savedCourses;
+      case "created": return createdCourses;
+      default: return [];
+    }
+  };
 
-  const roleColor = currentUser.role === "instructor" ? "#d97706" : "#6366f1";
+  const activeData = getTabData();
+  const roleColor = isInstructor ? "#d97706" : "#6366f1";
+
+  const handleUnenrollConfirm = () => {
+    if (!unenrollTarget) return;
+    unenrollCourse(unenrollTarget.id);
+    setUnenrollTarget(null);
+  };
 
   return (
     <div
@@ -43,9 +66,7 @@ export default function Dashboard() {
       {/* Profile Header */}
       <div style={styles.profileBanner}>
         <div style={styles.profileInner}>
-          <div style={styles.avatar} aria-hidden="true">
-            {currentUser.name.charAt(0).toUpperCase()}
-          </div>
+          <div style={styles.avatar}>{currentUser.name.charAt(0).toUpperCase()}</div>
           <div style={styles.profileInfo}>
             <h1 style={styles.profileName}>{currentUser.name}</h1>
             <p style={styles.profileEmail}>{currentUser.email}</p>
@@ -53,19 +74,17 @@ export default function Dashboard() {
               {currentUser.role}
             </span>
           </div>
-          {currentUser.role === "instructor" && (
-            <Link to="/course-form" style={styles.addCourseBtn}>
-              + Add Course
-            </Link>
+          {isInstructor && (
+            <Link to="/course-form" style={styles.addCourseBtn}>+ Add Course</Link>
           )}
         </div>
 
-        {/* Stats */}
         <div style={styles.stats}>
           {[
-            { label: "Enrolled", value: enrolled.length },
-            { label: "Saved", value: saved.length },
-            { label: "Created", value: created.length },
+            { label: "Enrolled", value: enrolledCourses.length },
+            { label: "Completed", value: completedCoursesList.length },
+            { label: "Saved", value: savedCourses.length },
+            ...(isInstructor ? [{ label: "Created", value: createdCourses.length }] : []),
           ].map((s) => (
             <div key={s.label} style={styles.stat}>
               <span style={styles.statNum}>{s.value}</span>
@@ -75,7 +94,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Tabs + Content */}
+      {/* Tabs */}
       <div style={styles.body}>
         <div style={styles.tabs} role="tablist">
           {tabs.map((tab) => (
@@ -98,10 +117,11 @@ export default function Dashboard() {
           {activeData.length === 0 ? (
             <div style={styles.emptyTab}>
               <span style={styles.emptyIcon}>
-                {activeTab === "enrolled" ? "📚" : activeTab === "saved" ? "♡" : "✏️"}
+                {activeTab === "enrolled" ? "📚" : activeTab === "completed" ? "🎓" : activeTab === "saved" ? "♡" : "✏️"}
               </span>
               <p style={styles.emptyText}>
-                {activeTab === "enrolled" && "You haven't enrolled in any courses yet."}
+                {activeTab === "enrolled" && "No courses in progress."}
+                {activeTab === "completed" && "You haven't completed any courses yet."}
                 {activeTab === "saved" && "You haven't saved any courses yet."}
                 {activeTab === "created" && "You haven't created any courses yet."}
               </p>
@@ -113,22 +133,65 @@ export default function Dashboard() {
             </div>
           ) : (
             <div style={styles.grid}>
-              {activeData.map((course) => (
-                <div key={course.id} style={styles.cardWrap}>
-                  <CourseCard course={course} />
-                  {activeTab === "created" && (
+              {activeData.map((course) => {
+                const progress = getCourseProgress(course.id);
+                const isCompleted = completedCourses.has(course.id);
+                return (
+                  <div key={course.id} style={styles.cardWrap}>
+                    <CourseCard course={course} />
+
+                    {/* Progress bar for enrolled courses */}
+                    {activeTab === "enrolled" && progress > 0 && (
+                      <div style={styles.cardProgressWrap}>
+                        <div style={styles.cardProgressBg}>
+                          <div style={{ ...styles.cardProgressFill, width: `${progress}%` }} />
+                        </div>
+                        <span style={styles.cardProgressPct}>{progress}%</span>
+                      </div>
+                    )}
+
+                    {/* Completed badge */}
+                    {activeTab === "completed" && (
+                      <div style={styles.completedBadgeRow}>
+                        <span style={styles.completedBadge}>🎓 Completed</span>
+                      </div>
+                    )}
+
                     <div style={styles.cardActions}>
-                      <Link to={`/course-form/${course.id}`} style={styles.editBtn}>
-                        ✏️ Edit
-                      </Link>
+                      {activeTab === "enrolled" && (
+                        <button onClick={() => setUnenrollTarget(course)} style={styles.unenrollBtn}>
+                          Unenroll
+                        </button>
+                      )}
+                      {activeTab === "saved" && (
+                        <button onClick={() => unsaveCourse(course.id)} style={styles.unsaveBtn}>
+                          Unsave
+                        </button>
+                      )}
+                      {activeTab === "created" && (
+                        <Link to={`/course-form/${course.id}`} style={styles.editBtn}>✏️ Edit</Link>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
       </div>
+
+      {/* Unenroll Modal */}
+      <Modal isOpen={Boolean(unenrollTarget)} onClose={() => setUnenrollTarget(null)} title="Unenroll from Course?">
+        <p style={styles.modalText}>
+          Are you sure you want to unenroll from{" "}
+          <strong style={{ color: "#f5f2ec" }}>{unenrollTarget?.title}</strong>?
+          You will lose access to all modules.
+        </p>
+        <div style={styles.modalActions}>
+          <button onClick={handleUnenrollConfirm} style={styles.modalConfirmBtn}>Yes, Unenroll</button>
+          <button onClick={() => setUnenrollTarget(null)} style={styles.modalCancelBtn}>Cancel</button>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -148,17 +211,29 @@ const styles = {
   statNum: { fontFamily: "'Playfair Display', serif", fontSize: "1.75rem", color: "#f5f2ec" },
   statLabel: { fontSize: "0.75rem", color: "#6b7280", letterSpacing: "0.05em", textTransform: "uppercase" },
   body: { maxWidth: "1100px", margin: "0 auto", padding: "2rem 1.25rem" },
-  tabs: { display: "flex", gap: "0.25rem", marginBottom: "2rem", borderBottom: "1px solid rgba(255,255,255,0.07)", paddingBottom: "0", overflowX: "auto" },
-  tab: { display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.65rem 1.1rem", background: "none", border: "none", borderBottom: "2px solid transparent", color: "#6b7280", fontFamily: "'DM Sans', sans-serif", fontSize: "0.9rem", fontWeight: 500, cursor: "pointer", transition: "color 0.15s", marginBottom: "-1px" },
+  tabs: { display: "flex", gap: "0.25rem", marginBottom: "2rem", borderBottom: "1px solid rgba(255,255,255,0.07)", overflowX: "auto" },
+  tab: { display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.65rem 1.1rem", background: "none", border: "none", borderBottom: "2px solid transparent", color: "#6b7280", fontFamily: "'DM Sans', sans-serif", fontSize: "0.9rem", fontWeight: 500, cursor: "pointer", marginBottom: "-1px", whiteSpace: "nowrap" },
   tabActive: { color: "#f5f2ec", borderBottomColor: "#d97706" },
   tabCount: { padding: "0.1rem 0.5rem", borderRadius: "999px", fontSize: "0.7rem", fontWeight: 700, backgroundColor: "#1a1a1e", color: "#6b7280" },
   tabCountActive: { backgroundColor: "rgba(217,119,6,0.15)", color: "#d97706" },
   grid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(255px, 1fr))", gap: "1.25rem" },
   cardWrap: { display: "flex", flexDirection: "column", gap: "0.5rem" },
+  cardProgressWrap: { display: "flex", alignItems: "center", gap: "0.75rem" },
+  cardProgressBg: { flex: 1, height: "4px", backgroundColor: "rgba(255,255,255,0.07)", borderRadius: "999px", overflow: "hidden" },
+  cardProgressFill: { height: "100%", background: "linear-gradient(90deg, #d97706, #f59e0b)", borderRadius: "999px", transition: "width 0.5s ease" },
+  cardProgressPct: { fontSize: "0.72rem", color: "#d97706", fontWeight: 700, flexShrink: 0 },
+  completedBadgeRow: { display: "flex" },
+  completedBadge: { fontSize: "0.78rem", color: "#22c55e", backgroundColor: "rgba(34,197,94,0.08)", padding: "0.25rem 0.75rem", borderRadius: "999px", border: "1px solid rgba(34,197,94,0.2)", fontWeight: 600 },
   cardActions: { display: "flex", gap: "0.5rem" },
   editBtn: { padding: "0.45rem 1rem", backgroundColor: "#1a1a1e", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "6px", color: "#9ca3af", textDecoration: "none", fontSize: "0.8rem", fontWeight: 500 },
+  unenrollBtn: { padding: "0.45rem 1rem", backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "6px", color: "#ef4444", fontSize: "0.8rem", fontWeight: 500, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" },
+  unsaveBtn: { padding: "0.45rem 1rem", backgroundColor: "#1a1a1e", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "6px", color: "#9ca3af", fontSize: "0.8rem", fontWeight: 500, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" },
   emptyTab: { display: "flex", flexDirection: "column", alignItems: "center", padding: "5rem 2rem", textAlign: "center", gap: "0.75rem" },
   emptyIcon: { fontSize: "2.5rem" },
   emptyText: { color: "#6b7280", fontSize: "0.92rem" },
   emptyAction: { color: "#d97706", textDecoration: "none", fontWeight: 600, fontSize: "0.88rem" },
+  modalText: { color: "#9ca3af", marginBottom: "1.5rem", fontSize: "0.95rem", lineHeight: 1.6 },
+  modalActions: { display: "flex", gap: "0.75rem" },
+  modalConfirmBtn: { flex: 1, padding: "0.75rem", backgroundColor: "#ef4444", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" },
+  modalCancelBtn: { flex: 1, padding: "0.75rem", backgroundColor: "transparent", color: "#e8e6e0", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "8px", fontWeight: 500, fontSize: "0.9rem", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" },
 };

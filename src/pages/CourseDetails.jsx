@@ -6,7 +6,12 @@ import Modal from "../components/Modal";
 export default function CourseDetails() {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const { courses, currentUser, enrollCourse, unenrollCourse, saveCourse, unsaveCourse } = useAppContext();
+  const {
+    courses, currentUser,
+    enrollCourse, unenrollCourse,
+    saveCourse, unsaveCourse,
+    completedCourses, getCourseProgress,
+  } = useAppContext();
 
   const course = courses.find((c) => c.id === courseId);
 
@@ -24,57 +29,45 @@ export default function CourseDetails() {
 
   useEffect(() => {
     if (currentUser && course) {
-      setEnrolled(currentUser.enrolledCourseIds?.includes(course.id));
-      setSaved(currentUser.savedCourseIds?.includes(course.id));
+      setEnrolled(currentUser.enrolledCourseIds?.includes(course.id) ?? false);
+      setSaved(currentUser.savedCourseIds?.includes(course.id) ?? false);
     } else {
       setEnrolled(false);
       setSaved(false);
     }
-  }, [currentUser, course]);
+  }, [currentUser?.enrolledCourseIds, currentUser?.savedCourseIds, course?.id]);
 
   if (!course) {
     return (
       <div style={styles.notFound}>
         <span style={styles.notFoundIcon}>⚠</span>
         <h2 style={styles.notFoundTitle}>Course Not Found</h2>
-        <p style={styles.notFoundSub}>
-          The course you're looking for doesn't exist or has been removed.
-        </p>
-        <Link to="/courses" style={styles.backLink}>
-          ← Back to All Courses
-        </Link>
+        <p style={styles.notFoundSub}>The course you're looking for doesn't exist or has been removed.</p>
+        <Link to="/courses" style={styles.backLink}>← Back to All Courses</Link>
       </div>
     );
   }
 
+  const isCompleted = completedCourses.has(course.id);
+  const progress = getCourseProgress(course.id);
+
   const handleEnroll = () => {
     if (!currentUser) { setModalOpen(true); return; }
     enrollCourse(course.id);
-    setEnrolled(true);
   };
 
   const handleUnenroll = () => {
     unenrollCourse(course.id);
-    setEnrolled(false);
     setUnenrollModal(false);
   };
 
   const handleSaveToggle = () => {
     if (!currentUser) { setModalOpen(true); return; }
-    if (saved) {
-      unsaveCourse(course.id);
-      setSaved(false);
-    } else {
-      saveCourse(course.id);
-      setSaved(true);
-    }
+    if (saved) { unsaveCourse(course.id); }
+    else { saveCourse(course.id); }
   };
 
-  const levelColors = {
-    Beginner: "#22c55e",
-    Intermediate: "#f59e0b",
-    Advanced: "#ef4444",
-  };
+  const levelColors = { Beginner: "#22c55e", Intermediate: "#f59e0b", Advanced: "#ef4444" };
 
   return (
     <>
@@ -86,24 +79,19 @@ export default function CourseDetails() {
           transition: "opacity 0.6s ease, transform 0.6s ease",
         }}
       >
-        {/* ── Hero Banner ── */}
+        {/* Hero */}
         <div style={styles.hero}>
           <div style={styles.heroOverlay} />
-          {course.thumbnail && (
-            <img src={course.thumbnail} alt={`${course.title} thumbnail`} style={styles.heroBg} />
-          )}
+          {course.thumbnail && <img src={course.thumbnail} alt={`${course.title} thumbnail`} style={styles.heroBg} />}
           <div style={styles.heroContent}>
             <Link to="/courses" style={styles.breadcrumb}>← All Courses</Link>
             <div style={styles.metaRow}>
-              <span style={{ ...styles.levelBadge, backgroundColor: levelColors[course.level] || "#6b7280" }}>
-                {course.level}
-              </span>
+              <span style={{ ...styles.levelBadge, backgroundColor: levelColors[course.level] || "#6b7280" }}>{course.level}</span>
               <span style={styles.categoryBadge}>{course.category}</span>
+              {isCompleted && <span style={styles.completedBadge}>✓ Completed</span>}
             </div>
             <h1 style={styles.heroTitle}>{course.title}</h1>
-            <p style={styles.heroInstructor}>
-              By <span style={styles.instructorName}>{course.instructorName}</span>
-            </p>
+            <p style={styles.heroInstructor}>By <span style={styles.instructorName}>{course.instructorName}</span></p>
             <div style={styles.ratingRow}>
               {[...Array(5)].map((_, i) => (
                 <span key={i} style={{ ...styles.star, color: i < Math.round(course.rating) ? "#f59e0b" : "#4b5563" }}>★</span>
@@ -113,9 +101,8 @@ export default function CourseDetails() {
           </div>
         </div>
 
-        {/* ── Body ── */}
+        {/* Body */}
         <div style={styles.body}>
-          {/* Left Column */}
           <div style={styles.leftCol}>
             <section style={styles.section}>
               <h2 style={styles.sectionTitle}>About This Course</h2>
@@ -126,9 +113,7 @@ export default function CourseDetails() {
               <section style={styles.section}>
                 <h2 style={styles.sectionTitle}>Topics</h2>
                 <div style={styles.tagList}>
-                  {course.tags.map((tag) => (
-                    <span key={tag} style={styles.tag}>{tag}</span>
-                  ))}
+                  {course.tags.map((tag) => <span key={tag} style={styles.tag}>{tag}</span>)}
                 </div>
               </section>
             )}
@@ -138,11 +123,7 @@ export default function CourseDetails() {
                 Course Curriculum
                 <span style={styles.moduleCount}>{course.modules?.length || 0} Modules</span>
               </h2>
-
-              {course.modules?.length === 0 && (
-                <p style={styles.emptyModules}>No modules available yet.</p>
-              )}
-
+              {course.modules?.length === 0 && <p style={styles.emptyModules}>No modules available yet.</p>}
               <div style={styles.moduleList}>
                 {course.modules?.map((mod, idx) => (
                   <div key={mod.id} style={styles.moduleCard}>
@@ -156,7 +137,6 @@ export default function CourseDetails() {
                       <span style={styles.lessonCount}>{mod.lessons?.length || 0} lessons</span>
                       <span style={styles.chevron}>{expandedModule === mod.id ? "▲" : "▼"}</span>
                     </button>
-
                     {expandedModule === mod.id && (
                       <div style={styles.lessonList}>
                         {mod.lessons?.map((lesson) => (
@@ -166,7 +146,6 @@ export default function CourseDetails() {
                             <span style={styles.lessonDuration}>{lesson.duration}</span>
                           </div>
                         ))}
-
                         {enrolled ? (
                           <Link to={`/courses/${course.id}/modules/${mod.id}`} style={styles.viewModuleBtn}>
                             Open Module →
@@ -186,32 +165,40 @@ export default function CourseDetails() {
             </section>
           </div>
 
-          {/* Right — Sticky Card */}
+          {/* Side Card */}
           <aside style={styles.sideCard}>
-            {course.thumbnail && (
-              <img src={course.thumbnail} alt="" style={styles.cardThumb} />
-            )}
+            {course.thumbnail && <img src={course.thumbnail} alt="" style={styles.cardThumb} />}
             <div style={styles.cardBody}>
               <div style={styles.cardMeta}>
                 <span>📚 {course.modules?.length || 0} Modules</span>
                 <span>🎯 {course.modules?.reduce((acc, m) => acc + (m.lessons?.length || 0), 0)} Lessons</span>
               </div>
 
-              {/* Enroll / Unenroll button */}
-              <button
-                onClick={enrolled ? () => setUnenrollModal(true) : handleEnroll}
-                style={enrolled ? styles.enrolledBtn : styles.enrollBtn}
-                aria-label={enrolled ? "Unenroll from course" : `Enroll in ${course.title}`}
-              >
-                {enrolled ? "✓ Enrolled" : "Enroll Now"}
-              </button>
+              {/* Progress bar if enrolled */}
+              {enrolled && !isCompleted && progress > 0 && (
+                <div style={styles.progressWrap}>
+                  <div style={styles.progressBarBg}>
+                    <div style={{ ...styles.progressBarFill, width: `${progress}%` }} />
+                  </div>
+                  <span style={styles.progressPct}>{progress}% complete</span>
+                </div>
+              )}
 
-              {/* Save / Unsave button */}
-              <button
-                onClick={handleSaveToggle}
-                style={saved ? styles.savedBtn : styles.saveBtn}
-                aria-label={saved ? "Unsave course" : `Save ${course.title}`}
-              >
+              {/* Enroll / Unenroll / Completed button */}
+              {isCompleted ? (
+                <button style={styles.completedBtn} disabled>
+                  ✓ Completed
+                </button>
+              ) : (
+                <button
+                  onClick={enrolled ? () => setUnenrollModal(true) : handleEnroll}
+                  style={enrolled ? styles.enrolledBtn : styles.enrollBtn}
+                >
+                  {enrolled ? "✓ Enrolled" : "Enroll Now"}
+                </button>
+              )}
+
+              <button onClick={handleSaveToggle} style={saved ? styles.savedBtn : styles.saveBtn}>
                 {saved ? "♥ Saved" : "♡ Save Course"}
               </button>
 
@@ -231,18 +218,14 @@ export default function CourseDetails() {
         </div>
       </Modal>
 
-      {/* Unenroll Confirmation Modal */}
+      {/* Unenroll Modal */}
       <Modal isOpen={unenrollModal} onClose={() => setUnenrollModal(false)} title="Unenroll from Course?">
         <p style={styles.modalText}>
-          Are you sure you want to unenroll from{" "}
-          <strong style={{ color: "#f5f2ec" }}>{course.title}</strong>?
-          You will lose access to all modules.
+          Are you sure you want to unenroll from <strong style={{ color: "#f5f2ec" }}>{course.title}</strong>? You will lose access to all modules.
         </p>
         <div style={styles.modalActions}>
           <button onClick={handleUnenroll} style={styles.modalLoginBtn}>Yes, Unenroll</button>
-          <button onClick={() => setUnenrollModal(false)} style={{ ...styles.modalRegisterBtn, cursor: "pointer", border: "1px solid rgba(255,255,255,0.12)" }}>
-            Cancel
-          </button>
+          <button onClick={() => setUnenrollModal(false)} style={{ ...styles.modalRegisterBtn, cursor: "pointer", border: "1px solid rgba(255,255,255,0.12)" }}>Cancel</button>
         </div>
       </Modal>
     </>
@@ -254,11 +237,12 @@ const styles = {
   hero: { position: "relative", minHeight: "420px", display: "flex", alignItems: "flex-end", overflow: "hidden" },
   heroBg: { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "grayscale(40%) brightness(0.35)" },
   heroOverlay: { position: "absolute", inset: 0, background: "linear-gradient(to top, #0c0c0e 40%, rgba(12,12,14,0.5) 100%)", zIndex: 1 },
-  heroContent: { position: "relative", zIndex: 2, padding: "2.5rem 2rem 2.5rem", maxWidth: "820px", width: "100%" },
-  breadcrumb: { color: "#d97706", textDecoration: "none", fontSize: "0.85rem", letterSpacing: "0.05em", display: "inline-block", marginBottom: "1rem" },
-  metaRow: { display: "flex", gap: "0.6rem", marginBottom: "1rem" },
-  levelBadge: { padding: "0.2rem 0.75rem", borderRadius: "999px", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.08em", color: "#0c0c0e", textTransform: "uppercase" },
-  categoryBadge: { padding: "0.2rem 0.75rem", borderRadius: "999px", fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.06em", backgroundColor: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", color: "#d1cfc8", textTransform: "uppercase" },
+  heroContent: { position: "relative", zIndex: 2, padding: "2.5rem 2rem", maxWidth: "820px", width: "100%" },
+  breadcrumb: { color: "#d97706", textDecoration: "none", fontSize: "0.85rem", display: "inline-block", marginBottom: "1rem" },
+  metaRow: { display: "flex", gap: "0.6rem", marginBottom: "1rem", flexWrap: "wrap" },
+  levelBadge: { padding: "0.2rem 0.75rem", borderRadius: "999px", fontSize: "0.72rem", fontWeight: 700, color: "#0c0c0e", textTransform: "uppercase" },
+  categoryBadge: { padding: "0.2rem 0.75rem", borderRadius: "999px", fontSize: "0.72rem", fontWeight: 600, backgroundColor: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", color: "#d1cfc8", textTransform: "uppercase" },
+  completedBadge: { padding: "0.2rem 0.75rem", borderRadius: "999px", fontSize: "0.72rem", fontWeight: 700, backgroundColor: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e" },
   heroTitle: { fontFamily: "'Playfair Display', serif", fontSize: "clamp(1.8rem, 4vw, 3rem)", fontWeight: 700, lineHeight: 1.15, margin: "0 0 0.6rem", color: "#f5f2ec" },
   heroInstructor: { fontSize: "0.95rem", color: "#9ca3af", marginBottom: "0.8rem" },
   instructorName: { color: "#d97706", fontWeight: 600 },
@@ -269,7 +253,7 @@ const styles = {
   leftCol: {},
   section: { marginBottom: "2.5rem" },
   sectionTitle: { fontFamily: "'Playfair Display', serif", fontSize: "1.25rem", color: "#f5f2ec", marginBottom: "1rem", paddingBottom: "0.5rem", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", gap: "1rem" },
-  moduleCount: { fontSize: "0.75rem", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, color: "#6b7280", marginLeft: "auto", letterSpacing: "0.05em" },
+  moduleCount: { fontSize: "0.75rem", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, color: "#6b7280", marginLeft: "auto" },
   description: { color: "#9ca3af", lineHeight: 1.75, fontSize: "0.97rem" },
   tagList: { display: "flex", flexWrap: "wrap", gap: "0.5rem" },
   tag: { backgroundColor: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.25)", color: "#d97706", padding: "0.25rem 0.75rem", borderRadius: "999px", fontSize: "0.78rem", fontWeight: 500 },
@@ -286,15 +270,20 @@ const styles = {
   lessonIcon: { color: "#d97706", fontSize: "0.65rem" },
   lessonTitle: { flex: 1, fontSize: "0.88rem", color: "#d1cfc8" },
   lessonDuration: { fontSize: "0.78rem", color: "#6b7280" },
-  viewModuleBtn: { display: "inline-block", marginTop: "1rem", color: "#d97706", textDecoration: "none", fontSize: "0.85rem", fontWeight: 600, letterSpacing: "0.03em" },
+  viewModuleBtn: { display: "inline-block", marginTop: "1rem", color: "#d97706", textDecoration: "none", fontSize: "0.85rem", fontWeight: 600 },
   lockedBtn: { display: "inline-block", marginTop: "1rem", padding: "0.4rem 1rem", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "6px", color: "#4b5563", fontSize: "0.83rem", fontWeight: 500, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" },
   lockedMsg: { marginTop: "1rem", fontSize: "0.83rem", color: "#4b5563", fontStyle: "italic" },
   sideCard: { backgroundColor: "#16161a", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "14px", overflow: "hidden", position: "sticky", top: "75px" },
   cardThumb: { width: "100%", height: "175px", objectFit: "cover" },
   cardBody: { padding: "1.5rem" },
   cardMeta: { display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "#9ca3af", marginBottom: "1.25rem" },
-  enrollBtn: { width: "100%", padding: "0.85rem", backgroundColor: "#d97706", color: "#0c0c0e", border: "none", borderRadius: "8px", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", marginBottom: "0.75rem", letterSpacing: "0.04em", fontFamily: "'DM Sans', sans-serif" },
+  progressWrap: { marginBottom: "1rem" },
+  progressBarBg: { width: "100%", height: "5px", backgroundColor: "rgba(255,255,255,0.07)", borderRadius: "999px", overflow: "hidden", marginBottom: "0.35rem" },
+  progressBarFill: { height: "100%", background: "linear-gradient(90deg, #d97706, #f59e0b)", borderRadius: "999px", transition: "width 0.5s ease" },
+  progressPct: { fontSize: "0.72rem", color: "#d97706", fontWeight: 600 },
+  enrollBtn: { width: "100%", padding: "0.85rem", backgroundColor: "#d97706", color: "#0c0c0e", border: "none", borderRadius: "8px", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", marginBottom: "0.75rem", fontFamily: "'DM Sans', sans-serif" },
   enrolledBtn: { width: "100%", padding: "0.85rem", backgroundColor: "#1f2937", color: "#22c55e", border: "1px solid rgba(34,197,94,0.25)", borderRadius: "8px", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", marginBottom: "0.75rem", fontFamily: "'DM Sans', sans-serif" },
+  completedBtn: { width: "100%", padding: "0.85rem", backgroundColor: "rgba(34,197,94,0.1)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.3)", borderRadius: "8px", fontWeight: 700, fontSize: "0.9rem", cursor: "default", marginBottom: "0.75rem", fontFamily: "'DM Sans', sans-serif" },
   saveBtn: { width: "100%", padding: "0.75rem", backgroundColor: "transparent", color: "#9ca3af", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", fontWeight: 500, fontSize: "0.88rem", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" },
   savedBtn: { width: "100%", padding: "0.75rem", backgroundColor: "transparent", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)", borderRadius: "8px", fontWeight: 500, fontSize: "0.88rem", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" },
   divider: { height: "1px", backgroundColor: "rgba(255,255,255,0.06)", margin: "1.25rem 0" },
