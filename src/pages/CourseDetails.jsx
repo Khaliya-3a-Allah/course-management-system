@@ -6,13 +6,13 @@ import Modal from "../components/Modal";
 export default function CourseDetails() {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const { courses, currentUser, enrollCourse, saveCourse } = useAppContext();
-
+const { courses, currentUser, enrollCourse, saveCourse, unenrollCourse, unsaveCourse } = useAppContext();
   const course = courses.find((c) => c.id === courseId);
 
   const [enrolled, setEnrolled] = useState(false);
   const [saved, setSaved] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [unenrollModal, setUnenrollModal] = useState(false);
   const [expandedModule, setExpandedModule] = useState(null);
   const [visible, setVisible] = useState(false);
 
