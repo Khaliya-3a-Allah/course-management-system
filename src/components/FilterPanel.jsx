@@ -17,27 +17,30 @@ export default function FilterPanel({ courses, filters, onChange }) {
     (filters.category?.length > 0) || (filters.level?.length > 0);
 
   return (
-    <aside style={styles.panel} aria-label="Filter courses">
-      <div style={styles.header}>
-        <span style={styles.headerLabel}>Filters</span>
+    <aside className="flex min-w-52 flex-col gap-5" aria-label="Filter courses">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-400">Filters</span>
         {hasFilters && (
           <button
             onClick={() => onChange({ category: [], level: [] })}
-            style={styles.clearAll}
+            className="text-xs font-semibold text-amber-600 transition hover:text-amber-500"
           >
             Clear all
           </button>
         )}
       </div>
 
-      {/* Category */}
-      <div style={styles.group}>
-        <p style={styles.groupLabel}>Category</p>
+      <div className="flex flex-col gap-2">
+        <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500">Category</p>
         {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => toggle("category", cat)}
-            style={isActive("category", cat) ? { ...styles.chip, ...styles.chipActive } : styles.chip}
+            className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
+              isActive("category", cat)
+                ? "border-amber-500/50 bg-amber-500/10 text-amber-500"
+                : "border-white/10 bg-zinc-900 text-zinc-300 hover:border-white/20"
+            }`}
             aria-pressed={isActive("category", cat)}
           >
             {cat}
@@ -45,14 +48,17 @@ export default function FilterPanel({ courses, filters, onChange }) {
         ))}
       </div>
 
-      {/* Level */}
-      <div style={styles.group}>
-        <p style={styles.groupLabel}>Level</p>
+      <div className="flex flex-col gap-2">
+        <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500">Level</p>
         {LEVELS.map((lvl) => (
           <button
             key={lvl}
             onClick={() => toggle("level", lvl)}
-            style={isActive("level", lvl) ? { ...styles.chip, ...styles.chipActive } : styles.chip}
+            className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
+              isActive("level", lvl)
+                ? "border-amber-500/50 bg-amber-500/10 text-amber-500"
+                : "border-white/10 bg-zinc-900 text-zinc-300 hover:border-white/20"
+            }`}
             aria-pressed={isActive("level", lvl)}
           >
             {lvl}
@@ -62,14 +68,3 @@ export default function FilterPanel({ courses, filters, onChange }) {
     </aside>
   );
 }
-
-const styles = {
-  panel: { display: "flex", flexDirection: "column", gap: "1.25rem", minWidth: "200px" },
-  header: { display: "flex", justifyContent: "space-between", alignItems: "center" },
-  headerLabel: { fontSize: "0.7rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#6b7280", fontWeight: 700 },
-  clearAll: { background: "none", border: "none", color: "#d97706", fontSize: "0.78rem", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, padding: 0 },
-  group: { display: "flex", flexDirection: "column", gap: "0.4rem" },
-  groupLabel: { fontSize: "0.72rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "#4b5563", fontWeight: 700, margin: "0 0 0.35rem" },
-  chip: { padding: "0.45rem 0.85rem", backgroundColor: "#111114", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "6px", color: "#9ca3af", fontSize: "0.83rem", cursor: "pointer", textAlign: "left", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" },
-  chipActive: { backgroundColor: "rgba(217,119,6,0.1)", borderColor: "rgba(217,119,6,0.4)", color: "#d97706" },
-};

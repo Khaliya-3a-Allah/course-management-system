@@ -27,89 +27,29 @@ export default function Modal({ isOpen, onClose, title, children }) {
 
   return (
     <div
-      style={styles.overlay}
+      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 p-4 backdrop-blur"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label={title}
     >
       <div
-        style={styles.modal}
+        className="w-full max-w-md rounded-xl border border-white/10 bg-zinc-900 text-stone-200 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div style={styles.header}>
-          <h2 style={styles.title}>{title}</h2>
+        <div className="flex items-center justify-between px-6 py-5">
+          <h2 className="font-display text-xl text-stone-100">{title}</h2>
           <button
             onClick={onClose}
-            style={styles.closeBtn}
+            className="text-zinc-400 transition hover:text-zinc-200"
             aria-label="Close modal"
           >
-            ✕
+            Close
           </button>
         </div>
-
-        {/* Divider */}
-        <div style={styles.divider} />
-
-        {/* Content */}
-        <div style={styles.content}>{children}</div>
+        <div className="h-px bg-white/10" />
+        <div className="p-6">{children}</div>
       </div>
     </div>
   );
 }
-
-const styles = {
-  overlay: {
-    position: "fixed",
-    inset: 0,
-    backgroundColor: "rgba(0,0,0,0.72)",
-    backdropFilter: "blur(4px)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-    padding: "1rem",
-    animation: "fadeIn 0.2s ease",
-  },
-  modal: {
-    backgroundColor: "#16161a",
-    border: "1px solid rgba(255,255,255,0.09)",
-    borderRadius: "14px",
-    width: "100%",
-    maxWidth: "420px",
-    boxShadow: "0 25px 60px rgba(0,0,0,0.6)",
-    animation: "slideUp 0.25s ease",
-    fontFamily: "'DM Sans', sans-serif",
-    color: "#e8e6e0",
-  },
-  header: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "1.25rem 1.5rem",
-  },
-  title: {
-    fontFamily: "'Playfair Display', serif",
-    fontSize: "1.15rem",
-    color: "#f5f2ec",
-    margin: 0,
-  },
-  closeBtn: {
-    background: "none",
-    border: "none",
-    color: "#6b7280",
-    fontSize: "1rem",
-    cursor: "pointer",
-    padding: "0.25rem",
-    lineHeight: 1,
-    transition: "color 0.15s",
-  },
-  divider: {
-    height: "1px",
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  content: {
-    padding: "1.5rem",
-  },
-};

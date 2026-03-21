@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import CourseCard from "../components/CourseCard";
@@ -14,135 +14,86 @@ export default function Courses() {
     category: searchParams.get("category") ? [searchParams.get("category")] : [],
     level: [],
   });
-  const [visible, setVisible] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 50);
-    return () => clearTimeout(t);
-  }, []);
+  const filteredCourses = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
 
-  const filtered = useMemo(() => {
-    return courses.filter((c) => {
-      const q = query.toLowerCase();
-      const matchesQuery =
-        !q ||
-        c.title.toLowerCase().includes(q) ||
-        c.instructorName.toLowerCase().includes(q) ||
-        c.tags?.some((t) => t.toLowerCase().includes(q));
+    return courses.filter((course) => {
+      const queryMatch =
+        !normalized ||
+        course.title.toLowerCase().includes(normalized) ||
+        course.instructorName.toLowerCase().includes(normalized) ||
+        course.tags?.some((tag) => tag.toLowerCase().includes(normalized));
 
-      const matchesCategory =
-        !filters.category.length || filters.category.includes(c.category);
+      const categoryMatch = !filters.category.length || filters.category.includes(course.category);
+      const levelMatch = !filters.level.length || filters.level.includes(course.level);
 
-      const matchesLevel =
-        !filters.level.length || filters.level.includes(c.level);
-
-      return matchesQuery && matchesCategory && matchesLevel;
+      return queryMatch && categoryMatch && levelMatch;
     });
   }, [courses, query, filters]);
 
-  const [showFilters, setShowFilters] = useState(false);
+  const clearAll = () => {
+    setQuery("");
+    setFilters({ category: [], level: [] });
+  };
 
   return (
-    <div
-      style={{
-        ...styles.page,
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(12px)",
-        transition: "opacity 0.5s ease, transform 0.5s ease",
-      }}
-    >
-      <style>{`
-        @media (max-width: 700px) {
-          .courses-body { grid-template-columns: 1fr !important; }
-          .courses-sidebar { display: none; }
-          .courses-sidebar.open { display: block !important; }
-          .filter-toggle { display: flex !important; }
-        }
-        @media (min-width: 701px) {
-          .filter-toggle { display: none !important; }
-          .courses-sidebar { display: block !important; }
-        }
-      `}</style>
-
-      {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.headerInner}>
-          <h1 style={styles.pageTitle}>All Courses</h1>
-          <p style={styles.pageSubtitle}>
-            {courses.length} courses across development, design, data science & more.
-          </p>
-          <div style={styles.searchWrap}>
+    <div className="min-h-screen">
+      <section className="border-b border-white/10 bg-zinc-900/40">
+        <div className="mx-auto w-full max-w-6xl px-6 py-12">
+          <h1 className="font-display text-4xl text-stone-100">All Courses</h1>
+          <p className="mt-2 text-zinc-400">{courses.length} courses across development, design, data science, and more.</p>
+          <div className="mt-5 max-w-xl">
             <SearchBar value={query} onChange={setQuery} />
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Body */}
-      <div className="courses-body" style={styles.body}>
-        {/* Sidebar */}
-        <aside className={`courses-sidebar${showFilters ? " open" : ""}`}>
-          {/* Mobile filter toggle */}
+      <section className="mx-auto grid w-full max-w-6xl gap-8 px-6 py-8 lg:grid-cols-[220px_1fr]">
+        <div>
           <button
-            className="filter-toggle"
+            className="mb-3 w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm font-semibold text-amber-500 lg:hidden"
             onClick={() => setShowFilters((v) => !v)}
-            style={styles.filterToggle}
           >
-            {showFilters ? "Hide Filters ▲" : "Show Filters ▼"}
+            {showFilters ? "Hide Filters" : "Show Filters"}
           </button>
-          <FilterPanel courses={courses} filters={filters} onChange={setFilters} />
-        </aside>
 
-        {/* Grid */}
-        <main>
-          <div style={styles.resultsBar}>
-            <span style={styles.resultsCount}>
-              {filtered.length} result{filtered.length !== 1 ? "s" : ""}
-              {query && <> for "<strong>{query}</strong>"</>}
-            </span>
+          <div className={`${showFilters ? "block" : "hidden"} lg:block`}>
+            <FilterPanel courses={courses} filters={filters} onChange={setFilters} />
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <p className="text-sm text-zinc-400">
+              {filteredCourses.length} result{filteredCourses.length !== 1 ? "s" : ""}
+              {query ? ` for \"${query}\"` : ""}
+            </p>
+            {(query || filters.category.length || filters.level.length) && (
+              <button className="text-sm font-semibold text-amber-500 hover:text-amber-400" onClick={clearAll}>
+                Clear all
+              </button>
+            )}
           </div>
 
-          {filtered.length === 0 ? (
-            <div style={styles.emptyState}>
-              <span style={styles.emptyIcon}>🔍</span>
-              <h3 style={styles.emptyTitle}>No courses found</h3>
-              <p style={styles.emptySub}>
-                Try a different search term or clear your filters.
-              </p>
-              <button
-                onClick={() => { setQuery(""); setFilters({ category: [], level: [] }); }}
-                style={styles.clearBtn}
-              >
-                Clear all filters
+          {filteredCourses.length === 0 ? (
+            <div className="rounded-xl border border-white/10 bg-zinc-900 p-10 text-center">
+              <p className="font-display text-2xl text-stone-100">No courses found</p>
+              <p className="mt-2 text-zinc-400">Try another search or clear active filters.</p>
+              <button onClick={clearAll} className="mt-5 rounded-lg bg-amber-600 px-5 py-2.5 text-sm font-bold text-zinc-950 hover:bg-amber-500">
+                Reset filters
               </button>
             </div>
           ) : (
-            <div style={styles.grid}>
-              {filtered.map((course) => (
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              {filteredCourses.map((course) => (
                 <CourseCard key={course.id} course={course} />
               ))}
             </div>
           )}
-        </main>
-      </div>
+        </div>
+      </section>
     </div>
   );
 }
-
-const styles = {
-  page: { minHeight: "100vh", backgroundColor: "#0c0c0e", color: "#e8e6e0", fontFamily: "'DM Sans', sans-serif" },
-  header: { backgroundColor: "#111114", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "3rem 1.5rem 2.5rem" },
-  headerInner: { maxWidth: "1200px", margin: "0 auto" },
-  pageTitle: { fontFamily: "'Playfair Display', serif", fontSize: "2.2rem", color: "#f5f2ec", margin: "0 0 0.5rem" },
-  pageSubtitle: { color: "#6b7280", marginBottom: "1.5rem", fontSize: "0.95rem" },
-  searchWrap: { maxWidth: "540px" },
-  body: { maxWidth: "1200px", margin: "0 auto", padding: "2.5rem 1.5rem", display: "grid", gridTemplateColumns: "220px 1fr", gap: "2.5rem", alignItems: "start" },
-  filterToggle: { display: "none", width: "100%", padding: "0.65rem 1rem", backgroundColor: "#16161a", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "8px", color: "#d97706", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer", marginBottom: "1rem", alignItems: "center", justifyContent: "center" },
-  resultsBar: { marginBottom: "1.25rem" },
-  resultsCount: { fontSize: "0.85rem", color: "#6b7280" },
-  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "1.25rem" },
-  emptyState: { display: "flex", flexDirection: "column", alignItems: "center", padding: "5rem 2rem", textAlign: "center" },
-  emptyIcon: { fontSize: "2.5rem", marginBottom: "1rem" },
-  emptyTitle: { fontFamily: "'Playfair Display', serif", fontSize: "1.4rem", color: "#f5f2ec", marginBottom: "0.5rem" },
-  emptySub: { color: "#6b7280", marginBottom: "1.5rem", fontSize: "0.9rem" },
-  clearBtn: { padding: "0.65rem 1.5rem", backgroundColor: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.3)", borderRadius: "8px", color: "#d97706", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: "0.88rem", cursor: "pointer" },
-};

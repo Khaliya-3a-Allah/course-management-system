@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
-import Modal from "../components/Modal";
 
 // ── SVG Icons ────────────────────────────────────────────────────────────────
 const IconPlay = () => (
@@ -309,99 +308,45 @@ const vStyles = {
 // ── Main Page ────────────────────────────────────────────────────────────────
 export default function ModuleDetails() {
   const { courseId, moduleId } = useParams();
-  const navigate = useNavigate();
-  const { courses, updateCourse, currentUser, lessonProgress, markLessonComplete, markCourseComplete, completedCourses } = useAppContext();
+  const { courses } = useAppContext();
 
-  const course = courses.find((c) => c.id === courseId);
-  const allModules = course?.modules || [];
-  const currentModuleIndex = allModules.findIndex((m) => m.id === moduleId);
-  const module = allModules[currentModuleIndex];
-  const completedLessons = lessonProgress[courseId] || {};
-
-  const [activeLesson, setActiveLesson] = useState(null);
-  const [expandedModules, setExpandedModules] = useState({});
-  const [visible, setVisible] = useState(false);
-  const [showCompletion, setShowCompletion] = useState(false);
-  const [completionShown, setCompletionShown] = useState(false);
-  const [hoveredStar, setHoveredStar] = useState(0);
-  const [selectedRating, setSelectedRating] = useState(0);
-  const [reviewMessage, setReviewMessage] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const course = useMemo(() => courses.find((item) => item.id === courseId), [courses, courseId]);
+  const module = useMemo(() => course?.modules?.find((item) => item.id === moduleId), [course, moduleId]);
+  const [activeLessonId, setActiveLessonId] = useState(null);
 
   useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 50);
-    return () => clearTimeout(t);
-  }, []);
-
-  useEffect(() => {
-    if (module) {
-      setExpandedModules({ [module.id]: true });
-      if (module.lessons?.length > 0) setActiveLesson(module.lessons[0]);
+    if (module?.lessons?.length) {
+      setActiveLessonId(module.lessons[0].id);
     }
-  }, [moduleId]);
+  }, [module]);
+
+  const activeLesson = module?.lessons?.find((item) => item.id === activeLessonId);
 
   if (!course) {
     return (
-      <div style={styles.notFound}>
-        <h2 style={styles.nfTitle}>Course Not Found</h2>
-        <Link to="/courses" style={styles.backLink}>← All Courses</Link>
+      <div className="mx-auto max-w-3xl px-6 py-16 text-center">
+        <h1 className="font-display text-3xl text-stone-100">Course not found</h1>
+        <Link to="/courses" className="mt-5 inline-block text-amber-500 hover:text-amber-400">Back to courses</Link>
       </div>
     );
   }
 
   if (!module) {
     return (
-      <div style={styles.notFound}>
-        <h2 style={styles.nfTitle}>Module Not Found</h2>
-        <Link to={`/courses/${courseId}`} style={styles.backLink}>← Back to Course</Link>
+      <div className="mx-auto max-w-3xl px-6 py-16 text-center">
+        <h1 className="font-display text-3xl text-stone-100">Module not found</h1>
+        <Link to={`/courses/${course.id}`} className="mt-5 inline-block text-amber-500 hover:text-amber-400">Back to course</Link>
       </div>
     );
   }
 
-  const totalLessons = allModules.reduce((acc, m) => acc + (m.lessons?.length || 0), 0);
-  const completedCount = Object.keys(completedLessons).filter((k) => completedLessons[k]).length;
-  const progressPct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
-
-  const isModuleComplete = (mod) =>
-    mod.lessons?.length > 0 && mod.lessons?.every((l) => completedLessons[l.id]);
-
-  const toggleModule = (modId) =>
-    setExpandedModules((prev) => ({ ...prev, [modId]: !prev[modId] }));
-
-  const handleMarkComplete = (lessonId) => {
-    markLessonComplete(courseId, lessonId);
-    const newCompleted = { ...completedLessons, [lessonId]: true };
-    const newCount = Object.keys(newCompleted).filter((k) => newCompleted[k]).length;
-    const newPct = totalLessons > 0 ? Math.round((newCount / totalLessons) * 100) : 0;
-    if (newPct === 100 && !completionShown && !completedCourses.has(courseId)) {
-      markCourseComplete(courseId);
-      setTimeout(() => { setShowCompletion(true); setCompletionShown(true); }, 600);
-    }
-  };
-
-  const activeLessonIndex = module.lessons?.indexOf(activeLesson);
-  const isLastLesson = activeLessonIndex === (module.lessons?.length - 1);
-  const isFirstLesson = activeLessonIndex === 0;
-  const nextModule = allModules[currentModuleIndex + 1];
-  const prevModule = allModules[currentModuleIndex - 1];
-
-  const goToNextLesson = () => { if (!isLastLesson) setActiveLesson(module.lessons[activeLessonIndex + 1]); };
-  const goToPrevLesson = () => {
-    if (!isFirstLesson) setActiveLesson(module.lessons[activeLessonIndex - 1]);
-    else if (prevModule) navigate(`/courses/${courseId}/modules/${prevModule.id}`);
-  };
-  const goToNextModule = () => {
-    if (nextModule) { setExpandedModules({ [nextModule.id]: true }); setActiveLesson(null); navigate(`/courses/${courseId}/modules/${nextModule.id}`); }
-  };
-
-  const handleSubmitReview = () => {
-    if (selectedRating === 0) return;
-    const newRating = ((course.rating || 0) + selectedRating) / 2;
-    updateCourse({ ...course, rating: Math.round(newRating * 10) / 10 });
-    setSubmitted(true);
-  };
-
   return (
+    <div className="min-h-screen">
+      <div className="border-b border-white/10 bg-zinc-900/50">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-6 py-4 text-sm text-zinc-400">
+          <Link to={`/courses/${course.id}`} className="text-amber-500 hover:text-amber-400">{course.title}</Link>
+          <span>/</span>
+          <span>{module.title}</span>
     <div style={{ ...styles.page, opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(16px)", transition: "opacity 0.55s ease, transform 0.55s ease" }}>
       <style>{`
         @keyframes fadeSlide { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
@@ -447,86 +392,37 @@ export default function ModuleDetails() {
         </div>
       </div>
 
-      {/* Layout */}
-      <div className="module-layout" style={styles.layout}>
-
-        {/* Sidebar */}
-        <aside className="module-sidebar" style={styles.sidebar}>
-          <div style={styles.sidebarHeader}>
-            <div style={styles.progressHeader}>
-              <p style={styles.sidebarLabel}>Course Content</p>
-              <span style={styles.progressPctBig}>{progressPct}%</span>
-            </div>
-            <div style={styles.progressBarWrap}><div className="progress-fill" style={{ width: `${progressPct}%` }} /></div>
-            <p style={styles.progressSub}>{completedCount} of {totalLessons} lessons completed</p>
+      <div className="mx-auto grid w-full max-w-6xl gap-6 px-6 py-8 lg:grid-cols-[280px_1fr]">
+        <aside className="rounded-xl border border-white/10 bg-zinc-900">
+          <div className="border-b border-white/10 p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">Module</p>
+            <h2 className="font-display mt-2 text-xl text-stone-100">{module.title}</h2>
           </div>
-
-          <nav aria-label="Course modules">
-            {allModules.map((mod, modIdx) => {
-              const isCurrentModule = mod.id === moduleId;
-              const isExpanded = expandedModules[mod.id];
-              const modComplete = isModuleComplete(mod);
-              const modDone = mod.lessons?.filter((l) => completedLessons[l.id]).length || 0;
-              const modTotal = mod.lessons?.length || 0;
-              const modPct = modTotal > 0 ? Math.round((modDone / modTotal) * 100) : 0;
-
-              return (
-                <div key={mod.id} style={styles.moduleGroup}>
-                  <button
-                    className={isCurrentModule ? "module-btn-active" : ""}
-                    onClick={() => { toggleModule(mod.id); if (!isCurrentModule) navigate(`/courses/${courseId}/modules/${mod.id}`); }}
-                    style={styles.moduleBtn}
-                  >
-                    <span style={{ ...styles.modNum, color: modComplete ? "#22c55e" : isCurrentModule ? "#d97706" : "rgba(217,119,6,0.3)" }}>
-                      {modComplete ? "✓" : String(modIdx + 1).padStart(2, "0")}
-                    </span>
-                    <span style={styles.modInfo}>
-                      <span style={styles.modTitle}>{mod.title}</span>
-                      <span style={styles.modProgressRow}>
-                        <span style={styles.modProgressBarWrap}>
-                          <span style={{ ...styles.modProgressFill, width: `${modPct}%`, backgroundColor: modComplete ? "#22c55e" : "#d97706" }} />
-                        </span>
-                        <span style={styles.modProgressText}>{modDone}/{modTotal}</span>
-                      </span>
-                    </span>
-                    <span style={styles.modChevron}>{isExpanded ? "▲" : "▼"}</span>
-                  </button>
-
-                  {isExpanded && (
-                    <div style={styles.lessonDropdown}>
-                      {mod.lessons?.map((lesson) => {
-                        const isActiveLesson = isCurrentModule && activeLesson?.id === lesson.id;
-                        const isDone = completedLessons[lesson.id];
-                        return (
-                          <button
-                            key={lesson.id}
-                            className={`lesson-btn${isActiveLesson ? " active" : ""}`}
-                            onClick={() => setActiveLesson(lesson)}
-                            style={styles.lessonBtn}
-                          >
-                            <span style={{ ...styles.lessonDot, backgroundColor: isDone ? "#22c55e" : isActiveLesson ? "#d97706" : "rgba(255,255,255,0.1)", boxShadow: isActiveLesson && !isDone ? "0 0 0 2px rgba(217,119,6,0.3)" : "none" }} />
-                            <span style={styles.lessonBtnText}>
-                              <span style={{ ...styles.lessonBtnTitle, color: isDone ? "#6b7280" : isActiveLesson ? "#f5f2ec" : "#9ca3af", textDecoration: isDone ? "line-through" : "none" }}>
-                                {lesson.title}
-                              </span>
-                              <span style={styles.lessonBtnDuration}>{lesson.duration}</span>
-                            </span>
-                            {isActiveLesson && !isDone && <span style={styles.activeIndicator}>▶</span>}
-                            {isDone && <span style={styles.doneCheck}>✓</span>}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </nav>
+          <div className="p-2">
+            {module.lessons?.map((lesson, index) => (
+              <button
+                key={lesson.id}
+                onClick={() => setActiveLessonId(lesson.id)}
+                className={`mb-2 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left ${activeLessonId === lesson.id ? "bg-amber-500/10 text-amber-500" : "text-zinc-300 hover:bg-white/5"}`}
+              >
+                <span className="font-display text-lg">{String(index + 1).padStart(2, "0")}</span>
+                <span className="flex-1">
+                  <span className="block text-sm font-medium">{lesson.title}</span>
+                  <span className="text-xs text-zinc-500">{lesson.duration}</span>
+                </span>
+              </button>
+            ))}
+          </div>
         </aside>
 
-        {/* Main */}
-        <main className="module-main" style={styles.main}>
+        <main>
           {activeLesson ? (
+            <div>
+              <div className="aspect-video w-full rounded-xl border border-white/10 bg-zinc-900">
+                {activeLesson.videoUrl ? (
+                  <iframe src={activeLesson.videoUrl} title={activeLesson.title} className="h-full w-full rounded-xl" allowFullScreen />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-zinc-500">No video available</div>
             <div key={activeLesson.id} style={{ animation: "fadeSlide 0.4s ease forwards" }}>
               <VideoPlayer
                 src={activeLesson.videoUrl}
@@ -560,68 +456,21 @@ export default function ModuleDetails() {
                     ← {isFirstLesson && prevModule ? "Prev Module" : "Prev Lesson"}
                   </button>
                 )}
-                {!isLastLesson ? (
-                  <button onClick={goToNextLesson} style={{ ...styles.navBtn, ...styles.navBtnNext }}>Next Lesson →</button>
-                ) : nextModule ? (
-                  <button onClick={goToNextModule} style={{ ...styles.navBtn, ...styles.navBtnNext }}>Next Module →</button>
-                ) : null}
+              </div>
+              <h1 className="font-display mt-6 text-3xl text-stone-100">{activeLesson.title}</h1>
+              <p className="mt-2 text-sm text-zinc-500">{activeLesson.duration}</p>
+              <div className="mt-5 rounded-xl border border-white/10 bg-zinc-900 p-5">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-600">Lesson Preview</p>
+                <p className="mt-3 leading-7 text-zinc-400">
+                  {activeLesson.contentPreview || "No preview content available for this lesson."}
+                </p>
               </div>
             </div>
           ) : (
-            <div style={styles.selectPrompt}>
-              <span style={styles.selectIcon}>📖</span>
-              <p>Select a lesson from the sidebar to begin.</p>
-            </div>
+            <div className="rounded-xl border border-white/10 bg-zinc-900 p-8 text-center text-zinc-400">Select a lesson to begin.</div>
           )}
         </main>
       </div>
-
-      {/* Completion Modal */}
-      <Modal isOpen={showCompletion} onClose={() => setShowCompletion(false)} title="">
-        {!submitted ? (
-          <div style={styles.completionInner}>
-            <div style={styles.completionTop}>
-              <span style={styles.completionEmoji}>🎉</span>
-              <h2 style={styles.completionTitle}>Course Complete!</h2>
-              <p style={styles.completionSub}>You've finished <strong style={{ color: "#f5f2ec" }}>{course.title}</strong>.<br />Share how it went!</p>
-            </div>
-            <div style={styles.starsSection}>
-              <p style={styles.starsLabel}>Your Rating</p>
-              <div style={styles.starsRow}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button key={star} className="star-btn" onClick={() => setSelectedRating(star)} onMouseEnter={() => setHoveredStar(star)} onMouseLeave={() => setHoveredStar(0)}>
-                    <span style={{ color: star <= (hoveredStar || selectedRating) ? "#f59e0b" : "#2d2d35", transition: "color 0.12s" }}>★</span>
-                  </button>
-                ))}
-              </div>
-              {selectedRating > 0 && <p style={styles.ratingLabel}>{["", "Poor", "Fair", "Good", "Very Good", "Excellent"][selectedRating]}</p>}
-            </div>
-            <div style={styles.messageSection}>
-              <p style={styles.messageLabel}>Leave a review <span style={styles.optional}>(optional)</span></p>
-              <textarea className="review-textarea" placeholder="What did you think of this course? What was most valuable?" value={reviewMessage} onChange={(e) => setReviewMessage(e.target.value)} rows={3} />
-            </div>
-            <div style={styles.completionActions}>
-              <button className="submit-btn" onClick={handleSubmitReview} disabled={selectedRating === 0} style={{ ...styles.submitBtn, opacity: selectedRating === 0 ? 0.4 : 1, cursor: selectedRating === 0 ? "not-allowed" : "pointer" }}>Submit Review</button>
-              <button onClick={() => setShowCompletion(false)} style={styles.skipBtn}>Skip for now</button>
-            </div>
-          </div>
-        ) : (
-          <div style={styles.completionInner}>
-            <div style={styles.completionTop}>
-              <span style={styles.completionEmoji}>⭐</span>
-              <h2 style={styles.completionTitle}>Thanks for your review!</h2>
-              <p style={styles.completionSub}>
-                You rated <strong style={{ color: "#f5f2ec" }}>{course.title}</strong> {selectedRating} star{selectedRating !== 1 ? "s" : ""}.
-                {reviewMessage && <span style={{ display: "block", marginTop: "0.5rem", fontStyle: "italic", color: "#6b7280" }}>"{reviewMessage}"</span>}
-              </p>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              <Link to="/courses" style={styles.browseBtn} onClick={() => setShowCompletion(false)}>Browse More Courses →</Link>
-              <button onClick={() => setShowCompletion(false)} style={styles.closeBtn}>Close</button>
-            </div>
-          </div>
-        )}
-      </Modal>
     </div>
   );
 }

@@ -1,25 +1,24 @@
 export default function SearchBar({ value, onChange, placeholder = "Search courses..." }) {
   return (
-    <div style={styles.wrap}>
-      <span style={styles.icon} aria-hidden="true">🔍</span>
+    <div className="relative flex w-full items-center">
+      <span className="pointer-events-none absolute left-3 text-xs text-zinc-500" aria-hidden="true">Search</span>
       <input
         type="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        style={styles.input}
+        className="w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-3 pl-16 text-sm text-stone-200 outline-none transition placeholder:text-zinc-500 focus:border-amber-500/60"
         aria-label="Search courses"
       />
       {value && (
-        <button onClick={() => onChange("")} style={styles.clear} aria-label="Clear search">✕</button>
+        <button
+          onClick={() => onChange("")}
+          className="absolute right-3 text-sm text-zinc-500 transition hover:text-zinc-300"
+          aria-label="Clear search"
+        >
+          Clear
+        </button>
       )}
     </div>
   );
 }
-
-const styles = {
-  wrap: { position: "relative", display: "flex", alignItems: "center", width: "100%" },
-  icon: { position: "absolute", left: "0.9rem", fontSize: "0.85rem", pointerEvents: "none" },
-  input: { width: "100%", padding: "0.75rem 2.5rem 0.75rem 2.5rem", backgroundColor: "#16161a", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "8px", color: "#e8e6e0", fontFamily: "'DM Sans', sans-serif", fontSize: "0.92rem", outline: "none", boxSizing: "border-box" },
-  clear: { position: "absolute", right: "0.9rem", background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: "0.85rem", padding: "0.25rem", lineHeight: 1 },
-};
