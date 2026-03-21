@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { validateCourseForm } from "../utils/validators";
 
 const CATEGORIES = ["Development", "Design", "Backend", "Data Science", "DevOps", "Marketing"];
 const LEVELS = ["Beginner", "Intermediate", "Advanced"];
 
-const emptyForm = {
+const blankForm = {
   title: "",
   category: "",
   level: "",
@@ -22,26 +22,19 @@ export default function CourseForm() {
   const { courses, addCourse, updateCourse, currentUser } = useAppContext();
 
   const isEdit = Boolean(courseId);
-  const existing = isEdit ? courses.find((c) => c.id === courseId) : null;
+  const existing = isEdit ? courses.find((item) => item.id === courseId) : null;
 
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(blankForm);
   const [errors, setErrors] = useState({});
-  const [submitted, setSubmitted] = useState(false);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 50);
-    return () => clearTimeout(t);
-  }, []);
 
   useEffect(() => {
     if (isEdit && existing) {
       setForm({
-        title: existing.title || "",
-        category: existing.category || "",
-        level: existing.level || "",
-        instructorName: existing.instructorName || "",
-        description: existing.description || "",
+        title: existing.title,
+        category: existing.category,
+        level: existing.level,
+        instructorName: existing.instructorName,
+        description: existing.description,
         thumbnail: existing.thumbnail || "",
         tags: existing.tags?.join(", ") || "",
       });
@@ -50,212 +43,118 @@ export default function CourseForm() {
 
   if (isEdit && !existing) {
     return (
-      <div style={styles.notFound}>
-        <h2 style={styles.nfTitle}>Course Not Found</h2>
-        <Link to="/dashboard" style={styles.nfLink}>← Back to Dashboard</Link>
+      <div className="mx-auto max-w-3xl px-6 py-16 text-center">
+        <h1 className="font-display text-3xl text-stone-100">Course not found</h1>
+        <Link to="/dashboard" className="mt-5 inline-block text-amber-500 hover:text-amber-400">Back to dashboard</Link>
       </div>
     );
   }
 
-  const set = (key, value) => {
+  const setField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
-    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: "" }));
+    if (errors[key]) {
+      setErrors((prev) => ({ ...prev, [key]: "" }));
+    }
   };
 
-  const handleSubmit = () => {
-    const { errors: errs, isValid } = validateCourseForm(form);
-    setErrors(errs);
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const { errors: nextErrors, isValid } = validateCourseForm(form);
+    setErrors(nextErrors);
     if (!isValid) return;
 
-    const tagsArr = form.tags
+    const tags = form.tags
       .split(",")
-      .map((t) => t.trim())
+      .map((item) => item.trim())
       .filter(Boolean);
 
     if (isEdit) {
-      updateCourse({ ...existing, ...form, tags: tagsArr });
+      updateCourse({ ...existing, ...form, tags });
     } else {
       addCourse({
         id: `c-${Date.now()}`,
         ...form,
-        tags: tagsArr,
+        tags,
         rating: 0,
         modules: [],
         instructorName: form.instructorName || currentUser?.name || "",
       });
     }
 
-    setSubmitted(true);
-    setTimeout(() => navigate("/dashboard"), 1200);
+    navigate("/dashboard");
   };
 
   return (
-    <div
-      style={{
-        ...styles.page,
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(14px)",
-        transition: "opacity 0.5s ease, transform 0.5s ease",
-      }}
-    >
-      <div style={styles.container}>
-        {/* Back */}
-        <Link to="/dashboard" style={styles.back}>← Back to Dashboard</Link>
+    <div className="mx-auto w-full max-w-3xl px-6 py-10">
+      <Link to="/dashboard" className="text-sm text-amber-500 hover:text-amber-400">Back to dashboard</Link>
+      <h1 className="font-display mt-3 text-4xl text-stone-100">{isEdit ? "Edit course" : "Create course"}</h1>
+      <p className="mt-2 text-zinc-400">Provide core course details and save to local state.</p>
 
-        <h1 style={styles.pageTitle}>
-          {isEdit ? "Edit Course" : "Create New Course"}
-        </h1>
-        <p style={styles.pageSub}>
-          {isEdit ? "Update your course details below." : "Fill in the details to publish a new course."}
-        </p>
+      <form onSubmit={handleSubmit} className="mt-8 space-y-5 rounded-2xl border border-white/10 bg-zinc-900 p-6">
+        <Field label="Course title" error={errors.title}>
+          <input value={form.title} onChange={(e) => setField("title", e.target.value)} className={inputClass(errors.title)} />
+        </Field>
 
-        {submitted && (
-          <div style={styles.successBanner} role="status">
-            ✓ Course {isEdit ? "updated" : "created"} successfully! Redirecting…
-          </div>
-        )}
-
-        <div style={styles.form}>
-          {/* Title */}
-          <Field label="Course Title *" error={errors.title}>
-            <input
-              style={inputStyle(errors.title)}
-              value={form.title}
-              onChange={(e) => set("title", e.target.value)}
-              placeholder="e.g. React from Zero to Hero"
-              aria-label="Course title"
-              aria-describedby={errors.title ? "title-err" : undefined}
-            />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Category" error={errors.category}>
+            <select value={form.category} onChange={(e) => setField("category", e.target.value)} className={inputClass(errors.category)}>
+              <option value="">Select category</option>
+              {CATEGORIES.map((category) => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
           </Field>
-
-          {/* Category + Level row */}
-          <div style={styles.row}>
-            <Field label="Category *" error={errors.category}>
-              <select
-                style={inputStyle(errors.category)}
-                value={form.category}
-                onChange={(e) => set("category", e.target.value)}
-                aria-label="Category"
-              >
-                <option value="">Select category</option>
-                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </Field>
-
-            <Field label="Level *" error={errors.level}>
-              <select
-                style={inputStyle(errors.level)}
-                value={form.level}
-                onChange={(e) => set("level", e.target.value)}
-                aria-label="Level"
-              >
-                <option value="">Select level</option>
-                {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
-              </select>
-            </Field>
-          </div>
-
-          {/* Instructor */}
-          <Field label="Instructor Name *" error={errors.instructorName}>
-            <input
-              style={inputStyle(errors.instructorName)}
-              value={form.instructorName}
-              onChange={(e) => set("instructorName", e.target.value)}
-              placeholder="e.g. Sarah Chen"
-              aria-label="Instructor name"
-            />
+          <Field label="Level" error={errors.level}>
+            <select value={form.level} onChange={(e) => setField("level", e.target.value)} className={inputClass(errors.level)}>
+              <option value="">Select level</option>
+              {LEVELS.map((level) => (
+                <option key={level} value={level}>{level}</option>
+              ))}
+            </select>
           </Field>
-
-          {/* Description */}
-          <Field label="Description *" error={errors.description}>
-            <textarea
-              style={{ ...inputStyle(errors.description), minHeight: "120px", resize: "vertical" }}
-              value={form.description}
-              onChange={(e) => set("description", e.target.value)}
-              placeholder="Describe what students will learn..."
-              aria-label="Course description"
-            />
-          </Field>
-
-          {/* Thumbnail */}
-          <Field label="Thumbnail URL" error={errors.thumbnail} hint="Optional — paste a direct image URL">
-            <input
-              style={inputStyle(errors.thumbnail)}
-              value={form.thumbnail}
-              onChange={(e) => set("thumbnail", e.target.value)}
-              placeholder="https://example.com/image.jpg"
-              aria-label="Thumbnail URL"
-            />
-          </Field>
-
-          {/* Tags */}
-          <Field label="Tags" hint="Comma-separated, e.g. React, JavaScript, Frontend">
-            <input
-              style={inputStyle(false)}
-              value={form.tags}
-              onChange={(e) => set("tags", e.target.value)}
-              placeholder="React, JavaScript, Frontend"
-              aria-label="Tags"
-            />
-          </Field>
-
-          {/* Actions */}
-          <div style={styles.actions}>
-            <button onClick={handleSubmit} style={styles.submitBtn} disabled={submitted}>
-              {submitted ? "Saving…" : isEdit ? "Save Changes" : "Publish Course"}
-            </button>
-            <button onClick={() => navigate("/dashboard")} style={styles.cancelBtn}>
-              Cancel
-            </button>
-          </div>
         </div>
-      </div>
+
+        <Field label="Instructor" error={errors.instructorName}>
+          <input value={form.instructorName} onChange={(e) => setField("instructorName", e.target.value)} className={inputClass(errors.instructorName)} />
+        </Field>
+
+        <Field label="Description" error={errors.description}>
+          <textarea value={form.description} onChange={(e) => setField("description", e.target.value)} className={`${inputClass(errors.description)} min-h-32`} />
+        </Field>
+
+        <Field label="Thumbnail URL" error={errors.thumbnail}>
+          <input value={form.thumbnail} onChange={(e) => setField("thumbnail", e.target.value)} className={inputClass(errors.thumbnail)} />
+        </Field>
+
+        <Field label="Tags (comma separated)">
+          <input value={form.tags} onChange={(e) => setField("tags", e.target.value)} className={inputClass(false)} />
+        </Field>
+
+        <div className="flex gap-3">
+          <button type="submit" className="rounded-lg bg-amber-600 px-5 py-2.5 text-sm font-bold text-zinc-950 hover:bg-amber-500">
+            {isEdit ? "Save changes" : "Publish course"}
+          </button>
+          <button type="button" onClick={() => navigate("/dashboard")} className="rounded-lg border border-white/15 px-5 py-2.5 text-sm font-semibold text-zinc-200">
+            Cancel
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
 
-function Field({ label, error, hint, children }) {
+function Field({ label, error, children }) {
   return (
-    <div style={styles.field}>
-      <label style={styles.label}>{label}</label>
-      {hint && <p style={styles.hint}>{hint}</p>}
+    <div>
+      <label className="mb-1 block text-sm font-semibold text-zinc-200">{label}</label>
       {children}
-      {error && <p style={styles.errorText} role="alert">{error}</p>}
+      {error && <p className="mt-1 text-xs text-rose-400">{error}</p>}
     </div>
   );
 }
 
-const inputStyle = (hasError) => ({
-  width: "100%",
-  padding: "0.75rem 1rem",
-  backgroundColor: "#111114",
-  border: `1px solid ${hasError ? "#ef4444" : "rgba(255,255,255,0.09)"}`,
-  borderRadius: "8px",
-  color: "#e8e6e0",
-  fontFamily: "'DM Sans', sans-serif",
-  fontSize: "0.92rem",
-  outline: "none",
-  boxSizing: "border-box",
-  transition: "border-color 0.2s",
-});
-
-const styles = {
-  page: { minHeight: "100vh", backgroundColor: "#0c0c0e", color: "#e8e6e0", fontFamily: "'DM Sans', sans-serif", paddingBottom: "4rem" },
-  container: { maxWidth: "680px", margin: "0 auto", padding: "2.5rem 1.5rem" },
-  back: { color: "#d97706", textDecoration: "none", fontSize: "0.85rem", fontWeight: 600, display: "inline-block", marginBottom: "1.5rem" },
-  pageTitle: { fontFamily: "'Playfair Display', serif", fontSize: "2rem", color: "#f5f2ec", margin: "0 0 0.4rem" },
-  pageSub: { color: "#6b7280", fontSize: "0.92rem", marginBottom: "2rem" },
-  successBanner: { backgroundColor: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: "8px", padding: "0.85rem 1.25rem", color: "#22c55e", fontSize: "0.9rem", marginBottom: "1.5rem" },
-  form: { display: "flex", flexDirection: "column", gap: "1.25rem" },
-  field: { display: "flex", flexDirection: "column", gap: "0.35rem" },
-  label: { fontSize: "0.82rem", fontWeight: 600, color: "#d1cfc8", letterSpacing: "0.03em" },
-  hint: { fontSize: "0.75rem", color: "#4b5563", margin: "0 0 0.2rem" },
-  errorText: { fontSize: "0.78rem", color: "#ef4444", margin: 0 },
-  row: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" },
-  actions: { display: "flex", gap: "0.75rem", marginTop: "0.5rem" },
-  submitBtn: { padding: "0.85rem 2rem", backgroundColor: "#d97706", color: "#0c0c0e", border: "none", borderRadius: "8px", fontWeight: 700, fontSize: "0.92rem", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "opacity 0.2s" },
-  cancelBtn: { padding: "0.85rem 1.5rem", backgroundColor: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", color: "#9ca3af", fontFamily: "'DM Sans', sans-serif", fontSize: "0.92rem", cursor: "pointer" },
-  notFound: { minHeight: "60vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: "#0c0c0e", gap: "1rem" },
-  nfTitle: { fontFamily: "'Playfair Display', serif", color: "#f5f2ec", fontSize: "1.5rem" },
-  nfLink: { color: "#d97706", textDecoration: "none", fontWeight: 600 },
-};
+function inputClass(hasError) {
+  return `w-full rounded-lg border bg-zinc-950 px-3 py-2.5 text-sm text-stone-200 outline-none transition ${
+    hasError ? "border-rose-500/60" : "border-white/10 focus:border-amber-500/60"
+  }`;
+}

@@ -1,167 +1,86 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { validateLoginForm } from "../utils/validators";
 
 export default function Login() {
-  const { users, setCurrentUser, currentUser } = useAppContext();
   const navigate = useNavigate();
+  const { users, setCurrentUser, currentUser } = useAppContext();
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [authError, setAuthError] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [visible, setVisible] = useState(false);
 
-  useEffect(() => {
-    if (currentUser) { navigate("/dashboard"); return; }
-    const t = setTimeout(() => setVisible(true), 50);
-    return () => clearTimeout(t);
-  }, [currentUser, navigate]);
+  if (currentUser) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
-  const set = (key, value) => {
+  const setField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
-    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: "" }));
+    setErrors((prev) => ({ ...prev, [key]: "" }));
     setAuthError("");
   };
 
-  const handleSubmit = () => {
-    const { errors: errs, isValid } = validateLoginForm(form);
-    setErrors(errs);
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const { errors: nextErrors, isValid } = validateLoginForm(form);
+    setErrors(nextErrors);
     if (!isValid) return;
 
-    const matched = users.find(
-      (u) => u.email.toLowerCase() === form.email.toLowerCase() && u.password === form.password
+    const matchedUser = users.find(
+      (user) => user.email.toLowerCase() === form.email.toLowerCase() && user.password === form.password
     );
 
-    if (!matched) {
-      setAuthError("Incorrect email or password. Try alex@example.com / password123");
+    if (!matchedUser) {
+      setAuthError("Incorrect email or password.");
       return;
     }
 
-    setCurrentUser(matched);
+    setCurrentUser(matchedUser);
     navigate("/dashboard");
   };
 
   return (
-    <div
-      style={{
-        ...styles.page,
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(14px)",
-        transition: "opacity 0.5s ease, transform 0.5s ease",
-      }}
-    >
-      <div style={styles.card}>
-        {/* Decorative top */}
-        <div style={styles.cardAccent} />
+    <div className="flex min-h-screen items-center justify-center px-6 py-12">
+      <form onSubmit={handleSubmit} className="w-full max-w-md rounded-2xl border border-white/10 bg-zinc-900 p-7">
+        <h1 className="font-display text-3xl text-stone-100">Welcome back</h1>
+        <p className="mt-1 text-sm text-zinc-400">Sign in to continue learning.</p>
 
-        <div style={styles.cardInner}>
-          <h1 style={styles.title}>Welcome back.</h1>
-          <p style={styles.sub}>Sign in to continue learning.</p>
+        {authError && <p className="mt-4 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">{authError}</p>}
 
-          {authError && (
-            <div style={styles.authError} role="alert">{authError}</div>
-          )}
-
-          <div style={styles.form}>
-            {/* Email */}
-            <div style={styles.field}>
-              <label htmlFor="login-email" style={styles.label}>Email</label>
-              <input
-                id="login-email"
-                type="email"
-                value={form.email}
-                onChange={(e) => set("email", e.target.value)}
-                placeholder="you@example.com"
-                style={inputStyle(errors.email)}
-                autoComplete="email"
-                aria-describedby={errors.email ? "email-err" : undefined}
-              />
-              {errors.email && <p id="email-err" style={styles.errorText} role="alert">{errors.email}</p>}
-            </div>
-
-            {/* Password */}
-            <div style={styles.field}>
-              <label htmlFor="login-password" style={styles.label}>Password</label>
-              <div style={styles.passwordWrap}>
-                <input
-                  id="login-password"
-                  type={showPassword ? "text" : "password"}
-                  value={form.password}
-                  onChange={(e) => set("password", e.target.value)}
-                  placeholder="••••••••"
-                  style={{ ...inputStyle(errors.password), paddingRight: "3rem" }}
-                  autoComplete="current-password"
-                  onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-                  aria-describedby={errors.password ? "pw-err" : undefined}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  style={styles.eyeBtn}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? "🙈" : "👁"}
-                </button>
-              </div>
-              {errors.password && <p id="pw-err" style={styles.errorText} role="alert">{errors.password}</p>}
-            </div>
-
-            <button onClick={handleSubmit} style={styles.submitBtn}>
-              Sign In
-            </button>
-          </div>
-
-          <p style={styles.switchText}>
-            Don't have an account?{" "}
-            <Link to="/register" style={styles.switchLink}>Register →</Link>
-          </p>
-
-          {/* Demo hint */}
-          <div style={styles.demoHint}>
-            <p style={styles.demoText}>
-              Demo credentials: <code style={styles.code}>alex@example.com</code> / <code style={styles.code}>password123</code>
-            </p>
-          </div>
+        <div className="mt-5 space-y-4">
+          <Field label="Email" error={errors.email}>
+            <input type="email" value={form.email} onChange={(e) => setField("email", e.target.value)} className={inputClass(errors.email)} />
+          </Field>
+          <Field label="Password" error={errors.password}>
+            <input type="password" value={form.password} onChange={(e) => setField("password", e.target.value)} className={inputClass(errors.password)} />
+          </Field>
         </div>
-      </div>
+
+        <button type="submit" className="mt-5 w-full rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-bold text-zinc-950 hover:bg-amber-500">
+          Sign in
+        </button>
+
+        <p className="mt-4 text-center text-sm text-zinc-400">
+          Need an account? <Link to="/register" className="text-amber-500 hover:text-amber-400">Register</Link>
+        </p>
+      </form>
     </div>
   );
 }
 
-const inputStyle = (hasError) => ({
-  width: "100%",
-  padding: "0.8rem 1rem",
-  backgroundColor: "#0c0c0e",
-  border: `1px solid ${hasError ? "#ef4444" : "rgba(255,255,255,0.09)"}`,
-  borderRadius: "8px",
-  color: "#e8e6e0",
-  fontFamily: "'DM Sans', sans-serif",
-  fontSize: "0.93rem",
-  outline: "none",
-  boxSizing: "border-box",
-  transition: "border-color 0.2s",
-});
+function Field({ label, error, children }) {
+  return (
+    <div>
+      <label className="mb-1 block text-sm font-semibold text-zinc-200">{label}</label>
+      {children}
+      {error && <p className="mt-1 text-xs text-rose-400">{error}</p>}
+    </div>
+  );
+}
 
-const styles = {
-  page: { minHeight: "100vh", backgroundColor: "#0c0c0e", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem", fontFamily: "'DM Sans', sans-serif" },
-  card: { width: "100%", maxWidth: "420px", backgroundColor: "#16161a", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "16px", overflow: "hidden" },
-  cardAccent: { height: "4px", background: "linear-gradient(90deg, #d97706, #f59e0b)" },
-  cardInner: { padding: "2.25rem" },
-  title: { fontFamily: "'Playfair Display', serif", fontSize: "1.75rem", color: "#f5f2ec", margin: "0 0 0.3rem" },
-  sub: { color: "#6b7280", fontSize: "0.9rem", marginBottom: "1.75rem" },
-  authError: { backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: "8px", padding: "0.75rem 1rem", color: "#f87171", fontSize: "0.85rem", marginBottom: "1.25rem" },
-  form: { display: "flex", flexDirection: "column", gap: "1.1rem" },
-  field: { display: "flex", flexDirection: "column", gap: "0.35rem" },
-  label: { fontSize: "0.82rem", fontWeight: 600, color: "#d1cfc8", letterSpacing: "0.03em" },
-  passwordWrap: { position: "relative" },
-  eyeBtn: { position: "absolute", right: "0.75rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "0.95rem", lineHeight: 1, padding: "0.2rem" },
-  errorText: { fontSize: "0.77rem", color: "#ef4444", margin: 0 },
-  submitBtn: { padding: "0.85rem", backgroundColor: "#d97706", color: "#0c0c0e", border: "none", borderRadius: "8px", fontWeight: 700, fontSize: "0.93rem", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", marginTop: "0.25rem", transition: "opacity 0.2s" },
-  switchText: { textAlign: "center", fontSize: "0.85rem", color: "#6b7280", marginTop: "1.5rem" },
-  switchLink: { color: "#d97706", textDecoration: "none", fontWeight: 600 },
-  demoHint: { marginTop: "1.25rem", padding: "0.75rem", backgroundColor: "rgba(255,255,255,0.03)", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.05)" },
-  demoText: { fontSize: "0.75rem", color: "#4b5563", margin: 0, textAlign: "center" },
-  code: { backgroundColor: "rgba(255,255,255,0.06)", padding: "0.1rem 0.35rem", borderRadius: "4px", color: "#9ca3af", fontFamily: "monospace" },
-};
+function inputClass(hasError) {
+  return `w-full rounded-lg border bg-zinc-950 px-3 py-2.5 text-sm text-stone-200 outline-none transition ${
+    hasError ? "border-rose-500/60" : "border-white/10 focus:border-amber-500/60"
+  }`;
+}
