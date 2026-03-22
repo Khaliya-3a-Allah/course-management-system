@@ -1,55 +1,63 @@
 import { useEffect } from "react";
 
-/**
- * Modal — reusable overlay dialog
- * Props: isOpen, onClose, title, children
- */
 export default function Modal({ isOpen, onClose, title, children }) {
-  // Close on Escape key
+  // Close on Escape
   useEffect(() => {
     if (!isOpen) return;
-    const handler = (e) => {
-      if (e.key === "Escape") onClose();
-    };
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [isOpen, onClose]);
 
-  // Prevent body scroll while open
+  // Prevent body scroll
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
+    return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 p-4 backdrop-blur"
+      className="fixed inset-0 flex items-center justify-center z-[1000] p-4 bg-[rgba(0,0,0,0.72)]"
+      style={{ backdropFilter: "blur(4px)" }}
       onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
+      role="presentation"
     >
-      <div
-        className="w-full max-w-md rounded-xl border border-white/10 bg-zinc-900 text-stone-200 shadow-2xl"
+      <dialog
+        open
+        className="relative w-full max-w-[420px] rounded-2xl border border-[rgba(255,255,255,0.09)] p-0 m-0 bg-surface text-[#e8e6e0]"
+        style={{ boxShadow: "0 25px 60px rgba(0,0,0,0.6)" }}
         onClick={(e) => e.stopPropagation()}
+        aria-modal="true"
+        aria-labelledby={title ? "modal-title" : undefined}
       >
-        <div className="flex items-center justify-between px-6 py-5">
-          <h2 className="font-display text-xl text-stone-100">{title}</h2>
+        {/* Header */}
+        <header className="flex items-center justify-between px-6 py-5">
+          {title && (
+            <h2
+              id="modal-title"
+              className="font-heading text-[1.15rem] m-0 text-text-primary"
+            >
+              {title}
+            </h2>
+          )}
           <button
             onClick={onClose}
-            className="text-zinc-400 transition hover:text-zinc-200"
-            aria-label="Close modal"
+            aria-label="Close dialog"
+            className="border-none cursor-pointer text-[1rem] leading-none p-1 ml-auto text-text-dim hover:text-text-muted transition-colors bg-transparent"
           >
-            Close
+            ✕
           </button>
+        </header>
+
+        <hr className="border-[rgba(255,255,255,0.06)]" />
+
+        {/* Content */}
+        <div className="p-6">
+          {children}
         </div>
-        <div className="h-px bg-white/10" />
-        <div className="p-6">{children}</div>
-      </div>
+      </dialog>
     </div>
   );
 }
