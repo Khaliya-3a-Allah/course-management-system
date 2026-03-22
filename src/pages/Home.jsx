@@ -1,86 +1,143 @@
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import CourseCard from "../components/CourseCard";
 
 export default function Home() {
   const { courses } = useAppContext();
+  const [visible, setVisible] = useState(false);
 
-  const featuredCourses = courses.slice(0, 4);
-  const categories = useMemo(() => {
-    const map = new Map();
-    courses.forEach((course) => {
-      map.set(course.category, (map.get(course.category) || 0) + 1);
-    });
-    return Array.from(map.entries());
-  }, [courses]);
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 50);
+    return () => clearTimeout(t);
+  }, []);
+
+  const featured = courses.slice(0, 4);
+  const categories = [...new Set(courses.map((c) => c.category))];
 
   return (
-    <div className="min-h-screen">
-      <section className="relative overflow-hidden border-b border-white/10">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(245,158,11,0.15),transparent_55%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:56px_56px]" />
+    <div
+      className="min-h-screen bg-[#0c0c0e] text-[#e8e6e0] font-['DM_Sans',sans-serif]"
+      style={{ opacity: visible ? 1 : 0, transition: "opacity 0.6s ease" }}
+    >
+      <style>{`
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+        @media (max-width: 640px) { .hero-float-badge { display: none !important; } }
+        .hero-cta:hover { opacity:0.85; transform:translateY(-2px); }
+        .cat-card:hover { border-color:rgba(217,119,6,0.5)!important; background:rgba(217,119,6,0.07)!important; }
+      `}</style>
 
-        <div className="relative mx-auto flex min-h-[72vh] w-full max-w-6xl flex-col justify-center px-6 py-16">
-          <p className="mb-4 text-xs font-bold uppercase tracking-[0.24em] text-amber-600">Learn without limits</p>
-          <h1 className="font-display text-4xl leading-tight text-stone-100 sm:text-6xl">
-            Master skills that build
-            <span className="block text-amber-500">real outcomes.</span>
-          </h1>
-          <p className="mt-5 max-w-2xl text-base text-zinc-400 sm:text-lg">
-            Explore practical courses in development, design, and data. Study module by module and track your progress in one place.
+      {/* ── Hero ── */}
+      <section
+        className="relative min-h-[80vh] flex items-center overflow-hidden px-8 pt-16 pb-12"
+        aria-labelledby="hero-heading"
+      >
+        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 80% 60% at 60% 40%, rgba(217,119,6,0.08) 0%, transparent 70%)" }} aria-hidden="true" />
+        <div className="absolute inset-0" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)", backgroundSize: "60px 60px" }} aria-hidden="true" />
+
+        <div className="relative z-10 max-w-[680px]">
+          <p className="text-[0.78rem] tracking-[0.18em] uppercase font-bold mb-5 text-[#d97706]">
+            Learn Without Limits
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/courses" className="rounded-lg bg-amber-600 px-6 py-3 text-sm font-bold text-zinc-950 hover:bg-amber-500">
-              Explore courses
-            </Link>
-            <Link to="/register" className="rounded-lg border border-white/20 px-6 py-3 text-sm font-semibold text-stone-200 hover:border-white/35">
-              Create free account
-            </Link>
-          </div>
+          <h1
+            id="hero-heading"
+            className="font-['Playfair_Display',serif] font-black leading-[1.08] text-[#f5f2ec] mb-5"
+            style={{ fontSize: "clamp(2.5rem, 6vw, 4.5rem)" }}
+          >
+            Master Skills That<br />
+            <span className="text-[#d97706]">Actually Matter.</span>
+          </h1>
+          <p className="text-[1.05rem] text-[#9ca3af] leading-[1.7] max-w-[520px] mb-8">
+            Browse expert-crafted courses across development, design, and beyond.
+            Build real skills. Ship real projects.
+          </p>
+          <Link
+            to="/courses"
+            className="hero-cta inline-block px-8 py-3.5 rounded-lg font-bold no-underline text-[0.95rem] tracking-wide transition-all duration-200 bg-[#d97706] text-[#0c0c0e]"
+          >
+            Explore All Courses →
+          </Link>
+        </div>
+
+        <div
+          className="hero-float-badge absolute right-[8%] top-[35%] flex flex-col items-center gap-2 rounded-2xl p-6 border border-[rgba(255,255,255,0.08)] bg-[#16161a]"
+          style={{ animation: "float 4s ease-in-out infinite" }}
+          aria-hidden="true"
+        >
+          <span className="text-[2rem]">🎓</span>
+          <span className="text-[0.85rem] text-[#9ca3af] font-semibold">{courses.length} Courses</span>
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-6 py-14">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <h2 className="font-display text-3xl text-stone-100">Featured Courses</h2>
-          <Link to="/courses" className="text-sm font-semibold text-amber-500 hover:text-amber-400">
-            See all
+      {/* ── Featured Courses ── */}
+      <section className="max-w-[1200px] mx-auto px-8 py-16" aria-labelledby="featured-heading">
+        <div className="flex justify-between items-baseline mb-8">
+          <h2 id="featured-heading" className="font-['Playfair_Display',serif] text-[1.6rem] text-[#f5f2ec] m-0">
+            Featured Courses
+          </h2>
+          <Link to="/courses" className="no-underline text-[0.88rem] font-semibold text-[#d97706]">
+            See all →
           </Link>
         </div>
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {featuredCourses.map((course) => (
-            <CourseCard key={course.id} course={course} />
+        <ul
+          className="grid gap-6 list-none p-0 m-0"
+          style={{ gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" }}
+          aria-label="Featured courses"
+        >
+          {featured.map((course) => (
+            <li key={course.id}><CourseCard course={course} /></li>
           ))}
+        </ul>
+      </section>
+
+      {/* ── Categories ── */}
+      <section
+        className="border-t border-b border-[rgba(255,255,255,0.05)] py-16 px-8 bg-[#111114]"
+        aria-labelledby="categories-heading"
+      >
+        <div className="max-w-[1200px] mx-auto">
+          <h2 id="categories-heading" className="font-['Playfair_Display',serif] text-[1.6rem] text-[#f5f2ec] mb-6">
+            Browse by Category
+          </h2>
+          <ul
+            className="grid gap-4 list-none p-0 m-0"
+            style={{ gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))" }}
+            aria-label="Course categories"
+          >
+            {categories.map((cat) => {
+              const count = courses.filter((c) => c.category === cat).length;
+              return (
+                <li key={cat}>
+                  <Link
+                    to={`/courses?category=${encodeURIComponent(cat)}`}
+                    className="cat-card flex flex-col gap-1.5 p-5 rounded-xl no-underline border border-[rgba(255,255,255,0.07)] bg-[#0c0c0e] transition-all duration-200"
+                    aria-label={`${cat} — ${count} course${count !== 1 ? "s" : ""}`}
+                  >
+                    <span className="font-semibold text-[#e8e6e0] text-[0.95rem]">{cat}</span>
+                    <span className="text-[0.78rem] text-[#6b7280]">{count} course{count !== 1 ? "s" : ""}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </section>
 
-      <section className="border-y border-white/10 bg-zinc-900/50">
-        <div className="mx-auto w-full max-w-6xl px-6 py-14">
-          <h2 className="font-display text-3xl text-stone-100">Browse by Category</h2>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {categories.map(([category, count]) => (
-              <Link
-                key={category}
-                to={`/courses?category=${encodeURIComponent(category)}`}
-                className="rounded-xl border border-white/10 bg-zinc-950 p-4 transition hover:border-amber-500/45"
-              >
-                <p className="text-base font-semibold text-stone-100">{category}</p>
-                <p className="mt-1 text-sm text-zinc-400">{count} course{count > 1 ? "s" : ""}</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-6xl px-6 py-16">
-        <div className="rounded-2xl border border-white/10 bg-zinc-900 px-6 py-10 text-center">
-          <h2 className="font-display text-3xl text-stone-100">Ready to begin?</h2>
-          <p className="mt-3 text-zinc-400">Join and start learning today with curated, project-based content.</p>
-          <Link to="/register" className="mt-6 inline-block rounded-lg bg-amber-600 px-6 py-3 text-sm font-bold text-zinc-950 hover:bg-amber-500">
-            Create Account
-          </Link>
-        </div>
+      {/* ── CTA Banner ── */}
+      <section
+        className="border-t border-[rgba(255,255,255,0.06)] py-20 px-8 text-center bg-[#111114]"
+        aria-labelledby="cta-heading"
+      >
+        <h2 id="cta-heading" className="font-['Playfair_Display',serif] text-[2rem] text-[#f5f2ec] mb-3">
+          Ready to start learning?
+        </h2>
+        <p className="text-[#6b7280] mb-8">Join thousands of learners building real-world skills.</p>
+        <Link
+          to="/register"
+          className="inline-block px-8 py-3.5 rounded-lg font-bold no-underline text-[0.95rem] bg-[#d97706] text-[#0c0c0e]"
+        >
+          Create Free Account →
+        </Link>
       </section>
     </div>
   );
