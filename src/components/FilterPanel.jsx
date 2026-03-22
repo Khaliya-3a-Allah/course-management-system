@@ -17,54 +17,73 @@ export default function FilterPanel({ courses, filters, onChange }) {
     (filters.category?.length > 0) || (filters.level?.length > 0);
 
   return (
-    <aside className="flex min-w-52 flex-col gap-5" aria-label="Filter courses">
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-400">Filters</span>
+    <aside
+      className="flex flex-col gap-5 min-w-[200px]"
+      aria-label="Filter courses"
+    >
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <span className="text-[0.7rem] tracking-widest uppercase font-bold text-text-dim">
+          Filters
+        </span>
         {hasFilters && (
           <button
             onClick={() => onChange({ category: [], level: [] })}
-            className="text-xs font-semibold text-amber-600 transition hover:text-amber-500"
+            className="border-none text-[0.78rem] font-semibold cursor-pointer p-0 hover:opacity-80 transition-opacity text-brand bg-transparent"
+            aria-label="Clear all filters"
           >
             Clear all
           </button>
         )}
       </div>
 
-      <div className="flex flex-col gap-2">
-        <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500">Category</p>
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => toggle("category", cat)}
-            className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-              isActive("category", cat)
-                ? "border-amber-500/50 bg-amber-500/10 text-amber-500"
-                : "border-white/10 bg-zinc-900 text-zinc-300 hover:border-white/20"
-            }`}
-            aria-pressed={isActive("category", cat)}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
+      {/* Category group */}
+      <fieldset className="flex flex-col gap-1.5 border-none p-0 m-0">
+        <legend className="text-[0.72rem] tracking-widest uppercase font-bold text-text-faint mb-1.5">
+          Category
+        </legend>
+        <ul className="list-none flex flex-col gap-1.5" role="list">
+          {categories.map((cat) => (
+            <li key={cat}>
+              <button
+                onClick={() => toggle("category", cat)}
+                aria-pressed={isActive("category", cat)}
+                className={`w-full px-3.5 py-2 rounded-md text-[0.83rem] cursor-pointer text-left border transition-all ${
+                  isActive("category", cat)
+                    ? "bg-[rgba(217,119,6,0.1)] border-[rgba(217,119,6,0.4)] text-brand"
+                    : "bg-sidebar border-[rgba(255,255,255,0.08)] text-text-muted"
+                }`}
+              >
+                {cat}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </fieldset>
 
-      <div className="flex flex-col gap-2">
-        <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500">Level</p>
-        {LEVELS.map((lvl) => (
-          <button
-            key={lvl}
-            onClick={() => toggle("level", lvl)}
-            className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-              isActive("level", lvl)
-                ? "border-amber-500/50 bg-amber-500/10 text-amber-500"
-                : "border-white/10 bg-zinc-900 text-zinc-300 hover:border-white/20"
-            }`}
-            aria-pressed={isActive("level", lvl)}
-          >
-            {lvl}
-          </button>
-        ))}
-      </div>
+      {/* Level group */}
+      <fieldset className="flex flex-col gap-1.5 border-none p-0 m-0">
+        <legend className="text-[0.72rem] tracking-widest uppercase font-bold text-text-faint mb-1.5">
+          Level
+        </legend>
+        <ul className="list-none flex flex-col gap-1.5" role="list">
+          {LEVELS.map((lvl) => (
+            <li key={lvl}>
+              <button
+                onClick={() => toggle("level", lvl)}
+                aria-pressed={isActive("level", lvl)}
+                className={`w-full px-3.5 py-2 rounded-md text-[0.83rem] cursor-pointer text-left border transition-all ${
+                  isActive("level", lvl)
+                    ? "bg-[rgba(217,119,6,0.1)] border-[rgba(217,119,6,0.4)] text-brand"
+                    : "bg-sidebar border-[rgba(255,255,255,0.08)] text-text-muted"
+                }`}
+              >
+                {lvl}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </fieldset>
     </aside>
   );
 }
