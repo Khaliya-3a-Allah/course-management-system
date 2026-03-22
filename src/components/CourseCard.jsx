@@ -1,52 +1,80 @@
 import { Link } from "react-router-dom";
 
 const levelColors = {
-  Beginner: "bg-emerald-500 text-zinc-950",
-  Intermediate: "bg-amber-500 text-zinc-950",
-  Advanced: "bg-rose-500 text-zinc-950",
+  Beginner: "#22c55e",
+  Intermediate: "#f59e0b",
+  Advanced: "#ef4444",
 };
 
 export default function CourseCard({ course }) {
-  const levelBadge = levelColors[course.level] || "bg-zinc-500 text-zinc-950";
-
   return (
-    <Link
-      to={`/courses/${course.id}`}
-      aria-label={`View ${course.title}`}
-      className="group block overflow-hidden rounded-xl border border-white/10 bg-zinc-900 transition hover:-translate-y-1 hover:border-amber-500/45"
-    >
-      <div className="relative h-40 bg-zinc-950">
-        {course.thumbnail ? (
-          <img
-            src={course.thumbnail}
-            alt={`${course.title} thumbnail`}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-4xl">BOOK</div>
-        )}
-        <span className={`absolute left-2.5 top-2.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider ${levelBadge}`}>
-          {course.level}
-        </span>
-      </div>
-
-      <div className="flex h-full flex-col gap-1 p-4">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-amber-600">{course.category}</p>
-        <h3 className="font-display text-base leading-snug text-stone-100">{course.title}</h3>
-        <p className="text-xs text-zinc-400">by {course.instructorName}</p>
-
-        <div className="mt-auto flex items-center justify-between border-t border-white/10 pt-3">
-          <div className="flex items-center gap-0.5">
-            {[...Array(5)].map((_, i) => (
-              <span key={i} className={`text-xs ${i < Math.round(course.rating) ? "text-amber-500" : "text-zinc-700"}`}>
-                *
-              </span>
-            ))}
-            <span className="ml-1 text-xs text-zinc-400">{course.rating?.toFixed(1)}</span>
-          </div>
-          <span className="text-xs text-zinc-500">{course.modules?.length || 0} modules</span>
+    <article className="flex flex-col rounded-xl overflow-hidden border border-[rgba(255,255,255,0.07)] transition-all duration-200 hover:-translate-y-0.5 bg-surface">
+      <Link
+        to={`/courses/${course.id}`}
+        className="flex flex-col flex-1 no-underline"
+        aria-label={`View ${course.title}`}
+      >
+        {/* Thumbnail */}
+        <div className="relative h-40 bg-sidebar">
+          {course.thumbnail ? (
+            <img
+              src={course.thumbnail}
+              alt={`${course.title} thumbnail`}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="h-full flex items-center justify-center text-4xl" aria-hidden="true">
+              📚
+            </div>
+          )}
+          <span
+            className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[0.65rem] font-bold tracking-wider uppercase text-[#0c0c0e]"
+            style={{ backgroundColor: levelColors[course.level] || "#6b7280" }}
+            aria-label={`Level: ${course.level}`}
+          >
+            {course.level}
+          </span>
         </div>
-      </div>
-    </Link>
+
+        {/* Body */}
+        <div className="flex flex-col gap-1.5 flex-1 px-4 pt-3.5 pb-4">
+          <p className="text-[0.7rem] tracking-widest uppercase font-bold m-0 text-brand">
+            {course.category}
+          </p>
+
+          <h3 className="font-heading text-[1rem] m-0 leading-snug text-text-primary">
+            {course.title}
+          </h3>
+
+          <p className="text-[0.78rem] m-0 text-text-dim">
+            by {course.instructorName}
+          </p>
+
+          {/* Footer */}
+          <footer className="flex justify-between items-center mt-auto pt-3 border-t border-[rgba(255,255,255,0.05)]">
+            {/* Stars */}
+            <div className="flex items-center gap-px" aria-label={`Rating: ${course.rating?.toFixed(1)} out of 5`}>
+              {[...Array(5)].map((_, i) => (
+                <span
+                  key={i}
+                  className="text-[0.75rem]"
+                  aria-hidden="true"
+                  style={{ color: i < Math.round(course.rating) ? "#f59e0b" : "#374151" }}
+                >
+                  ★
+                </span>
+              ))}
+              <span className="text-[0.75rem] text-text-muted ml-1.5">
+                {course.rating?.toFixed(1)}
+              </span>
+            </div>
+
+            <span className="text-[0.73rem] text-text-faint">
+              {course.modules?.length || 0} modules
+            </span>
+          </footer>
+        </div>
+      </Link>
+    </article>
   );
 }
