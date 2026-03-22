@@ -7,3 +7,13 @@
 body { background-color: #0c0c0e; color: #e8e6e0; -webkit-font-smoothing: antialiased; font-family: 'DM Sans', sans-serif; }
 input, select, textarea, button { font-family: inherit; }
 button { background-color: transparent; }
+
+@keyframes courseCardIn {
+	from { opacity: 0; transform: translateY(10px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+
+.course-card-enter {
+	opacity: 0;
+	animation: courseCardIn 420ms ease forwards;
+}
