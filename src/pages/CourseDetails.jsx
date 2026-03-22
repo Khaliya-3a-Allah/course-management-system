@@ -1,132 +1,434 @@
-import { useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import Modal from "../components/Modal";
 
-const levelClasses = {
-  Beginner: "bg-emerald-500 text-zinc-950",
-  Intermediate: "bg-amber-500 text-zinc-950",
-  Advanced: "bg-rose-500 text-zinc-950",
-};
-
 export default function CourseDetails() {
   const { courseId } = useParams();
-  const { courses, currentUser, enrollCourse, saveCourse } = useAppContext();
+  const navigate = useNavigate();
+  const {
+    courses, currentUser,
+    enrollCourse, unenrollCourse,
+    saveCourse, unsaveCourse,
+    completedCourses, getCourseProgress,
+    updateCourse,
+  } = useAppContext();
 
-  const course = useMemo(() => courses.find((item) => item.id === courseId), [courses, courseId]);
-  const [expandedModuleId, setExpandedModuleId] = useState(null);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const course = courses.find((c) => c.id === courseId);
+
+  const [enrolled, setEnrolled] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [unenrollModal, setUnenrollModal] = useState(false);
+  const [expandedModule, setExpandedModule] = useState(null);
+  const [visible, setVisible] = useState(false);
+
+  const [hoveredStar, setHoveredStar] = useState(0);
+  const [selectedRating, setSelectedRating] = useState(0);
+  const [reviewMessage, setReviewMessage] = useState("");
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 50);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (currentUser && course) {
+      setEnrolled(currentUser.enrolledCourseIds?.includes(course.id) ?? false);
+      setSaved(currentUser.savedCourseIds?.includes(course.id) ?? false);
+    } else {
+      setEnrolled(false);
+      setSaved(false);
+    }
+  }, [currentUser?.enrolledCourseIds, currentUser?.savedCourseIds, course?.id]);
 
   if (!course) {
     return (
-      <div className="mx-auto max-w-3xl px-6 py-16 text-center">
-        <h1 className="font-display text-3xl text-stone-100">Course not found</h1>
-        <p className="mt-2 text-zinc-400">The course you requested does not exist.</p>
-        <Link to="/courses" className="mt-5 inline-block text-amber-500 hover:text-amber-400">Back to courses</Link>
+      <div className="min-h-[80vh] flex flex-col items-center justify-center bg-[#0c0c0e] text-[#9ca3af] p-8 text-center">
+        <span className="text-[3rem] mb-4">⚠</span>
+        <h2 className="font-['Playfair_Display',serif] text-[1.75rem] text-[#f5f2ec] mb-2">Course Not Found</h2>
+        <p className="text-[#6b7280] mb-6">The course you're looking for doesn't exist or has been removed.</p>
+        <Link to="/courses" className="text-[#d97706] no-underline font-semibold">← Back to All Courses</Link>
       </div>
     );
   }
 
-  const enrolled = currentUser?.enrolledCourseIds?.includes(course.id);
-  const saved = currentUser?.savedCourseIds?.includes(course.id);
+  const isCompleted = completedCourses.has(course.id);
+  const progress = getCourseProgress(course.id);
+  const canRate = isCompleted && enrolled && currentUser && !ratingSubmitted;
 
-  const requestAuthOrRun = (action) => {
-    if (!currentUser) {
-      setAuthModalOpen(true);
-      return;
-    }
-    action();
+  const handleEnroll = () => {
+    if (!currentUser) { setModalOpen(true); return; }
+    enrollCourse(course.id);
   };
 
+  const handleUnenroll = () => {
+    unenrollCourse(course.id);
+    setUnenrollModal(false);
+  };
+
+  const handleSaveToggle = () => {
+    if (!currentUser) { setModalOpen(true); return; }
+    if (saved) unsaveCourse(course.id);
+    else saveCourse(course.id);
+  };
+
+  const handleSubmitRating = () => {
+    if (selectedRating === 0) return;
+    const newRating = ((course.rating || 0) + selectedRating) / 2;
+    updateCourse({ ...course, rating: Math.round(newRating * 10) / 10 });
+    setRatingSubmitted(true);
+  };
+
+  const levelColors = { Beginner: "#22c55e", Intermediate: "#f59e0b", Advanced: "#ef4444" };
+
   return (
-    <div className="min-h-screen">
-      <section className="relative border-b border-white/10">
-        {course.thumbnail && <img src={course.thumbnail} alt={`${course.title} thumbnail`} className="h-64 w-full object-cover opacity-35" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-6xl px-6 pb-8">
-          <Link to="/courses" className="text-sm text-amber-500 hover:text-amber-400">Back to courses</Link>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${levelClasses[course.level] || "bg-zinc-500 text-zinc-950"}`}>{course.level}</span>
-            <span className="rounded-full border border-white/20 px-3 py-1 text-xs uppercase tracking-wider text-zinc-300">{course.category}</span>
-          </div>
-          <h1 className="font-display mt-3 text-4xl text-stone-100">{course.title}</h1>
-          <p className="mt-2 text-zinc-300">By {course.instructorName}</p>
-        </div>
-      </section>
+    <>
+      <div
+        className="min-h-screen bg-[#0c0c0e] text-[#e8e6e0]"
+        style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(20px)", transition: "opacity 0.6s ease, transform 0.6s ease" }}
+      >
+        <style>{`
+          .star-rate-btn { background: none !important; border: none !important; cursor: pointer; padding: 0 3px; font-size: 1.8rem; line-height: 1; transition: transform 0.1s; }
+          .star-rate-btn:hover { transform: scale(1.2); }
+          .star-rate-btn:disabled { cursor: default; }
+          .review-ta { width: 100%; background: #0c0c0e; border: 1px solid rgba(255,255,255,0.09); border-radius: 8px; color: #e8e6e0; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; padding: 0.65rem 0.9rem; resize: vertical; min-height: 80px; box-sizing: border-box; outline: none; transition: border-color 0.2s; }
+          .review-ta:focus { border-color: rgba(217,119,6,0.4); }
+          .review-ta::placeholder { color: #4b5563; }
+        `}</style>
 
-      <div className="mx-auto grid w-full max-w-6xl gap-8 px-6 py-8 lg:grid-cols-[1fr_320px]">
-        <main>
-          <section>
-            <h2 className="font-display text-2xl text-stone-100">About this course</h2>
-            <p className="mt-3 leading-7 text-zinc-400">{course.description}</p>
-          </section>
-
-          <section className="mt-10">
-            <h2 className="font-display text-2xl text-stone-100">Curriculum</h2>
-            <div className="mt-4 space-y-3">
-              {course.modules?.map((module, index) => (
-                <div key={module.id} className="overflow-hidden rounded-xl border border-white/10 bg-zinc-900">
-                  <button
-                    className="flex w-full items-center gap-4 px-4 py-3 text-left"
-                    onClick={() => setExpandedModuleId((id) => (id === module.id ? null : module.id))}
-                    aria-expanded={expandedModuleId === module.id}
-                  >
-                    <span className="font-display text-xl text-amber-600/50">{String(index + 1).padStart(2, "0")}</span>
-                    <span className="flex-1 text-sm font-medium text-stone-200">{module.title}</span>
-                    <span className="text-xs text-zinc-400">{module.lessons?.length || 0} lessons</span>
-                  </button>
-
-                  {expandedModuleId === module.id && (
-                    <div className="border-t border-white/10 px-4 py-3">
-                      <div className="space-y-2">
-                        {module.lessons?.map((lesson) => (
-                          <div key={lesson.id} className="flex items-center justify-between rounded-md bg-zinc-950 px-3 py-2">
-                            <p className="text-sm text-zinc-200">{lesson.title}</p>
-                            <span className="text-xs text-zinc-500">{lesson.duration}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <Link to={`/courses/${course.id}/modules/${module.id}`} className="mt-3 inline-block text-sm font-semibold text-amber-500 hover:text-amber-400">
-                        Open module
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              ))}
+        {/* Hero */}
+        <header className="relative min-h-[420px] flex items-end overflow-hidden">
+          <div className="absolute inset-0 z-[1]" style={{ background: "linear-gradient(to top, #0c0c0e 40%, rgba(12,12,14,0.5) 100%)" }} aria-hidden="true" />
+          {course.thumbnail && (
+            <img
+              src={course.thumbnail}
+              alt={`${course.title} thumbnail`}
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ filter: "grayscale(40%) brightness(0.35)" }}
+            />
+          )}
+          <div className="relative z-[2] px-8 py-10 max-w-[820px] w-full">
+            <Link to="/courses" className="text-[#d97706] no-underline text-[0.85rem] inline-block mb-4">← All Courses</Link>
+            <div className="flex gap-[0.6rem] mb-4 flex-wrap">
+              <span
+                className="px-3 py-[0.2rem] rounded-full text-[0.72rem] font-bold text-[#0c0c0e] uppercase"
+                style={{ backgroundColor: levelColors[course.level] || "#6b7280" }}
+              >
+                {course.level}
+              </span>
+              <span className="px-3 py-[0.2rem] rounded-full text-[0.72rem] font-semibold bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.15)] text-[#d1cfc8] uppercase">
+                {course.category}
+              </span>
+              {isCompleted && (
+                <span className="px-3 py-[0.2rem] rounded-full text-[0.72rem] font-bold bg-[rgba(34,197,94,0.15)] border border-[rgba(34,197,94,0.3)] text-[#22c55e]">
+                  ✓ Completed
+                </span>
+              )}
             </div>
-          </section>
-        </main>
+            <h1
+              className="font-['Playfair_Display',serif] font-bold leading-[1.15] text-[#f5f2ec] mb-[0.6rem]"
+              style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)" }}
+            >
+              {course.title}
+            </h1>
+            <p className="text-[0.95rem] text-[#9ca3af] mb-[0.8rem]">
+              By <span className="text-[#d97706] font-semibold">{course.instructorName}</span>
+            </p>
+            <div className="flex items-center gap-[2px]" aria-label={`Rating: ${course.rating?.toFixed(1)} out of 5`}>
+              {[...Array(5)].map((_, i) => (
+                <span key={i} className="text-[1.1rem]" style={{ color: i < Math.round(course.rating) ? "#f59e0b" : "#4b5563" }} aria-hidden="true">★</span>
+              ))}
+              <span className="text-[#9ca3af] text-[0.9rem] ml-2">{course.rating?.toFixed(1)}</span>
+            </div>
+          </div>
+        </header>
 
-        <aside className="h-fit rounded-xl border border-white/10 bg-zinc-900 p-5 lg:sticky lg:top-20">
-          <p className="text-sm text-zinc-400">{course.modules?.length || 0} modules</p>
-          <button
-            className={`mt-4 w-full rounded-lg px-4 py-2.5 text-sm font-bold ${enrolled ? "cursor-not-allowed border border-emerald-500/30 bg-zinc-800 text-emerald-400" : "bg-amber-600 text-zinc-950 hover:bg-amber-500"}`}
-            onClick={() => requestAuthOrRun(() => enrollCourse(course.id))}
-            disabled={Boolean(enrolled)}
+        {/* Body */}
+        <div
+          className="max-w-[1200px] mx-auto px-5 py-8 grid gap-8 items-start"
+          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))" }}
+        >
+          {/* Left column */}
+          <div>
+            {/* About */}
+            <section className="mb-10" aria-labelledby="about-heading">
+              <h2
+                id="about-heading"
+                className="font-['Playfair_Display',serif] text-[1.25rem] text-[#f5f2ec] mb-4 pb-2 border-b border-[rgba(255,255,255,0.07)] flex items-center gap-4"
+              >
+                About This Course
+              </h2>
+              <p className="text-[#9ca3af] leading-[1.75] text-[0.97rem]">{course.description}</p>
+            </section>
+
+            {/* Tags */}
+            {course.tags?.length > 0 && (
+              <section className="mb-10" aria-labelledby="topics-heading">
+                <h2
+                  id="topics-heading"
+                  className="font-['Playfair_Display',serif] text-[1.25rem] text-[#f5f2ec] mb-4 pb-2 border-b border-[rgba(255,255,255,0.07)] flex items-center gap-4"
+                >
+                  Topics
+                </h2>
+                <ul className="flex flex-wrap gap-2 list-none p-0 m-0" aria-label="Course topics">
+                  {course.tags.map((tag) => (
+                    <li key={tag}>
+                      <span className="bg-[rgba(217,119,6,0.1)] border border-[rgba(217,119,6,0.25)] text-[#d97706] px-3 py-1 rounded-full text-[0.78rem] font-medium">
+                        {tag}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {/* Rating */}
+            {isCompleted && enrolled && currentUser && (
+              <section className="mb-10" aria-labelledby="rate-heading">
+                <h2
+                  id="rate-heading"
+                  className="font-['Playfair_Display',serif] text-[1.25rem] text-[#f5f2ec] mb-4 pb-2 border-b border-[rgba(255,255,255,0.07)] flex items-center gap-4"
+                >
+                  Rate This Course
+                </h2>
+                {ratingSubmitted ? (
+                  <div className="flex items-start gap-4 bg-[#16161a] border border-[rgba(34,197,94,0.15)] rounded-xl p-5">
+                    <span className="text-[1.5rem] shrink-0" aria-hidden="true">⭐</span>
+                    <div>
+                      <p className="text-[0.9rem] text-[#22c55e] font-semibold mb-1">Thanks for your review!</p>
+                      <p className="text-[0.85rem] text-[#6b7280] m-0 leading-[1.5]">
+                        You rated this course {selectedRating} star{selectedRating !== 1 ? "s" : ""}.
+                        {reviewMessage && (
+                          <span className="block mt-1 italic text-[#6b7280]">"{reviewMessage}"</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-[#16161a] border border-[rgba(255,255,255,0.06)] rounded-xl p-6 flex flex-col gap-4">
+                    <p className="text-[0.9rem] text-[#9ca3af] m-0">You've completed this course. How would you rate it?</p>
+                    <div className="flex items-center gap-[0.1rem] flex-wrap" role="group" aria-label="Star rating">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          className="star-rate-btn"
+                          onClick={() => setSelectedRating(star)}
+                          onMouseEnter={() => setHoveredStar(star)}
+                          onMouseLeave={() => setHoveredStar(0)}
+                          aria-label={`Rate ${star} stars`}
+                          aria-pressed={selectedRating === star}
+                        >
+                          <span style={{ color: star <= (hoveredStar || selectedRating) ? "#f59e0b" : "#374151", transition: "color 0.12s" }}>★</span>
+                        </button>
+                      ))}
+                      {selectedRating > 0 && (
+                        <span className="text-[0.82rem] text-[#d97706] font-semibold ml-3">
+                          {["", "Poor", "Fair", "Good", "Very Good", "Excellent"][selectedRating]}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-[0.4rem]">
+                      <label className="text-[0.82rem] text-[#d1cfc8] font-semibold">
+                        Leave a review <span className="text-[#4b5563] font-normal">(optional)</span>
+                      </label>
+                      <textarea
+                        className="review-ta"
+                        placeholder="What did you think? What was most valuable?"
+                        value={reviewMessage}
+                        onChange={(e) => setReviewMessage(e.target.value)}
+                        rows={3}
+                      />
+                    </div>
+                    <button
+                      onClick={handleSubmitRating}
+                      disabled={selectedRating === 0}
+                      className="self-start px-6 py-3 bg-[#d97706] text-[#0c0c0e] border-none rounded-lg font-bold text-[0.88rem] transition-opacity duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      Submit Review
+                    </button>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* Curriculum */}
+            <section aria-labelledby="curriculum-heading">
+              <h2
+                id="curriculum-heading"
+                className="font-['Playfair_Display',serif] text-[1.25rem] text-[#f5f2ec] mb-4 pb-2 border-b border-[rgba(255,255,255,0.07)] flex items-center gap-4"
+              >
+                Course Curriculum
+                <span className="text-[0.75rem] font-normal text-[#6b7280] ml-auto">{course.modules?.length || 0} Modules</span>
+              </h2>
+              {course.modules?.length === 0 && (
+                <p className="text-[#6b7280] italic">No modules available yet.</p>
+              )}
+              <ul className="flex flex-col gap-[0.6rem] list-none p-0 m-0" aria-label="Course modules">
+                {course.modules?.map((mod, idx) => (
+                  <li key={mod.id}>
+                    <article className="bg-[#16161a] border border-[rgba(255,255,255,0.06)] rounded-[10px] overflow-hidden">
+                      <button
+                        className="w-full flex items-center gap-4 px-5 py-4 bg-transparent border-none cursor-pointer text-[#e8e6e0] text-left"
+                        onClick={() => setExpandedModule(expandedModule === mod.id ? null : mod.id)}
+                        aria-expanded={expandedModule === mod.id}
+                        aria-controls={`module-${mod.id}`}
+                      >
+                        <span className="font-['Playfair_Display',serif] text-[1.5rem] text-[rgba(217,119,6,0.4)] min-w-[2rem]">
+                          {String(idx + 1).padStart(2, "0")}
+                        </span>
+                        <span className="flex-1 font-medium text-[0.95rem]">{mod.title}</span>
+                        <span className="text-[0.78rem] text-[#6b7280]">{mod.lessons?.length || 0} lessons</span>
+                        <span className="text-[0.65rem] text-[#6b7280]" aria-hidden="true">{expandedModule === mod.id ? "▲" : "▼"}</span>
+                      </button>
+                      {expandedModule === mod.id && (
+                        <div id={`module-${mod.id}`} className="border-t border-[rgba(255,255,255,0.05)] px-5 pt-3 pb-5">
+                          <ul className="list-none p-0 m-0" aria-label={`Lessons in ${mod.title}`}>
+                            {mod.lessons?.map((lesson) => (
+                              <li key={lesson.id} className="flex items-center gap-3 py-2 border-b border-[rgba(255,255,255,0.04)]">
+                                <span className="text-[#d97706] text-[0.65rem]" aria-hidden="true">▶</span>
+                                <span className="flex-1 text-[0.88rem] text-[#d1cfc8]">{lesson.title}</span>
+                                <span className="text-[0.78rem] text-[#6b7280]">{lesson.duration}</span>
+                              </li>
+                            ))}
+                          </ul>
+                          {enrolled ? (
+                            <Link
+                              to={`/courses/${course.id}/modules/${mod.id}`}
+                              className="inline-block mt-4 text-[#d97706] no-underline text-[0.85rem] font-semibold"
+                            >
+                              Open Module →
+                            </Link>
+                          ) : currentUser ? (
+                            <p className="mt-4 text-[0.83rem] text-[#4b5563] italic">🔒 Enroll in this course to access modules</p>
+                          ) : (
+                            <button
+                              onClick={() => setModalOpen(true)}
+                              className="mt-4 px-4 py-[0.4rem] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-md text-[#4b5563] text-[0.83rem] font-medium cursor-pointer"
+                            >
+                              🔒 Sign in to access modules
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </article>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
+
+          {/* Side Card */}
+          <aside
+            className="bg-[#16161a] border border-[rgba(255,255,255,0.07)] rounded-[14px] overflow-hidden sticky top-[75px]"
+            aria-label="Course enrollment"
           >
-            {enrolled ? "Enrolled" : "Enroll now"}
-          </button>
-          <button
-            className={`mt-3 w-full rounded-lg px-4 py-2.5 text-sm font-semibold ${saved ? "cursor-not-allowed border border-rose-500/30 bg-zinc-800 text-rose-400" : "border border-white/15 text-zinc-200 hover:border-white/25"}`}
-            onClick={() => requestAuthOrRun(() => saveCourse(course.id))}
-            disabled={Boolean(saved)}
-          >
-            {saved ? "Saved" : "Save course"}
-          </button>
-        </aside>
+            {course.thumbnail && (
+              <img src={course.thumbnail} alt="" className="w-full h-[175px] object-cover" aria-hidden="true" />
+            )}
+            <div className="p-6">
+              <div className="flex justify-between text-[0.82rem] text-[#9ca3af] mb-5">
+                <span>📚 {course.modules?.length || 0} Modules</span>
+                <span>🎯 {course.modules?.reduce((acc, m) => acc + (m.lessons?.length || 0), 0)} Lessons</span>
+              </div>
+
+              {enrolled && !isCompleted && progress > 0 && (
+                <div className="mb-4" aria-label={`${progress}% complete`}>
+                  <div className="w-full h-[5px] bg-[rgba(255,255,255,0.07)] rounded-full overflow-hidden mb-[0.35rem]">
+                    <div
+                      className="h-full rounded-full transition-[width] duration-500"
+                      style={{ width: `${progress}%`, background: "linear-gradient(90deg, #d97706, #f59e0b)" }}
+                    />
+                  </div>
+                  <span className="text-[0.72rem] text-[#d97706] font-semibold">{progress}% complete</span>
+                </div>
+              )}
+
+              {isCompleted ? (
+                <button
+                  disabled
+                  className="w-full py-[0.85rem] bg-[rgba(34,197,94,0.1)] text-[#22c55e] border border-[rgba(34,197,94,0.3)] rounded-lg font-bold text-[0.9rem] cursor-default mb-3"
+                >
+                  ✓ Completed
+                </button>
+              ) : (
+                <button
+                  onClick={enrolled ? () => setUnenrollModal(true) : handleEnroll}
+                  aria-pressed={enrolled}
+                  className={`w-full py-[0.85rem] rounded-lg font-bold text-[0.9rem] cursor-pointer mb-3 border-none ${
+                    enrolled
+                      ? "bg-[#1f2937] text-[#22c55e] border border-[rgba(34,197,94,0.25)]"
+                      : "bg-[#d97706] text-[#0c0c0e]"
+                  }`}
+                >
+                  {enrolled ? "✓ Enrolled" : "Enroll Now"}
+                </button>
+              )}
+
+              <button
+                onClick={handleSaveToggle}
+                aria-pressed={saved}
+                className={`w-full py-3 bg-transparent rounded-lg font-medium text-[0.88rem] cursor-pointer border ${
+                  saved
+                    ? "border-[rgba(239,68,68,0.3)] text-[#ef4444]"
+                    : "border-[rgba(255,255,255,0.1)] text-[#9ca3af]"
+                }`}
+              >
+                {saved ? "♥ Saved" : "♡ Save Course"}
+              </button>
+
+              <hr className="border-none h-px bg-[rgba(255,255,255,0.06)] my-5" />
+              <p className="text-[0.78rem] text-[#4b5563] text-center">Enroll to track your progress and access all lessons.</p>
+            </div>
+          </aside>
+        </div>
       </div>
 
-      <Modal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} title="Sign in required">
-        <p className="text-sm text-zinc-400">You need to sign in before saving or enrolling.</p>
-        <div className="mt-5 flex gap-3">
-          <Link to="/login" className="flex-1 rounded-lg bg-amber-600 px-4 py-2 text-center text-sm font-bold text-zinc-950" onClick={() => setAuthModalOpen(false)}>
-            Login
+      {/* Auth Modal */}
+      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Sign In Required">
+        <p className="text-[#9ca3af] mb-6 text-[0.95rem] leading-[1.6]">
+          You need to be logged in to enroll or save courses.
+        </p>
+        <div className="flex gap-3">
+          <Link
+            to="/login"
+            onClick={() => setModalOpen(false)}
+            className="flex-1 py-3 bg-[#d97706] text-[#0c0c0e] rounded-lg text-center no-underline font-bold text-[0.9rem]"
+          >
+            Log In
           </Link>
-          <Link to="/register" className="flex-1 rounded-lg border border-white/15 px-4 py-2 text-center text-sm font-semibold text-zinc-200" onClick={() => setAuthModalOpen(false)}>
+          <Link
+            to="/register"
+            onClick={() => setModalOpen(false)}
+            className="flex-1 py-3 bg-transparent text-[#e8e6e0] rounded-lg text-center no-underline font-medium text-[0.9rem]"
+          >
             Register
           </Link>
         </div>
       </Modal>
-    </div>
+
+      {/* Unenroll Modal */}
+      <Modal isOpen={unenrollModal} onClose={() => setUnenrollModal(false)} title="Unenroll from Course?">
+        <p className="text-[#9ca3af] mb-6 text-[0.95rem] leading-[1.6]">
+          Are you sure you want to unenroll from{" "}
+          <strong className="text-[#f5f2ec]">{course.title}</strong>? You will lose access to all modules.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={handleUnenroll}
+            className="flex-1 py-3 bg-[#ef4444] text-white rounded-lg font-bold text-[0.9rem] border-none cursor-pointer"
+          >
+            Yes, Unenroll
+          </button>
+          <button
+            onClick={() => setUnenrollModal(false)}
+            className="flex-1 py-3 bg-transparent text-[#e8e6e0] rounded-lg font-medium text-[0.9rem] cursor-pointer border border-[rgba(255,255,255,0.12)]"
+          >
+            Cancel
+          </button>
+        </div>
+      </Modal>
+    </>
   );
 }
