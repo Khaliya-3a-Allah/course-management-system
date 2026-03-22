@@ -1,24 +1,37 @@
 export default function SearchBar({ value, onChange, placeholder = "Search courses..." }) {
   return (
-    <div className="relative flex w-full items-center">
-      <span className="pointer-events-none absolute left-3 text-xs text-zinc-500" aria-hidden="true">Search</span>
+    <search className="relative flex items-center w-full" role="search">
+      <label htmlFor="course-search" className="sr-only">
+        Search courses
+      </label>
+
+      <span
+        className="absolute left-3.5 text-[0.85rem] pointer-events-none"
+        aria-hidden="true"
+      >
+        🔍
+      </span>
+
       <input
+        id="course-search"
         type="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-3 pl-16 text-sm text-stone-200 outline-none transition placeholder:text-zinc-500 focus:border-amber-500/60"
         aria-label="Search courses"
+        autoComplete="off"
+        className="w-full py-3 pl-10 pr-10 rounded-lg text-[0.92rem] outline-none border border-[rgba(255,255,255,0.09)] bg-surface text-[#e8e6e0]"
       />
+
       {value && (
         <button
           onClick={() => onChange("")}
-          className="absolute right-3 text-sm text-zinc-500 transition hover:text-zinc-300"
           aria-label="Clear search"
+          className="absolute right-3.5 border-none cursor-pointer text-[0.85rem] p-1 leading-none text-text-dim hover:text-text-muted transition-colors"
         >
-          Clear
+          ✕
         </button>
       )}
-    </div>
+    </search>
   );
 }
