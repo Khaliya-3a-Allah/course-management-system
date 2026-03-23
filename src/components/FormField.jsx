@@ -2,10 +2,10 @@
  * Reusable form field wrapper — renders label, optional hint,
  * child input, and inline error in a consistent layout.
  */
-export default function FormField({ label, error, hint, children }) {
+export default function FormField({ label, htmlFor, error, hint, children }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[0.82rem] font-semibold text-text-secondary tracking-wide">
+      <label htmlFor={htmlFor} className="text-[0.82rem] font-semibold text-text-secondary tracking-wide">
         {label}
       </label>
       {hint && <p className="text-[0.73rem] text-text-faint m-0">{hint}</p>}

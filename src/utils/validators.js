@@ -148,9 +148,59 @@ export function validateCourseForm(data) {
     title: validateMinLength(data.title, 3, "Title"),
     category: validateRequired(data.category, "Category"),
     level: validateRequired(data.level, "Level"),
-    instructorName: validateRequired(data.instructorName, "Instructor name"),
     description: validateRequired(data.description, "Description"),
     thumbnail: data.thumbnail ? validateUrl(data.thumbnail) : "",
   };
   return { errors, isValid: Object.values(errors).every((e) => !e) };
+}
+
+export function validateModules(modules) {
+  const errors = {};
+  let isValid = true;
+
+  modules.forEach((mod, modIndex) => {
+    const modErrors = {};
+
+    const titleErr = validateRequired(mod.title, "Module title");
+    if (titleErr) {
+      modErrors.title = titleErr;
+      isValid = false;
+    }
+
+    const lessonErrors = {};
+    (mod.lessons || []).forEach((lesson, lesIndex) => {
+      const lesErr = {};
+
+      const lesTitleErr = validateRequired(lesson.title, "Lesson title");
+      if (lesTitleErr) {
+        lesErr.title = lesTitleErr;
+        isValid = false;
+      }
+
+      const durErr = validateRequired(lesson.duration, "Duration");
+      if (durErr) {
+        lesErr.duration = durErr;
+        isValid = false;
+      }
+
+      const urlErr = lesson.videoUrl ? validateOptionalUrl(lesson.videoUrl) : "";
+      if (urlErr) {
+        lesErr.videoUrl = urlErr;
+        isValid = false;
+      }
+
+      if (Object.keys(lesErr).length > 0) {
+        lessonErrors[lesIndex] = lesErr;
+      }
+    });
+
+    if (Object.keys(lessonErrors).length > 0) {
+      modErrors.lessons = lessonErrors;
+    }
+    if (Object.keys(modErrors).length > 0) {
+      errors[modIndex] = modErrors;
+    }
+  });
+
+  return { errors, isValid };
 }

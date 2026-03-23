@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
-import { validateCourseForm } from "../utils/validators";
-import { CATEGORIES, LEVELS } from "../data/constants";
+import { validateCourseForm, validateModules, sanitizeInput } from "../utils/validators";
+import { INTERESTS, LEVELS } from "../data/constants";
+import FormField, { INPUT_CLASS, buildInputBorder } from "../components/FormField";
+import AutocompleteInput from "../components/AutocompleteInput";
+import CurriculumBuilder from "../components/curriculum/CurriculumBuilder";
 
 const emptyForm = {
   title: "", category: "", level: "",
-  instructorName: "", description: "", thumbnail: "", tags: "",
+  description: "", thumbnail: "", tags: "",
 };
 
 export default function CourseForm() {
@@ -18,6 +21,7 @@ export default function CourseForm() {
   const existing = isEdit ? courses.find((c) => c.id === courseId) : null;
 
   const [form, setForm] = useState(emptyForm);
+  const [modules, setModules] = useState([]);
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -33,11 +37,16 @@ export default function CourseForm() {
         title: existing.title || "",
         category: existing.category || "",
         level: existing.level || "",
-        instructorName: existing.instructorName || "",
         description: existing.description || "",
         thumbnail: existing.thumbnail || "",
         tags: existing.tags?.join(", ") || "",
       });
+      setModules(
+        (existing.modules || []).map((mod) => ({
+          ...mod,
+          lessons: mod.lessons.map((les) => ({ ...les })),
+        }))
+      );
     }
   }, [isEdit, existing]);
 
@@ -57,24 +66,68 @@ export default function CourseForm() {
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: "" }));
   };
 
+  const handleModulesChange = (newModules) => {
+    setModules(newModules);
+    if (errors.modules) {
+      setErrors((prev) => {
+        const { modules: _removed, ...rest } = prev;
+        return rest;
+      });
+    }
+  };
+
   const handleSubmit = (e) => {
     e?.preventDefault();
-    const { errors: errs, isValid } = validateCourseForm(form);
-    setErrors(errs);
-    if (!isValid) return;
 
-    const tagsArr = form.tags.split(",").map((t) => t.trim()).filter(Boolean);
+    const { errors: formErrs, isValid: formValid } = validateCourseForm(form);
+    const { errors: modErrs, isValid: modsValid } = validateModules(modules);
+
+    const allErrors = { ...formErrs };
+    if (Object.keys(modErrs).length > 0) {
+      allErrors.modules = modErrs;
+    }
+
+    setErrors(allErrors);
+    if (!formValid || !modsValid) return;
+
+    const sanitizedForm = {
+      title: sanitizeInput(form.title),
+      category: form.category,
+      level: form.level,
+      description: sanitizeInput(form.description),
+      thumbnail: form.thumbnail.trim(),
+      tags: form.tags,
+    };
+    const tagsArr = sanitizedForm.tags.split(",").map((t) => sanitizeInput(t)).filter(Boolean);
+    const newCourseId = isEdit ? existing.id : `c-${Date.now()}`;
+
+    const finalModules = modules.map((mod) => ({
+      ...mod,
+      title: sanitizeInput(mod.title),
+      courseId: newCourseId,
+      lessons: mod.lessons.map((les) => ({
+        ...les,
+        title: sanitizeInput(les.title),
+        contentPreview: sanitizeInput(les.contentPreview),
+        moduleId: mod.id,
+      })),
+    }));
 
     if (isEdit) {
-      updateCourse({ ...existing, ...form, tags: tagsArr });
+      updateCourse({
+        ...existing,
+        ...sanitizedForm,
+        tags: tagsArr,
+        modules: finalModules,
+      });
     } else {
       addCourse({
-        id: `c-${Date.now()}`,
-        ...form,
+        id: newCourseId,
+        ...sanitizedForm,
         tags: tagsArr,
         rating: 0,
-        modules: [],
-        instructorName: form.instructorName || currentUser?.name || "",
+        modules: finalModules,
+        instructorName: currentUser?.name || "Unknown",
       });
     }
 
@@ -128,7 +181,7 @@ export default function CourseForm() {
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5" aria-label={isEdit ? "Edit course" : "Create course"}>
 
           {/* Title */}
-          <Field label="Course Title *" htmlFor="f-title" error={errors.title}>
+          <FormField label="Course Title *" htmlFor="f-title" error={errors.title}>
             <input
               id="f-title"
               value={form.title}
@@ -136,77 +189,41 @@ export default function CourseForm() {
               placeholder="e.g. React from Zero to Hero"
               aria-required="true"
               aria-invalid={!!errors.title}
-              aria-describedby={errors.title ? "title-err" : undefined}
-              className="w-full px-4 py-3 rounded-lg text-[0.92rem] text-[#e8e6e0] outline-none border transition-colors"
-              style={{
-                backgroundColor: "#111114",
-                borderColor: errors.title ? "#ef4444" : "rgba(255,255,255,0.09)",
-              }}
+              className={INPUT_CLASS}
+              style={buildInputBorder(errors.title)}
             />
-            {errors.title && <p id="title-err" role="alert" className="text-[0.78rem] text-red-400 m-0">{errors.title}</p>}
-          </Field>
+          </FormField>
 
-          {/* Category + Level row */}
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Category *" htmlFor="f-category" error={errors.category}>
-              <select
-                id="f-category"
-                value={form.category}
-                onChange={(e) => set("category", e.target.value)}
-                aria-required="true"
-                aria-invalid={!!errors.category}
-                className="w-full px-4 py-3 rounded-lg text-[0.92rem] text-[#e8e6e0] outline-none border transition-colors cursor-pointer"
-                style={{
-                  backgroundColor: "#111114",
-                  borderColor: errors.category ? "#ef4444" : "rgba(255,255,255,0.09)",
-                }}
-              >
-                <option value="">Select category</option>
-                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-              {errors.category && <p role="alert" className="text-[0.78rem] text-red-400 m-0">{errors.category}</p>}
-            </Field>
+          {/* Category */}
+          <FormField label="Category *" error={errors.category}>
+            <AutocompleteInput
+              options={INTERESTS}
+              value={form.category}
+              onChange={(val) => set("category", val)}
+              placeholder="Type to search categories..."
+              label="Select category"
+              error={errors.category}
+            />
+          </FormField>
 
-            <Field label="Level *" htmlFor="f-level" error={errors.level}>
-              <select
-                id="f-level"
-                value={form.level}
-                onChange={(e) => set("level", e.target.value)}
-                aria-required="true"
-                aria-invalid={!!errors.level}
-                className="w-full px-4 py-3 rounded-lg text-[0.92rem] text-[#e8e6e0] outline-none border transition-colors cursor-pointer"
-                style={{
-                  backgroundColor: "#111114",
-                  borderColor: errors.level ? "#ef4444" : "rgba(255,255,255,0.09)",
-                }}
-              >
-                <option value="">Select level</option>
-                {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
-              </select>
-              {errors.level && <p role="alert" className="text-[0.78rem] text-red-400 m-0">{errors.level}</p>}
-            </Field>
-          </div>
-
-          {/* Instructor */}
-          <Field label="Instructor Name *" htmlFor="f-instructor" error={errors.instructorName}>
-            <input
-              id="f-instructor"
-              value={form.instructorName}
-              onChange={(e) => set("instructorName", e.target.value)}
-              placeholder="e.g. Sarah Chen"
+          {/* Level */}
+          <FormField label="Level *" htmlFor="f-level" error={errors.level}>
+            <select
+              id="f-level"
+              value={form.level}
+              onChange={(e) => set("level", e.target.value)}
               aria-required="true"
-              aria-invalid={!!errors.instructorName}
-              className="w-full px-4 py-3 rounded-lg text-[0.92rem] text-[#e8e6e0] outline-none border transition-colors"
-              style={{
-                backgroundColor: "#111114",
-                borderColor: errors.instructorName ? "#ef4444" : "rgba(255,255,255,0.09)",
-              }}
-            />
-            {errors.instructorName && <p role="alert" className="text-[0.78rem] text-red-400 m-0">{errors.instructorName}</p>}
-          </Field>
+              aria-invalid={!!errors.level}
+              className={`${INPUT_CLASS} cursor-pointer`}
+              style={buildInputBorder(errors.level)}
+            >
+              <option value="">Select level</option>
+              {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
+            </select>
+          </FormField>
 
           {/* Description */}
-          <Field label="Description *" htmlFor="f-desc" error={errors.description}>
+          <FormField label="Description *" htmlFor="f-desc" error={errors.description}>
             <textarea
               id="f-desc"
               value={form.description}
@@ -215,47 +232,42 @@ export default function CourseForm() {
               aria-required="true"
               aria-invalid={!!errors.description}
               rows={5}
-              className="w-full px-4 py-3 rounded-lg text-[0.92rem] text-[#e8e6e0] outline-none border transition-colors resize-y"
-              style={{
-                backgroundColor: "#111114",
-                borderColor: errors.description ? "#ef4444" : "rgba(255,255,255,0.09)",
-                minHeight: "120px",
-              }}
+              className={`${INPUT_CLASS} resize-y`}
+              style={{ ...buildInputBorder(errors.description), minHeight: "120px" }}
             />
-            {errors.description && <p role="alert" className="text-[0.78rem] text-red-400 m-0">{errors.description}</p>}
-          </Field>
+          </FormField>
 
           {/* Thumbnail */}
-          <Field label="Thumbnail URL" htmlFor="f-thumb" hint="Optional — paste a direct image URL" error={errors.thumbnail}>
+          <FormField label="Thumbnail URL" htmlFor="f-thumb" hint="Optional — paste a direct image URL" error={errors.thumbnail}>
             <input
               id="f-thumb"
               value={form.thumbnail}
               onChange={(e) => set("thumbnail", e.target.value)}
               placeholder="https://example.com/image.jpg"
               aria-invalid={!!errors.thumbnail}
-              className="w-full px-4 py-3 rounded-lg text-[0.92rem] text-[#e8e6e0] outline-none border transition-colors"
-              style={{
-                backgroundColor: "#111114",
-                borderColor: errors.thumbnail ? "#ef4444" : "rgba(255,255,255,0.09)",
-              }}
+              className={INPUT_CLASS}
+              style={buildInputBorder(errors.thumbnail)}
             />
-            {errors.thumbnail && <p role="alert" className="text-[0.78rem] text-red-400 m-0">{errors.thumbnail}</p>}
-          </Field>
+          </FormField>
 
           {/* Tags */}
-          <Field label="Tags" htmlFor="f-tags" hint="Comma-separated, e.g. React, JavaScript, Frontend">
+          <FormField label="Tags" htmlFor="f-tags" hint="Comma-separated, e.g. React, JavaScript, Frontend">
             <input
               id="f-tags"
               value={form.tags}
               onChange={(e) => set("tags", e.target.value)}
               placeholder="React, JavaScript, Frontend"
-              className="w-full px-4 py-3 rounded-lg text-[0.92rem] text-[#e8e6e0] outline-none border transition-colors"
-              style={{
-                backgroundColor: "#111114",
-                borderColor: "rgba(255,255,255,0.09)",
-              }}
+              className={INPUT_CLASS}
+              style={buildInputBorder(false)}
             />
-          </Field>
+          </FormField>
+
+          {/* Curriculum */}
+          <CurriculumBuilder
+            modules={modules}
+            onModulesChange={handleModulesChange}
+            errors={errors.modules || {}}
+          />
 
           {/* Actions */}
           <div className="flex gap-3 mt-2">
@@ -279,20 +291,5 @@ export default function CourseForm() {
         </form>
       </div>
     </main>
-  );
-}
-
-function Field({ label, htmlFor, error, hint, children }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label
-        htmlFor={htmlFor}
-        className="text-[0.82rem] font-semibold text-text-secondary tracking-wide"
-      >
-        {label}
-      </label>
-      {hint && <p className="text-[0.75rem] text-text-faint m-0">{hint}</p>}
-      {children}
-    </div>
   );
 }
