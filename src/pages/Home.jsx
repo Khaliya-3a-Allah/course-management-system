@@ -3,6 +3,134 @@ import { Link } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import CourseCard from "../components/CourseCard";
 
+function AppIcon({ name, className = "w-6 h-6", strokeWidth = 1.9 }) {
+  const base = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+  };
+
+  const icons = {
+    spark: (
+      <>
+        <path {...base} d="M12 3v4M12 17v4M5.5 5.5l2.8 2.8M15.7 15.7l2.8 2.8M3 12h4M17 12h4M5.5 18.5l2.8-2.8M15.7 8.3l2.8-2.8" />
+      </>
+    ),
+    cap: (
+      <>
+        <path {...base} d="M3 9.5L12 5l9 4.5L12 14 3 9.5Z" />
+        <path {...base} d="M6.5 11.1V15c0 1.8 2.7 3.3 5.5 3.3s5.5-1.5 5.5-3.3v-3.9" />
+      </>
+    ),
+    users: (
+      <>
+        <path {...base} d="M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1" />
+        <circle {...base} cx="9.5" cy="8" r="3" />
+        <path {...base} d="M21 19v-1a3.5 3.5 0 0 0-2.8-3.4" />
+        <path {...base} d="M15.5 5.2a3 3 0 0 1 0 5.6" />
+      </>
+    ),
+    star: (
+      <>
+        <path {...base} d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9L12 3Z" />
+      </>
+    ),
+    trophy: (
+      <>
+        <path {...base} d="M8 4h8v3a4 4 0 0 1-8 0V4Z" />
+        <path {...base} d="M8 7H6a2 2 0 0 1-2-2V4h4" />
+        <path {...base} d="M16 7h2a2 2 0 0 0 2-2V4h-4" />
+        <path {...base} d="M12 11v4" />
+        <path {...base} d="M9 20h6" />
+        <path {...base} d="M10 15h4" />
+      </>
+    ),
+    chat: (
+      <>
+        <path {...base} d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H6l-3 3V11.5A8.5 8.5 0 0 1 11.5 3h1A8.5 8.5 0 0 1 21 11.5Z" />
+      </>
+    ),
+    globe: (
+      <>
+        <circle {...base} cx="12" cy="12" r="9" />
+        <path {...base} d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+      </>
+    ),
+    mobile: (
+      <>
+        <rect {...base} x="7" y="3" width="10" height="18" rx="2" />
+        <path {...base} d="M11 18h2" />
+      </>
+    ),
+    chart: (
+      <>
+        <path {...base} d="M4 19V5M10 19v-6M16 19V9M22 19H2" />
+      </>
+    ),
+    palette: (
+      <>
+        <path {...base} d="M12 4a8 8 0 0 0-8 8c0 3.3 2.7 6 6 6h2a2 2 0 0 0 0-4h-1a1.5 1.5 0 0 1 0-3H14a6 6 0 0 0-2-7Z" />
+      </>
+    ),
+    cog: (
+      <>
+        <circle {...base} cx="12" cy="12" r="3" />
+        <path {...base} d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a1 1 0 1 1-1.4 1.4l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V19a1 1 0 1 1-2 0v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a1 1 0 1 1-1.4-1.4l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H5a1 1 0 1 1 0-2h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a1 1 0 1 1 1.4-1.4l.1.1a1 1 0 0 0 1.1.2 1 1 0 0 0 .6-.9V5a1 1 0 1 1 2 0v.2a1 1 0 0 0 .6.9 1 1 0 0 0 1.1-.2l.1-.1a1 1 0 1 1 1.4 1.4l-.1.1a1 1 0 0 0-.2 1.1 1 1 0 0 0 .9.6H19a1 1 0 1 1 0 2h-.2a1 1 0 0 0-.9.6" />
+      </>
+    ),
+    cloud: (
+      <>
+        <path {...base} d="M18.5 18H7a4 4 0 1 1 .6-8A5.5 5.5 0 0 1 18.2 8a3.8 3.8 0 0 1 .3 10Z" />
+      </>
+    ),
+    brain: (
+      <>
+        <path {...base} d="M9 8a3 3 0 1 1 6 0v8a3 3 0 1 1-6 0V8Z" />
+        <path {...base} d="M9 11H7a2 2 0 1 1 0-4h1M15 11h2a2 2 0 1 0 0-4h-1M9 15H7a2 2 0 1 0 0 4h2M15 15h2a2 2 0 1 1 0 4h-2" />
+      </>
+    ),
+    book: (
+      <>
+        <path {...base} d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21V5.5Z" />
+        <path {...base} d="M8 7h8" />
+      </>
+    ),
+    instructor: (
+      <>
+        <circle {...base} cx="10" cy="8" r="3" />
+        <path {...base} d="M4 19a6 6 0 0 1 12 0" />
+        <path {...base} d="M18 7h3M19.5 5.5v3" />
+      </>
+    ),
+    rocket: (
+      <>
+        <path {...base} d="M14 4c3 1 6 4 7 7-2 .7-4.2 1-6 1.2A12 12 0 0 1 11.8 19c-.2-1.8.5-4 1.2-6C13 10.8 13.3 8 14 4Z" />
+        <path {...base} d="M9 15 5 19l1-4 3-1" />
+      </>
+    ),
+    unlock: (
+      <>
+        <rect {...base} x="5" y="11" width="14" height="10" rx="2" />
+        <path {...base} d="M9 11V8a3 3 0 1 1 6 0" />
+      </>
+    ),
+    award: (
+      <>
+        <circle {...base} cx="12" cy="8" r="4" />
+        <path {...base} d="m8.5 12.5-1.5 8 5-3 5 3-1.5-8" />
+      </>
+    ),
+  };
+
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true" focusable="false">
+      {icons[name] || icons.book}
+    </svg>
+  );
+}
+
 export default function Home() {
   const { courses } = useAppContext();
   const [visible, setVisible] = useState(false);
@@ -14,16 +142,46 @@ export default function Home() {
 
   const featured = courses.slice(0, 6);
   const categories = [...new Set(courses.map((c) => c.category))];
-  const categoryEmojis = {
-    "Web Development": "🌐",
-    "Mobile Development": "📱",
-    "Data Science": "📊",
-    "Design": "🎨",
-    "DevOps": "⚙️",
-    "Cloud": "☁️",
-    "AI/ML": "🤖",
-    "Other": "📚"
+  const categoryIcons = {
+    "Web Development": "globe",
+    "Mobile Development": "mobile",
+    "Data Science": "chart",
+    "Design": "palette",
+    DevOps: "cog",
+    Cloud: "cloud",
+    "AI/ML": "brain",
+    Other: "book",
   };
+
+  const stats = [
+    { num: "50K+", label: "Active Learners", icon: "users" },
+    { num: "98%", label: "Satisfaction Rate", icon: "star" },
+    { num: "5K+", label: "Project Completions", icon: "trophy" },
+    { num: "24/7", label: "Community Support", icon: "chat" },
+  ];
+
+  const features = [
+    {
+      title: "Expert Instructors",
+      description: "Learn from industry professionals with real-world experience",
+      icon: "instructor",
+    },
+    {
+      title: "Hands-On Projects",
+      description: "Build real projects and add them to your portfolio",
+      icon: "rocket",
+    },
+    {
+      title: "Lifetime Access",
+      description: "Access course materials anytime, anywhere, forever",
+      icon: "unlock",
+    },
+    {
+      title: "Certifications",
+      description: "Earn recognized certificates upon course completion",
+      icon: "award",
+    },
+  ];
 
   return (
     <div
@@ -66,8 +224,9 @@ export default function Home() {
 
         <div className="relative z-10 max-w-4xl">
           <div className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#d97706] via-[#d97706] to-[#ea580c] bg-opacity-20 border border-[rgba(217,119,6,0.5)]">
+            <AppIcon name="spark" className="w-3.5 h-3.5 text-[#fbbf24]" strokeWidth={2.2} />
             <span className="text-[0.75rem] tracking-[0.15em] uppercase font-bold text-[#fbbf24]">
-              ✨ Premium Learning Platform
+              Premium Learning Platform
             </span>
           </div>
 
@@ -126,7 +285,9 @@ export default function Home() {
           style={{ animation: "float 4s ease-in-out infinite", boxShadow: "0 0 30px rgba(217,119,6,0.1)" }}
           aria-hidden="true"
         >
-          <span className="text-4xl">🎓</span>
+          <div className="w-14 h-14 rounded-2xl border border-[rgba(217,119,6,0.4)] bg-[rgba(217,119,6,0.12)] flex items-center justify-center text-[#fbbf24]">
+            <AppIcon name="cap" className="w-8 h-8" strokeWidth={1.8} />
+          </div>
           <div className="text-center">
             <p className="text-lg font-bold text-[#f5f2ec] m-0">{courses.length}</p>
             <p className="text-xs text-[#9ca3af] m-0">Courses</p>
@@ -149,17 +310,14 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              { num: "50K+", label: "Active Learners", icon: "👥" },
-              { num: "98%", label: "Satisfaction Rate", icon: "⭐" },
-              { num: "5K+", label: "Project Completions", icon: "🏆" },
-              { num: "24/7", label: "Community Support", icon: "💬" }
-            ].map((stat, i) => (
+            {stats.map((stat, i) => (
               <div
                 key={i}
                 className="stat-item text-center p-8 rounded-2xl border border-[rgba(217,119,6,0.2)] bg-[#16161a] hover:bg-[#1a1a1f] transition-all duration-300"
               >
-                <p className="text-4xl mb-3">{stat.icon}</p>
+                <div className="w-14 h-14 mx-auto mb-3 rounded-xl border border-[rgba(217,119,6,0.35)] bg-[rgba(217,119,6,0.08)] flex items-center justify-center text-[#fbbf24]">
+                  <AppIcon name={stat.icon} className="w-7 h-7" />
+                </div>
                 <p className="text-3xl font-bold bg-gradient-to-r from-[#d97706] to-[#f59e0b] bg-clip-text text-transparent mb-2">
                   {stat.num}
                 </p>
@@ -218,7 +376,7 @@ export default function Home() {
           >
             {categories.map((cat, idx) => {
               const count = courses.filter((c) => c.category === cat).length;
-              const emoji = categoryEmojis[cat] || "📚";
+              const iconName = categoryIcons[cat] || "book";
               return (
                 <li key={cat} style={{ animation: `slide-up 0.6s ease forwards`, animationDelay: `${idx * 0.05}s` }}>
                   <Link
@@ -226,7 +384,9 @@ export default function Home() {
                     className="cat-card flex flex-col gap-3 p-6 rounded-2xl no-underline border border-[rgba(255,255,255,0.08)] bg-[#16161a] group"
                   >
                     <div className="flex items-start justify-between">
-                      <span className="text-3xl">{emoji}</span>
+                      <span className="w-11 h-11 rounded-xl border border-[rgba(217,119,6,0.35)] bg-[rgba(217,119,6,0.08)] flex items-center justify-center text-[#fbbf24]">
+                        <AppIcon name={iconName} className="w-5 h-5" />
+                      </span>
                       <span className="px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-[#d97706] to-[#f59e0b] bg-opacity-40 text-white">
                         {count} {count === 1 ? "course" : "courses"}
                       </span>
@@ -254,33 +414,14 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                title: "Expert Instructors",
-                description: "Learn from industry professionals with real-world experience",
-                icon: "👨‍🏫"
-              },
-              {
-                title: "Hands-On Projects",
-                description: "Build real projects and add them to your portfolio",
-                icon: "🚀"
-              },
-              {
-                title: "Lifetime Access",
-                description: "Access course materials anytime, anywhere, forever",
-                icon: "🔓"
-              },
-              {
-                title: "Certifications",
-                description: "Earn recognized certificates upon course completion",
-                icon: "🏅"
-              }
-            ].map((feature, i) => (
+            {features.map((feature, i) => (
               <div
                 key={i}
                 className="feature-card p-6 rounded-2xl border border-[rgba(217,119,6,0.15)] bg-gradient-to-br from-[#16161a] to-[#1a1a1f] hover:border-[rgba(217,119,6,0.4)]"
               >
-                <p className="text-4xl mb-3">{feature.icon}</p>
+                <div className="w-12 h-12 mb-3 rounded-xl border border-[rgba(217,119,6,0.35)] bg-[rgba(217,119,6,0.08)] flex items-center justify-center text-[#fbbf24]">
+                  <AppIcon name={feature.icon} className="w-6 h-6" />
+                </div>
                 <h3 className="text-[#f5f2ec] font-bold mb-2 text-lg">{feature.title}</h3>
                 <p className="text-[#9ca3af] text-sm leading-relaxed">{feature.description}</p>
               </div>
