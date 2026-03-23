@@ -196,7 +196,7 @@ export default function Register() {
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer leading-none p-1 text-text-dim hover:text-text-primary transition-colors flex items-center justify-center rounded"
                 >
-                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                  {showPassword ? <EyeIcon /> : <EyeOffIcon />}
                 </button>
               </div>
             </FormField>
@@ -221,7 +221,7 @@ export default function Register() {
                   aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                   className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer leading-none p-1 text-text-dim hover:text-text-primary transition-colors flex items-center justify-center rounded"
                 >
-                  {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                  {showConfirmPassword ? <EyeIcon /> : <EyeOffIcon />}
                 </button>
               </div>
             </FormField>
