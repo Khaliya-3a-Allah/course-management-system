@@ -2,9 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { validateCourseForm } from "../utils/validators";
-
-const CATEGORIES = ["Development", "Design", "Backend", "Data Science", "DevOps", "Marketing"];
-const LEVELS = ["Beginner", "Intermediate", "Advanced"];
+import { CATEGORIES, LEVELS } from "../data/constants";
 
 const emptyForm = {
   title: "", category: "", level: "",
