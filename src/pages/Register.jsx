@@ -1,58 +1,117 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
-import { validateRegisterForm } from "../utils/validators";
+import { validateRegisterForm, sanitizeInput } from "../utils/validators";
+import { CATEGORIES, INTERESTS } from "../data/constants";
+import { EyeIcon, EyeOffIcon } from "../components/Icons";
+import FormField, { buildInputStyle } from "../components/FormField";
+import AutocompleteSelect from "../components/AutocompleteSelect";
+import Modal from "../components/Modal";
+import TermsContent from "../components/TermsContent";
 
 export default function Register() {
-  const { users, setUsers, setCurrentUser, currentUser } = useAppContext();
+  const { users, setUsers, setCurrentUser, currentUser, addToast } = useAppContext();
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "", role: "student" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: "student",
+    phone: "",
+    bio: "",
+    interests: [],
+    expertise: "",
+    website: "",
+    acceptTerms: false,
+  });
   const [errors, setErrors] = useState({});
   const [authError, setAuthError] = useState("");
-  const [showPw, setShowPw] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   useEffect(() => {
-    if (currentUser) { navigate("/dashboard"); return; }
-    const t = setTimeout(() => setVisible(true), 50);
-    return () => clearTimeout(t);
+    if (currentUser) {
+      navigate("/dashboard");
+      return;
+    }
+    const timer = setTimeout(() => setVisible(true), 50);
+    return () => clearTimeout(timer);
   }, [currentUser, navigate]);
 
-  const set = (key, value) => {
+  function updateField(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
-    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: "" }));
+    if (errors[key]) {
+      setErrors((prev) => ({ ...prev, [key]: "" }));
+    }
     setAuthError("");
-  };
+  }
 
-  const handleSubmit = () => {
-    const { errors: errs, isValid } = validateRegisterForm(form);
-    setErrors(errs);
+  function handleRoleChange(newRole) {
+    setForm((prev) => ({
+      ...prev,
+      role: newRole,
+      interests: [],
+      expertise: "",
+      website: "",
+    }));
+    setErrors((prev) => ({ ...prev, role: "", expertise: "", website: "" }));
+    setAuthError("");
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    if (isSubmitting) return;
+
+    const { errors: validationErrors, isValid } = validateRegisterForm(form);
+    setErrors(validationErrors);
     if (!isValid) return;
 
-    const emailTaken = users.some(
-      (u) => u.email.toLowerCase() === form.email.toLowerCase()
+    const emailAlreadyExists = users.some(
+      (user) => user.email.toLowerCase() === form.email.toLowerCase()
     );
-    if (emailTaken) {
+    if (emailAlreadyExists) {
       setAuthError("An account with this email already exists.");
       return;
     }
 
-    const newUser = {
+    setIsSubmitting(true);
+
+    try {
+    const baseUser = {
       id: `u-${Date.now()}`,
-      name: form.name.trim(),
+      name: sanitizeInput(form.name),
       email: form.email.trim().toLowerCase(),
       password: form.password,
       role: form.role,
+      phone: sanitizeInput(form.phone),
+      bio: sanitizeInput(form.bio),
       createdCourseIds: [],
       enrolledCourseIds: [],
       savedCourseIds: [],
     };
 
+    const newUser =
+      form.role === "student"
+        ? { ...baseUser, interests: form.interests.filter((i) => INTERESTS.includes(i)) }
+        : {
+            ...baseUser,
+            expertise: sanitizeInput(form.expertise),
+            website: form.website.trim(),
+          };
+
     setUsers((prev) => [...prev, newUser]);
     setCurrentUser(newUser);
+    addToast("Account created successfully!", "success");
     navigate("/dashboard");
-  };
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
     <div
@@ -67,149 +126,367 @@ export default function Register() {
         <div style={styles.cardAccent} />
         <div style={styles.cardInner}>
           <h1 style={styles.title}>Create account.</h1>
-          <p style={styles.sub}>Start learning today — it's free.</p>
+          <p style={styles.subtitle}>Start learning today — it's free.</p>
 
           {authError && (
             <div style={styles.authError} role="alert">{authError}</div>
           )}
 
-          <div style={styles.form}>
-            {/* Name */}
-            <Field label="Full Name" error={errors.name}>
+          <form onSubmit={handleSubmit} style={styles.form} noValidate>
+            <FormField label="Full Name" error={errors.name}>
               <input
-                id="reg-name"
+                id="register-name"
                 type="text"
                 value={form.name}
-                onChange={(e) => set("name", e.target.value)}
+                onChange={(e) => updateField("name", e.target.value)}
                 placeholder="Alex Jordan"
-                style={inputStyle(errors.name)}
+                style={buildInputStyle(errors.name)}
                 autoComplete="name"
+                maxLength={50}
               />
-            </Field>
+            </FormField>
 
-            {/* Email */}
-            <Field label="Email" error={errors.email}>
+            <FormField label="Email" error={errors.email}>
               <input
-                id="reg-email"
+                id="register-email"
                 type="email"
                 value={form.email}
-                onChange={(e) => set("email", e.target.value)}
+                onChange={(e) => updateField("email", e.target.value)}
                 placeholder="you@example.com"
-                style={inputStyle(errors.email)}
+                style={buildInputStyle(errors.email)}
                 autoComplete="email"
               />
-            </Field>
+            </FormField>
 
-            {/* Password */}
-            <Field label="Password" error={errors.password} hint="Minimum 6 characters">
-              <div style={styles.passwordWrap}>
+            <FormField label="Password" error={errors.password} hint="Minimum 6 characters">
+              <div style={styles.passwordWrapper}>
                 <input
-                  id="reg-password"
-                  type={showPw ? "text" : "password"}
+                  id="register-password"
+                  type={showPassword ? "text" : "password"}
                   value={form.password}
-                  onChange={(e) => set("password", e.target.value)}
-                  placeholder="••••••••"
-                  style={{ ...inputStyle(errors.password), paddingRight: "3rem" }}
+                  onChange={(e) => updateField("password", e.target.value)}
+                  placeholder="Enter your password"
+                  style={{ ...buildInputStyle(errors.password), paddingRight: "3rem" }}
                   autoComplete="new-password"
                 />
-                <button type="button" onClick={() => setShowPw((v) => !v)} style={styles.eyeBtn} aria-label="Toggle password">
-                  {showPw ? "🙈" : "👁"}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((p) => !p)}
+                  style={styles.eyeButton}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
               </div>
-            </Field>
+            </FormField>
 
-            {/* Confirm Password */}
-            <Field label="Confirm Password" error={errors.confirmPassword}>
-              <input
-                id="reg-confirm"
-                type={showPw ? "text" : "password"}
-                value={form.confirmPassword}
-                onChange={(e) => set("confirmPassword", e.target.value)}
-                placeholder="••••••••"
-                style={inputStyle(errors.confirmPassword)}
-                autoComplete="new-password"
-                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-              />
-            </Field>
-
-            {/* Role */}
-            <Field label="I am a..." error={errors.role}>
-              <div style={styles.roleRow} role="group" aria-label="Select role">
-                {["student", "instructor"].map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => set("role", r)}
-                    style={form.role === r ? { ...styles.roleBtn, ...styles.roleBtnActive } : styles.roleBtn}
-                    aria-pressed={form.role === r}
-                  >
-                    <span>{r === "student" ? "📚" : "🎓"}</span>
-                    <span style={styles.roleBtnLabel}>{r.charAt(0).toUpperCase() + r.slice(1)}</span>
-                  </button>
-                ))}
+            <FormField label="Confirm Password" error={errors.confirmPassword}>
+              <div style={styles.passwordWrapper}>
+                <input
+                  id="register-confirm-password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={form.confirmPassword}
+                  onChange={(e) => updateField("confirmPassword", e.target.value)}
+                  placeholder="Re-enter your password"
+                  style={{ ...buildInputStyle(errors.confirmPassword), paddingRight: "3rem" }}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((p) => !p)}
+                  style={styles.eyeButton}
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
               </div>
-            </Field>
+            </FormField>
 
-            <button onClick={handleSubmit} style={styles.submitBtn}>
-              Create Account
+            {/* Role Selection */}
+            <FormField label="I am a..." error={errors.role}>
+              <div style={styles.roleRow} role="group" aria-label="Select role">
+                {["student", "instructor"].map((roleOption) => {
+                  const isSelected = form.role === roleOption;
+                  const label = roleOption.charAt(0).toUpperCase() + roleOption.slice(1);
+                  const emoji = roleOption === "student" ? "\uD83D\uDCDA" : "\uD83C\uDF93";
+                  return (
+                    <button
+                      key={roleOption}
+                      type="button"
+                      onClick={() => handleRoleChange(roleOption)}
+                      style={isSelected ? { ...styles.roleButton, ...styles.roleButtonActive } : styles.roleButton}
+                      aria-pressed={isSelected}
+                    >
+                      <span>{emoji}</span>
+                      <span style={styles.roleButtonLabel}>{label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </FormField>
+
+            <FormField label="Phone Number" error={errors.phone} hint="Optional">
+              <input
+                id="register-phone"
+                type="tel"
+                value={form.phone}
+                onChange={(e) => updateField("phone", e.target.value)}
+                placeholder="+961 71 123 456"
+                style={buildInputStyle(errors.phone)}
+                autoComplete="tel"
+              />
+            </FormField>
+
+            <FormField label="About Me" error={errors.bio} hint="Optional — max 300 characters">
+              <textarea
+                id="register-bio"
+                value={form.bio}
+                onChange={(e) => updateField("bio", e.target.value)}
+                placeholder="Tell us a bit about yourself..."
+                rows={3}
+                maxLength={300}
+                style={{ ...buildInputStyle(errors.bio), resize: "vertical", minHeight: "80px" }}
+              />
+            </FormField>
+
+            {/* Student: Interests */}
+            {form.role === "student" && (
+              <FormField label="Interests" hint="Optional — select up to 10 topics">
+                <AutocompleteSelect
+                  options={INTERESTS}
+                  selected={form.interests}
+                  onChange={(updated) => updateField("interests", updated)}
+                  placeholder="Type to search interests..."
+                  maxSelections={10}
+                  label="Select interests"
+                />
+              </FormField>
+            )}
+
+            {/* Instructor: Expertise + Website */}
+            {form.role === "instructor" && (
+              <>
+                <FormField label="Area of Expertise" error={errors.expertise} hint="Optional">
+                  <input
+                    id="register-expertise"
+                    type="text"
+                    value={form.expertise}
+                    onChange={(e) => updateField("expertise", e.target.value)}
+                    placeholder="e.g., Full-Stack Development"
+                    style={buildInputStyle(errors.expertise)}
+                    maxLength={100}
+                  />
+                </FormField>
+                <FormField label="Portfolio / Website" error={errors.website} hint="Optional">
+                  <input
+                    id="register-website"
+                    type="url"
+                    value={form.website}
+                    onChange={(e) => updateField("website", e.target.value)}
+                    placeholder="https://yoursite.com"
+                    style={buildInputStyle(errors.website)}
+                    autoComplete="url"
+                  />
+                </FormField>
+              </>
+            )}
+
+            {/* Terms & Conditions */}
+            <div style={styles.termsRow}>
+              <input
+                id="register-terms"
+                type="checkbox"
+                checked={form.acceptTerms}
+                onChange={(e) => updateField("acceptTerms", e.target.checked)}
+                style={styles.checkbox}
+              />
+              <label htmlFor="register-terms" style={styles.termsLabel}>
+                I agree to the{" "}
+                <button
+                  type="button"
+                  onClick={() => setShowTermsModal(true)}
+                  style={styles.termsLink}
+                >
+                  Terms &amp; Conditions
+                </button>
+              </label>
+            </div>
+            {errors.acceptTerms && (
+              <p style={styles.errorText} role="alert">{errors.acceptTerms}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              style={{
+                ...styles.submitButton,
+                opacity: isSubmitting ? 0.6 : 1,
+                cursor: isSubmitting ? "not-allowed" : "pointer",
+              }}
+            >
+              {isSubmitting ? "Creating account..." : "Create Account"}
             </button>
-          </div>
+          </form>
 
           <p style={styles.switchText}>
             Already have an account?{" "}
-            <Link to="/login" style={styles.switchLink}>Sign in →</Link>
+            <Link to="/login" style={styles.switchLink}>Sign in</Link>
           </p>
         </div>
       </div>
+
+      <Modal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        title="Terms & Conditions"
+      >
+        <TermsContent />
+      </Modal>
+
+      <style>{focusStyles}</style>
     </div>
   );
 }
 
-function Field({ label, error, hint, children }) {
-  return (
-    <div style={styles.field}>
-      <label style={styles.label}>{label}</label>
-      {hint && <p style={styles.hint}>{hint}</p>}
-      {children}
-      {error && <p style={styles.errorText} role="alert">{error}</p>}
-    </div>
-  );
-}
-
-const inputStyle = (hasError) => ({
-  width: "100%",
-  padding: "0.8rem 1rem",
-  backgroundColor: "#0c0c0e",
-  border: `1px solid ${hasError ? "#ef4444" : "rgba(255,255,255,0.09)"}`,
-  borderRadius: "8px",
-  color: "#e8e6e0",
-  fontFamily: "'DM Sans', sans-serif",
-  fontSize: "0.93rem",
-  outline: "none",
-  boxSizing: "border-box",
-  transition: "border-color 0.2s",
-});
+const focusStyles = `
+  #register-name:focus,
+  #register-email:focus,
+  #register-password:focus,
+  #register-confirm-password:focus,
+  #register-phone:focus,
+  #register-bio:focus,
+  #register-expertise:focus,
+  #register-website:focus {
+    border-color: rgba(217, 119, 6, 0.5) !important;
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.12);
+  }
+`;
 
 const styles = {
-  page: { minHeight: "100vh", backgroundColor: "#0c0c0e", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem", fontFamily: "'DM Sans', sans-serif" },
-  card: { width: "100%", maxWidth: "440px", backgroundColor: "#16161a", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "16px", overflow: "hidden" },
-  cardAccent: { height: "4px", background: "linear-gradient(90deg, #d97706, #f59e0b)" },
+  page: {
+    minHeight: "100vh",
+    backgroundColor: "#0c0c0e",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "2rem",
+    fontFamily: "'DM Sans', sans-serif",
+  },
+  card: {
+    width: "100%",
+    maxWidth: "440px",
+    backgroundColor: "#16161a",
+    border: "1px solid rgba(255,255,255,0.07)",
+    borderRadius: "16px",
+    overflow: "hidden",
+  },
+  cardAccent: {
+    height: "4px",
+    background: "linear-gradient(90deg, #d97706, #f59e0b)",
+  },
   cardInner: { padding: "2.25rem" },
-  title: { fontFamily: "'Playfair Display', serif", fontSize: "1.75rem", color: "#f5f2ec", margin: "0 0 0.3rem" },
-  sub: { color: "#6b7280", fontSize: "0.9rem", marginBottom: "1.75rem" },
-  authError: { backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: "8px", padding: "0.75rem 1rem", color: "#f87171", fontSize: "0.85rem", marginBottom: "1.25rem" },
+  title: {
+    fontFamily: "'Playfair Display', serif",
+    fontSize: "1.75rem",
+    color: "#f5f2ec",
+    margin: "0 0 0.3rem",
+  },
+  subtitle: { color: "#6b7280", fontSize: "0.9rem", marginBottom: "1.75rem" },
+  authError: {
+    backgroundColor: "rgba(239,68,68,0.08)",
+    border: "1px solid rgba(239,68,68,0.25)",
+    borderRadius: "8px",
+    padding: "0.75rem 1rem",
+    color: "#f87171",
+    fontSize: "0.85rem",
+    marginBottom: "1.25rem",
+  },
   form: { display: "flex", flexDirection: "column", gap: "1rem" },
-  field: { display: "flex", flexDirection: "column", gap: "0.35rem" },
-  label: { fontSize: "0.82rem", fontWeight: 600, color: "#d1cfc8", letterSpacing: "0.03em" },
-  hint: { fontSize: "0.73rem", color: "#4b5563", margin: "0 0 0.15rem" },
-  errorText: { fontSize: "0.77rem", color: "#ef4444", margin: 0 },
-  passwordWrap: { position: "relative" },
-  eyeBtn: { position: "absolute", right: "0.75rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "0.95rem", lineHeight: 1, padding: "0.2rem" },
+  passwordWrapper: { position: "relative" },
+  eyeButton: {
+    position: "absolute",
+    right: "0.75rem",
+    top: "50%",
+    transform: "translateY(-50%)",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    lineHeight: 1,
+    padding: "0.3rem",
+    color: "#6b7280",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "4px",
+    transition: "color 0.15s",
+  },
   roleRow: { display: "flex", gap: "0.75rem" },
-  roleBtn: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "0.35rem", padding: "0.85rem", backgroundColor: "#0c0c0e", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontSize: "0.85rem", color: "#6b7280", transition: "all 0.15s" },
-  roleBtnActive: { borderColor: "rgba(217,119,6,0.5)", backgroundColor: "rgba(217,119,6,0.08)", color: "#d97706" },
-  roleBtnLabel: { fontWeight: 600, fontSize: "0.82rem" },
-  submitBtn: { padding: "0.85rem", backgroundColor: "#d97706", color: "#0c0c0e", border: "none", borderRadius: "8px", fontWeight: 700, fontSize: "0.93rem", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", marginTop: "0.25rem" },
-  switchText: { textAlign: "center", fontSize: "0.85rem", color: "#6b7280", marginTop: "1.5rem" },
+  roleButton: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "0.35rem",
+    padding: "0.85rem",
+    backgroundColor: "#0c0c0e",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontFamily: "'DM Sans', sans-serif",
+    fontSize: "0.85rem",
+    color: "#6b7280",
+    transition: "all 0.15s",
+  },
+  roleButtonActive: {
+    borderColor: "rgba(217,119,6,0.5)",
+    backgroundColor: "rgba(217,119,6,0.08)",
+    color: "#d97706",
+  },
+  roleButtonLabel: { fontWeight: 600, fontSize: "0.82rem" },
+  termsRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "0.6rem",
+    marginTop: "0.25rem",
+  },
+  checkbox: {
+    width: "18px",
+    height: "18px",
+    accentColor: "#d97706",
+    marginTop: "2px",
+    cursor: "pointer",
+    flexShrink: 0,
+  },
+  termsLabel: { fontSize: "0.83rem", color: "#9ca3af", lineHeight: 1.4 },
+  termsLink: {
+    background: "none",
+    border: "none",
+    color: "#d97706",
+    cursor: "pointer",
+    fontWeight: 600,
+    fontSize: "0.83rem",
+    fontFamily: "'DM Sans', sans-serif",
+    padding: 0,
+    textDecoration: "underline",
+  },
+  errorText: { fontSize: "0.77rem", color: "#ef4444", margin: 0 },
+  submitButton: {
+    padding: "0.85rem",
+    backgroundColor: "#d97706",
+    color: "#0c0c0e",
+    border: "none",
+    borderRadius: "8px",
+    fontWeight: 700,
+    fontSize: "0.93rem",
+    fontFamily: "'DM Sans', sans-serif",
+    marginTop: "0.25rem",
+    transition: "opacity 0.2s, transform 0.1s",
+  },
+  switchText: {
+    textAlign: "center",
+    fontSize: "0.85rem",
+    color: "#6b7280",
+    marginTop: "1.5rem",
+  },
   switchLink: { color: "#d97706", textDecoration: "none", fontWeight: 600 },
 };

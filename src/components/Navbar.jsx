@@ -4,7 +4,7 @@ import { useAppContext } from "../context/AppContext";
 import Modal from "./Modal";
 
 export default function Navbar() {
-  const { currentUser, setCurrentUser } = useAppContext();
+  const { currentUser, logout } = useAppContext();
   const location = useLocation();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -13,7 +13,7 @@ export default function Navbar() {
   const isActive = (path) => location.pathname === path;
 
   const confirmLogout = () => {
-    setCurrentUser(null);
+    logout();
     setLogoutModal(false);
     setMenuOpen(false);
     navigate("/");

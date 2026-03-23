@@ -1,17 +1,63 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { mockCourses } from "../data/mockCourses";
 import { mockUsers } from "../data/mockUsers";
 
 const AppContext = createContext(null);
 
+const STORAGE_KEY = "courseApp_currentUser";
+
+function loadUserFromStorage() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return null;
+    return JSON.parse(stored);
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
+    return null;
+  }
+}
+
+function saveUserToStorage(user) {
+  try {
+    if (user) {
+      const { password, ...safeUser } = user;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(safeUser));
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  } catch {
+    // Storage full or unavailable — continue without persistence
+  }
+}
+
 export function AppProvider({ children }) {
   const [courses, setCourses] = useState(mockCourses);
   const [users, setUsers] = useState(mockUsers);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(loadUserFromStorage);
   // courseId -> { lessonId: true }
   const [lessonProgress, setLessonProgress] = useState({});
   // set of completed courseIds
   const [completedCourses, setCompletedCourses] = useState(new Set());
+  // toast notifications
+  const [toasts, setToasts] = useState([]);
+
+  useEffect(() => {
+    saveUserToStorage(currentUser);
+  }, [currentUser]);
+
+  const logout = useCallback(() => {
+    setCurrentUser(null);
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
+
+  function addToast(message, variant = "success") {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, variant }]);
+  }
+
+  function removeToast(id) {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  }
 
   function enrollCourse(courseId) {
     if (!currentUser) return;
@@ -113,12 +159,14 @@ export function AppProvider({ children }) {
         courses, setCourses,
         users, setUsers,
         currentUser, setCurrentUser,
+        logout,
         addCourse, updateCourse,
         enrollCourse, unenrollCourse,
         saveCourse, unsaveCourse,
         lessonProgress, markLessonComplete,
         completedCourses, markCourseComplete,
         getCourseProgress,
+        toasts, addToast, removeToast,
       }}
     >
       {children}
