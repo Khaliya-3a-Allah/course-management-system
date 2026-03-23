@@ -143,8 +143,8 @@ export default function Dashboard() {
         <div role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
           {activeData.length === 0 ? (
             <section className="flex flex-col items-center py-20 px-8 text-center gap-3">
-              <span className="text-[2.5rem]" aria-hidden="true">
-                {activeTab === "enrolled" ? "📚" : activeTab === "completed" ? "🎓" : activeTab === "saved" ? "♡" : "✏️"}
+              <span className="text-[0.74rem] uppercase tracking-[0.2em] text-[#6b7280]" aria-hidden="true">
+                {activeTab}
               </span>
               <p className="text-[#6b7280] text-[0.92rem]">{emptyMessages[activeTab]}</p>
               {activeTab === "created" ? (
@@ -180,7 +180,7 @@ export default function Dashboard() {
                     {/* Completed badge */}
                     {activeTab === "completed" && (
                       <span className="self-start text-[0.78rem] font-semibold px-3 py-1 rounded-full border border-[rgba(34,197,94,0.2)] bg-[rgba(34,197,94,0.08)] text-[#22c55e]">
-                        🎓 Completed
+                        Completed
                       </span>
                     )}
 
@@ -207,7 +207,7 @@ export default function Dashboard() {
                           to={`/course-form/${course.id}`}
                           className="px-4 py-1.5 rounded-md text-[0.8rem] font-medium no-underline border border-[rgba(255,255,255,0.08)] bg-[#1a1a1e] text-[#9ca3af]"
                         >
-                          ✏️ Edit
+                          Edit
                         </Link>
                       )}
                     </div>

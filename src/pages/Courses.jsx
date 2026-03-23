@@ -4,6 +4,7 @@ import { useAppContext } from "../context/AppContext";
 import CourseCard from "../components/CourseCard";
 import SearchBar from "../components/SearchBar";
 import FilterPanel from "../components/FilterPanel";
+import { SearchIcon } from "../components/Icons";
 
 export default function Courses() {
   const { courses } = useAppContext();
@@ -199,7 +200,9 @@ export default function Courses() {
                 className="flex flex-col items-center py-20 px-8 text-center rounded-xl border border-[rgba(255,255,255,0.07)] bg-surface"
                 aria-label="No results"
               >
-                <span className="text-[2.5rem] mb-4" aria-hidden="true">🔍</span>
+                <span className="text-text-dim mb-4" aria-hidden="true">
+                  <SearchIcon size={40} />
+                </span>
                 <h2 className="font-['Playfair_Display',serif] text-[1.4rem] text-[#f5f2ec] mb-2">
                   No courses found
                 </h2>

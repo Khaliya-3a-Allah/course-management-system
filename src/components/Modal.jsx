@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { CloseIcon } from "./Icons";
 
 export default function Modal({ isOpen, onClose, title, children }) {
   // Close on Escape
@@ -47,7 +48,7 @@ export default function Modal({ isOpen, onClose, title, children }) {
             aria-label="Close dialog"
             className="border-none cursor-pointer text-[1rem] leading-none p-1 ml-auto text-text-dim hover:text-text-muted transition-colors bg-transparent"
           >
-            ✕
+            <CloseIcon size={16} />
           </button>
         </header>
 

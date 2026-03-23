@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { BookIcon } from "./Icons";
 
 const levelColors = {
   Beginner: "#22c55e",
@@ -24,8 +25,8 @@ export default function CourseCard({ course }) {
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
             />
           ) : (
-            <div className="h-full flex items-center justify-center text-4xl" aria-hidden="true">
-              📚
+            <div className="h-full flex items-center justify-center text-text-dim" aria-hidden="true">
+              <BookIcon size={34} />
             </div>
           )}
           <span

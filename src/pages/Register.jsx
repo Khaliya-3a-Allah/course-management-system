@@ -232,7 +232,6 @@ export default function Register() {
                 {["student", "instructor"].map((roleOption) => {
                   const isSelected = form.role === roleOption;
                   const roleLabel = roleOption.charAt(0).toUpperCase() + roleOption.slice(1);
-                  const emoji = roleOption === "student" ? "\uD83D\uDCDA" : "\uD83C\uDF93";
                   return (
                     <button
                       key={roleOption}
@@ -246,7 +245,6 @@ export default function Register() {
                         color: isSelected ? "#d97706" : "#6b7280",
                       }}
                     >
-                      <span aria-hidden="true">{emoji}</span>
                       <span className="font-semibold text-[0.82rem]">{roleLabel}</span>
                     </button>
                   );

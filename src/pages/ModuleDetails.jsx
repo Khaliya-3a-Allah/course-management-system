@@ -672,7 +672,7 @@ export default function ModuleDetails() {
         ) : (
           <div className="flex flex-col gap-6">
             <div className="text-center">
-              <span className="text-[3rem] block mb-3" aria-hidden="true">⭐</span>
+              <span className="text-[0.75rem] tracking-[0.22em] uppercase text-text-faint block mb-3" aria-hidden="true">Review</span>
               <h2 className="font-heading text-[1.5rem] text-text-primary mb-2">Thanks for your review!</h2>
               <p className="text-[0.9rem] text-text-muted leading-relaxed m-0">
                 You rated <strong className="text-text-primary">{course.title}</strong> {selectedRating} star{selectedRating !== 1 ? "s" : ""}.

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import Modal from "../components/Modal";
+import { BookIcon, CapIcon, LockIcon, TargetIcon } from "../components/Icons";
 
 export default function CourseDetails() {
   const { courseId } = useParams();
@@ -46,7 +47,7 @@ export default function CourseDetails() {
   if (!course) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center bg-[#0c0c0e] text-[#9ca3af] p-8 text-center">
-        <span className="text-[3rem] mb-4">⚠</span>
+        <span className="text-[0.75rem] tracking-[0.22em] uppercase text-[#6b7280] mb-4">Not Found</span>
         <h2 className="font-['Playfair_Display',serif] text-[1.75rem] text-[#f5f2ec] mb-2">Course Not Found</h2>
         <p className="text-[#6b7280] mb-6">The course you're looking for doesn't exist or has been removed.</p>
         <Link to="/courses" className="text-[#d97706] no-underline font-semibold">← Back to All Courses</Link>
@@ -195,7 +196,7 @@ export default function CourseDetails() {
                 </h2>
                 {ratingSubmitted ? (
                   <div className="flex items-start gap-4 bg-[#16161a] border border-[rgba(34,197,94,0.15)] rounded-xl p-5">
-                    <span className="text-[1.5rem] shrink-0" aria-hidden="true">⭐</span>
+                    <span className="text-[#22c55e] shrink-0 mt-0.5" aria-hidden="true"><CapIcon size={22} /></span>
                     <div>
                       <p className="text-[0.9rem] text-[#22c55e] font-semibold mb-1">Thanks for your review!</p>
                       <p className="text-[0.85rem] text-[#6b7280] m-0 leading-[1.5]">
@@ -301,13 +302,13 @@ export default function CourseDetails() {
                               Open Module →
                             </Link>
                           ) : currentUser ? (
-                            <p className="mt-4 text-[0.83rem] text-[#4b5563] italic">🔒 Enroll in this course to access modules</p>
+                            <p className="mt-4 text-[0.83rem] text-[#4b5563] italic inline-flex items-center gap-2"><LockIcon size={14} /> Enroll in this course to access modules</p>
                           ) : (
                             <button
                               onClick={() => setModalOpen(true)}
-                              className="mt-4 px-4 py-[0.4rem] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-md text-[#4b5563] text-[0.83rem] font-medium cursor-pointer"
+                              className="mt-4 px-4 py-[0.4rem] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-md text-[#4b5563] text-[0.83rem] font-medium cursor-pointer inline-flex items-center gap-2"
                             >
-                              🔒 Sign in to access modules
+                              <LockIcon size={14} /> Sign in to access modules
                             </button>
                           )}
                         </div>
@@ -329,8 +330,8 @@ export default function CourseDetails() {
             )}
             <div className="p-6">
               <div className="flex justify-between text-[0.82rem] text-[#9ca3af] mb-5">
-                <span>📚 {course.modules?.length || 0} Modules</span>
-                <span>🎯 {course.modules?.reduce((acc, m) => acc + (m.lessons?.length || 0), 0)} Lessons</span>
+                <span className="inline-flex items-center gap-1.5"><BookIcon size={14} /> {course.modules?.length || 0} Modules</span>
+                <span className="inline-flex items-center gap-1.5"><TargetIcon size={14} /> {course.modules?.reduce((acc, m) => acc + (m.lessons?.length || 0), 0)} Lessons</span>
               </div>
 
               {enrolled && !isCompleted && progress > 0 && (

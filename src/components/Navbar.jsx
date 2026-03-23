@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import Modal from "./Modal";
+import { CloseIcon, MenuIcon } from "./Icons";
 
 export default function Navbar() {
   const { currentUser, logout } = useAppContext();
@@ -110,8 +111,8 @@ export default function Navbar() {
             aria-expanded={menuOpen}
             aria-controls="mobile-menu"
           >
-            <span className="text-[1.3rem] text-text-secondary" aria-hidden="true">
-              {menuOpen ? "✕" : "☰"}
+            <span className="text-text-secondary" aria-hidden="true">
+              {menuOpen ? <CloseIcon size={20} /> : <MenuIcon size={20} />}
             </span>
           </button>
         </nav>
