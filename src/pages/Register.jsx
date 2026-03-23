@@ -93,6 +93,7 @@ export default function Register() {
         createdCourseIds: [],
         enrolledCourseIds: [],
         savedCourseIds: [],
+        completedCourseIds: [],
       };
 
       const newUser =

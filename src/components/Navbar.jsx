@@ -54,6 +54,7 @@ export default function Navbar() {
               { to: "/", label: "Home" },
               { to: "/courses", label: "Courses" },
               ...(currentUser ? [{ to: "/dashboard", label: "Dashboard" }] : []),
+              ...(currentUser ? [{ to: "/certificates", label: "Certificates" }] : []),
             ].map(({ to, label }) => (
               <li key={to}>
                 <Link
@@ -129,6 +130,7 @@ export default function Navbar() {
                 { to: "/", label: "Home" },
                 { to: "/courses", label: "Courses" },
                 ...(currentUser ? [{ to: "/dashboard", label: "Dashboard" }] : []),
+                ...(currentUser ? [{ to: "/certificates", label: "Certificates" }] : []),
               ].map(({ to, label }) => (
                 <li key={to}>
                   <Link

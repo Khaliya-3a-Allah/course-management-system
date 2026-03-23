@@ -45,6 +45,10 @@ export function AppProvider({ children }) {
     saveUserToStorage(currentUser);
   }, [currentUser]);
 
+  useEffect(() => {
+    setCompletedCourses(new Set(currentUser?.completedCourseIds || []));
+  }, [currentUser?.id, currentUser?.completedCourseIds]);
+
   const logout = useCallback(() => {
     setCurrentUser(null);
     localStorage.removeItem(STORAGE_KEY);
@@ -76,6 +80,7 @@ export function AppProvider({ children }) {
     const updated = {
       ...currentUser,
       enrolledCourseIds: currentUser.enrolledCourseIds.filter((id) => id !== courseId),
+      completedCourseIds: (currentUser.completedCourseIds || []).filter((id) => id !== courseId),
     };
     setCurrentUser(updated);
     setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
@@ -140,6 +145,18 @@ export function AppProvider({ children }) {
 
   /** Mark entire course as completed */
   function markCourseComplete(courseId) {
+    if (!currentUser) return;
+
+    const completedCourseIds = currentUser.completedCourseIds || [];
+    if (completedCourseIds.includes(courseId)) return;
+
+    const updated = {
+      ...currentUser,
+      completedCourseIds: [...completedCourseIds, courseId],
+    };
+
+    setCurrentUser(updated);
+    setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
     setCompletedCourses((prev) => new Set([...prev, courseId]));
   }
 
