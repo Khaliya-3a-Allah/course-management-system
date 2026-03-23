@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { validateRegisterForm, sanitizeInput } from "../utils/validators";
-import { CATEGORIES, INTERESTS } from "../data/constants";
+import { INTERESTS } from "../data/constants";
 import { EyeIcon, EyeOffIcon } from "../components/Icons";
-import FormField, { buildInputStyle } from "../components/FormField";
+import FormField, { INPUT_CLASS, buildInputBorder } from "../components/FormField";
 import AutocompleteSelect from "../components/AutocompleteSelect";
 import Modal from "../components/Modal";
 import TermsContent from "../components/TermsContent";
@@ -82,32 +82,32 @@ export default function Register() {
     setIsSubmitting(true);
 
     try {
-    const baseUser = {
-      id: `u-${Date.now()}`,
-      name: sanitizeInput(form.name),
-      email: form.email.trim().toLowerCase(),
-      password: form.password,
-      role: form.role,
-      phone: sanitizeInput(form.phone),
-      bio: sanitizeInput(form.bio),
-      createdCourseIds: [],
-      enrolledCourseIds: [],
-      savedCourseIds: [],
-    };
+      const baseUser = {
+        id: `u-${Date.now()}`,
+        name: sanitizeInput(form.name),
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+        role: form.role,
+        phone: sanitizeInput(form.phone),
+        bio: sanitizeInput(form.bio),
+        createdCourseIds: [],
+        enrolledCourseIds: [],
+        savedCourseIds: [],
+      };
 
-    const newUser =
-      form.role === "student"
-        ? { ...baseUser, interests: form.interests.filter((i) => INTERESTS.includes(i)) }
-        : {
-            ...baseUser,
-            expertise: sanitizeInput(form.expertise),
-            website: form.website.trim(),
-          };
+      const newUser =
+        form.role === "student"
+          ? { ...baseUser, interests: form.interests.filter((i) => INTERESTS.includes(i)) }
+          : {
+              ...baseUser,
+              expertise: sanitizeInput(form.expertise),
+              website: form.website.trim(),
+            };
 
-    setUsers((prev) => [...prev, newUser]);
-    setCurrentUser(newUser);
-    addToast("Account created successfully!", "success");
-    navigate("/dashboard");
+      setUsers((prev) => [...prev, newUser]);
+      setCurrentUser(newUser);
+      addToast("Account created successfully!", "success");
+      navigate("/dashboard");
     } finally {
       setIsSubmitting(false);
     }
@@ -122,20 +122,29 @@ export default function Register() {
         transition: "opacity 0.5s ease, transform 0.5s ease",
       }}
     >
-      <div style={styles.card}>
-        <div style={styles.cardAccent} />
-        <div style={styles.cardInner}>
-          <h1 style={styles.title}>Create account.</h1>
-          <p style={styles.subtitle}>Start learning today — it's free.</p>
+      <article
+        className="w-full max-w-[440px] bg-surface rounded-2xl overflow-hidden"
+        style={{ border: "1px solid rgba(255,255,255,0.07)" }}
+        aria-label="Registration form"
+      >
+        <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, #d97706, #f59e0b)" }} aria-hidden="true" />
+
+        <div className="p-9">
+          <h1 className="font-heading text-[1.75rem] text-text-primary mb-1">Create account.</h1>
+          <p className="text-text-dim text-sm mb-7">Start learning today — it&apos;s free.</p>
 
           {authError && (
-            <div role="alert" aria-live="assertive" className="rounded-lg px-4 py-3 text-sm mb-5"
-              style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#f87171" }}>
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="rounded-lg px-4 py-3 text-sm mb-5"
+              style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#f87171" }}
+            >
               {authError}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} style={styles.form} noValidate>
+          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4" aria-label="Create account">
             <FormField label="Full Name" error={errors.name}>
               <input
                 id="register-name"
@@ -143,9 +152,12 @@ export default function Register() {
                 value={form.name}
                 onChange={(e) => updateField("name", e.target.value)}
                 placeholder="Alex Jordan"
-                style={buildInputStyle(errors.name)}
+                className={INPUT_CLASS}
+                style={buildInputBorder(errors.name)}
                 autoComplete="name"
                 maxLength={50}
+                aria-required="true"
+                aria-invalid={!!errors.name}
               />
             </FormField>
 
@@ -156,27 +168,33 @@ export default function Register() {
                 value={form.email}
                 onChange={(e) => updateField("email", e.target.value)}
                 placeholder="you@example.com"
-                style={buildInputStyle(errors.email)}
+                className={INPUT_CLASS}
+                style={buildInputBorder(errors.email)}
                 autoComplete="email"
+                aria-required="true"
+                aria-invalid={!!errors.email}
               />
             </FormField>
 
             <FormField label="Password" error={errors.password} hint="Minimum 6 characters">
-              <div style={styles.passwordWrapper}>
+              <div className="relative">
                 <input
                   id="register-password"
                   type={showPassword ? "text" : "password"}
                   value={form.password}
                   onChange={(e) => updateField("password", e.target.value)}
                   placeholder="Enter your password"
-                  style={{ ...buildInputStyle(errors.password), paddingRight: "3rem" }}
+                  className={`${INPUT_CLASS} pr-12`}
+                  style={buildInputBorder(errors.password)}
                   autoComplete="new-password"
+                  aria-required="true"
+                  aria-invalid={!!errors.password}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((p) => !p)}
-                  style={styles.eyeButton}
                   aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer leading-none p-1 text-text-dim hover:text-text-primary transition-colors flex items-center justify-center rounded"
                 >
                   {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
@@ -184,21 +202,24 @@ export default function Register() {
             </FormField>
 
             <FormField label="Confirm Password" error={errors.confirmPassword}>
-              <div style={styles.passwordWrapper}>
+              <div className="relative">
                 <input
                   id="register-confirm-password"
                   type={showConfirmPassword ? "text" : "password"}
                   value={form.confirmPassword}
                   onChange={(e) => updateField("confirmPassword", e.target.value)}
                   placeholder="Re-enter your password"
-                  style={{ ...buildInputStyle(errors.confirmPassword), paddingRight: "3rem" }}
+                  className={`${INPUT_CLASS} pr-12`}
+                  style={buildInputBorder(errors.confirmPassword)}
                   autoComplete="new-password"
+                  aria-required="true"
+                  aria-invalid={!!errors.confirmPassword}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword((p) => !p)}
-                  style={styles.eyeButton}
                   aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer leading-none p-1 text-text-dim hover:text-text-primary transition-colors flex items-center justify-center rounded"
                 >
                   {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
@@ -207,21 +228,26 @@ export default function Register() {
 
             {/* Role Selection */}
             <FormField label="I am a..." error={errors.role}>
-              <div style={styles.roleRow} role="group" aria-label="Select role">
+              <div className="flex gap-3" role="group" aria-label="Select your role">
                 {["student", "instructor"].map((roleOption) => {
                   const isSelected = form.role === roleOption;
-                  const label = roleOption.charAt(0).toUpperCase() + roleOption.slice(1);
+                  const roleLabel = roleOption.charAt(0).toUpperCase() + roleOption.slice(1);
                   const emoji = roleOption === "student" ? "\uD83D\uDCDA" : "\uD83C\uDF93";
                   return (
                     <button
                       key={roleOption}
                       type="button"
                       onClick={() => handleRoleChange(roleOption)}
-                      style={isSelected ? { ...styles.roleButton, ...styles.roleButtonActive } : styles.roleButton}
                       aria-pressed={isSelected}
+                      className="flex-1 flex flex-col items-center gap-1.5 py-3.5 rounded-lg cursor-pointer font-body text-[0.85rem] transition-all"
+                      style={{
+                        backgroundColor: isSelected ? "rgba(217,119,6,0.08)" : "#0c0c0e",
+                        border: `1px solid ${isSelected ? "rgba(217,119,6,0.5)" : "rgba(255,255,255,0.08)"}`,
+                        color: isSelected ? "#d97706" : "#6b7280",
+                      }}
                     >
-                      <span>{emoji}</span>
-                      <span style={styles.roleButtonLabel}>{label}</span>
+                      <span aria-hidden="true">{emoji}</span>
+                      <span className="font-semibold text-[0.82rem]">{roleLabel}</span>
                     </button>
                   );
                 })}
@@ -235,7 +261,8 @@ export default function Register() {
                 value={form.phone}
                 onChange={(e) => updateField("phone", e.target.value)}
                 placeholder="+961 71 123 456"
-                style={buildInputStyle(errors.phone)}
+                className={INPUT_CLASS}
+                style={buildInputBorder(errors.phone)}
                 autoComplete="tel"
               />
             </FormField>
@@ -248,7 +275,8 @@ export default function Register() {
                 placeholder="Tell us a bit about yourself..."
                 rows={3}
                 maxLength={300}
-                style={{ ...buildInputStyle(errors.bio), resize: "vertical", minHeight: "80px" }}
+                className={INPUT_CLASS}
+                style={{ ...buildInputBorder(errors.bio), resize: "vertical", minHeight: "80px" }}
               />
             </FormField>
 
@@ -276,7 +304,8 @@ export default function Register() {
                     value={form.expertise}
                     onChange={(e) => updateField("expertise", e.target.value)}
                     placeholder="e.g., Full-Stack Development"
-                    style={buildInputStyle(errors.expertise)}
+                    className={INPUT_CLASS}
+                    style={buildInputBorder(errors.expertise)}
                     maxLength={100}
                   />
                 </FormField>
@@ -287,7 +316,8 @@ export default function Register() {
                     value={form.website}
                     onChange={(e) => updateField("website", e.target.value)}
                     placeholder="https://yoursite.com"
-                    style={buildInputStyle(errors.website)}
+                    className={INPUT_CLASS}
+                    style={buildInputBorder(errors.website)}
                     autoComplete="url"
                   />
                 </FormField>
@@ -295,34 +325,35 @@ export default function Register() {
             )}
 
             {/* Terms & Conditions */}
-            <div style={styles.termsRow}>
+            <div className="flex items-start gap-2.5 mt-1">
               <input
                 id="register-terms"
                 type="checkbox"
                 checked={form.acceptTerms}
                 onChange={(e) => updateField("acceptTerms", e.target.checked)}
-                style={styles.checkbox}
+                className="w-[18px] h-[18px] mt-0.5 cursor-pointer shrink-0"
+                style={{ accentColor: "#d97706" }}
               />
-              <label htmlFor="register-terms" style={styles.termsLabel}>
+              <label htmlFor="register-terms" className="text-[0.83rem] text-text-muted leading-snug">
                 I agree to the{" "}
                 <button
                   type="button"
                   onClick={() => setShowTermsModal(true)}
-                  style={styles.termsLink}
+                  className="bg-transparent border-none text-brand cursor-pointer font-semibold text-[0.83rem] font-body p-0 underline"
                 >
                   Terms &amp; Conditions
                 </button>
               </label>
             </div>
             {errors.acceptTerms && (
-              <p style={styles.errorText} role="alert">{errors.acceptTerms}</p>
+              <p className="text-[0.77rem] text-red-400 m-0" role="alert">{errors.acceptTerms}</p>
             )}
 
             <button
               type="submit"
               disabled={isSubmitting}
+              className="mt-1 w-full py-3.5 rounded-lg font-bold text-[0.93rem] font-body transition-opacity hover:opacity-90 active:opacity-80 border-none bg-brand text-base"
               style={{
-                ...styles.submitButton,
                 opacity: isSubmitting ? 0.6 : 1,
                 cursor: isSubmitting ? "not-allowed" : "pointer",
               }}
@@ -333,10 +364,10 @@ export default function Register() {
 
           <p className="text-center text-sm text-text-dim mt-6">
             Already have an account?{" "}
-            <Link to="/login" style={styles.switchLink}>Sign in</Link>
+            <Link to="/login" className="font-semibold no-underline text-brand">Sign in</Link>
           </p>
         </div>
-      </div>
+      </article>
 
       <Modal
         isOpen={showTermsModal}
@@ -345,151 +376,6 @@ export default function Register() {
       >
         <TermsContent />
       </Modal>
-
-      <style>{focusStyles}</style>
-    </div>
+    </main>
   );
 }
-
-const focusStyles = `
-  #register-name:focus,
-  #register-email:focus,
-  #register-password:focus,
-  #register-confirm-password:focus,
-  #register-phone:focus,
-  #register-bio:focus,
-  #register-expertise:focus,
-  #register-website:focus {
-    border-color: rgba(217, 119, 6, 0.5) !important;
-    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.12);
-  }
-`;
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    backgroundColor: "#0c0c0e",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "2rem",
-    fontFamily: "'DM Sans', sans-serif",
-  },
-  card: {
-    width: "100%",
-    maxWidth: "440px",
-    backgroundColor: "#16161a",
-    border: "1px solid rgba(255,255,255,0.07)",
-    borderRadius: "16px",
-    overflow: "hidden",
-  },
-  cardAccent: {
-    height: "4px",
-    background: "linear-gradient(90deg, #d97706, #f59e0b)",
-  },
-  cardInner: { padding: "2.25rem" },
-  title: {
-    fontFamily: "'Playfair Display', serif",
-    fontSize: "1.75rem",
-    color: "#f5f2ec",
-    margin: "0 0 0.3rem",
-  },
-  subtitle: { color: "#6b7280", fontSize: "0.9rem", marginBottom: "1.75rem" },
-  authError: {
-    backgroundColor: "rgba(239,68,68,0.08)",
-    border: "1px solid rgba(239,68,68,0.25)",
-    borderRadius: "8px",
-    padding: "0.75rem 1rem",
-    color: "#f87171",
-    fontSize: "0.85rem",
-    marginBottom: "1.25rem",
-  },
-  form: { display: "flex", flexDirection: "column", gap: "1rem" },
-  passwordWrapper: { position: "relative" },
-  eyeButton: {
-    position: "absolute",
-    right: "0.75rem",
-    top: "50%",
-    transform: "translateY(-50%)",
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    lineHeight: 1,
-    padding: "0.3rem",
-    color: "#6b7280",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: "4px",
-    transition: "color 0.15s",
-  },
-  roleRow: { display: "flex", gap: "0.75rem" },
-  roleButton: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "0.35rem",
-    padding: "0.85rem",
-    backgroundColor: "#0c0c0e",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontFamily: "'DM Sans', sans-serif",
-    fontSize: "0.85rem",
-    color: "#6b7280",
-    transition: "all 0.15s",
-  },
-  roleButtonActive: {
-    borderColor: "rgba(217,119,6,0.5)",
-    backgroundColor: "rgba(217,119,6,0.08)",
-    color: "#d97706",
-  },
-  roleButtonLabel: { fontWeight: 600, fontSize: "0.82rem" },
-  termsRow: {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: "0.6rem",
-    marginTop: "0.25rem",
-  },
-  checkbox: {
-    width: "18px",
-    height: "18px",
-    accentColor: "#d97706",
-    marginTop: "2px",
-    cursor: "pointer",
-    flexShrink: 0,
-  },
-  termsLabel: { fontSize: "0.83rem", color: "#9ca3af", lineHeight: 1.4 },
-  termsLink: {
-    background: "none",
-    border: "none",
-    color: "#d97706",
-    cursor: "pointer",
-    fontWeight: 600,
-    fontSize: "0.83rem",
-    fontFamily: "'DM Sans', sans-serif",
-    padding: 0,
-    textDecoration: "underline",
-  },
-  errorText: { fontSize: "0.77rem", color: "#ef4444", margin: 0 },
-  submitButton: {
-    padding: "0.85rem",
-    backgroundColor: "#d97706",
-    color: "#0c0c0e",
-    border: "none",
-    borderRadius: "8px",
-    fontWeight: 700,
-    fontSize: "0.93rem",
-    fontFamily: "'DM Sans', sans-serif",
-    marginTop: "0.25rem",
-    transition: "opacity 0.2s, transform 0.1s",
-  },
-  switchText: {
-    textAlign: "center",
-    fontSize: "0.85rem",
-    color: "#6b7280",
-    marginTop: "1.5rem",
-  },
-  switchLink: { color: "#d97706", textDecoration: "none", fontWeight: 600 },
-};

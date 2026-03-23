@@ -4,7 +4,7 @@
  */
 export default function TermsContent() {
   return (
-    <div style={styles.wrapper}>
+    <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto pr-2">
       <Section title="1. Acceptance of Terms">
         By creating an account on LearnHub, you agree to be bound by these Terms
         and Conditions. If you do not agree to all the terms stated here, you
@@ -71,7 +71,7 @@ export default function TermsContent() {
         users of significant changes via email.
       </Section>
 
-      <p style={styles.footer}>
+      <p className="text-[0.75rem] text-text-faint italic mt-2 font-body">
         Last updated: March 2026. If you have questions about these terms,
         please contact support@learnhub.com.
       </p>
@@ -81,46 +81,9 @@ export default function TermsContent() {
 
 function Section({ title, children }) {
   return (
-    <div style={styles.section}>
-      <h3 style={styles.sectionTitle}>{title}</h3>
-      <p style={styles.sectionBody}>{children}</p>
+    <div className="flex flex-col gap-1">
+      <h3 className="text-[0.88rem] font-bold text-text-secondary m-0 font-body">{title}</h3>
+      <p className="text-[0.82rem] text-text-muted leading-relaxed m-0 font-body">{children}</p>
     </div>
   );
 }
-
-const styles = {
-  wrapper: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1.1rem",
-    maxHeight: "60vh",
-    overflowY: "auto",
-    paddingRight: "0.5rem",
-  },
-  section: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.35rem",
-  },
-  sectionTitle: {
-    fontSize: "0.88rem",
-    fontWeight: 700,
-    color: "#d1cfc8",
-    margin: 0,
-    fontFamily: "'DM Sans', sans-serif",
-  },
-  sectionBody: {
-    fontSize: "0.82rem",
-    color: "#9ca3af",
-    lineHeight: 1.6,
-    margin: 0,
-    fontFamily: "'DM Sans', sans-serif",
-  },
-  footer: {
-    fontSize: "0.75rem",
-    color: "#4b5563",
-    fontStyle: "italic",
-    margin: "0.5rem 0 0",
-    fontFamily: "'DM Sans', sans-serif",
-  },
-};

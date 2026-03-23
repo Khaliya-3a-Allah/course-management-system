@@ -6,6 +6,10 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { background-color: #0c0c0e; color: #e8e6e0; -webkit-font-smoothing: antialiased; font-family: 'DM Sans', sans-serif; }
 input, select, textarea, button { font-family: inherit; }
+input:focus, textarea:focus, select:focus {
+  border-color: rgba(217, 119, 6, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.12);
+}
 button { background-color: transparent; }
 
 @keyframes courseCardIn {

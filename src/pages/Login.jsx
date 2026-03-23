@@ -114,18 +114,6 @@ export default function Login() {
           isSubmitting={isSubmitting}
         />
       )}
-    </div>
+    </main>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    backgroundColor: "#0c0c0e",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "2rem",
-    fontFamily: "'DM Sans', sans-serif",
-  },
-};
