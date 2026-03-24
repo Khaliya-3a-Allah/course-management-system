@@ -21,3 +21,12 @@ button { background-color: transparent; }
 	opacity: 0;
 	animation: courseCardIn 420ms ease forwards;
 }
+
+.no-scrollbar {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+	display: none;
+}

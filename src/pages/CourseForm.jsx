@@ -6,6 +6,7 @@ import { INTERESTS, LEVELS } from "../data/constants";
 import FormField, { INPUT_CLASS, buildInputBorder } from "../components/FormField";
 import AutocompleteInput from "../components/AutocompleteInput";
 import CurriculumBuilder from "../components/curriculum/CurriculumBuilder";
+import Modal from "../components/Modal";
 
 const emptyForm = {
   title: "", category: "", level: "",
@@ -15,7 +16,7 @@ const emptyForm = {
 export default function CourseForm() {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const { courses, addCourse, updateCourse, currentUser } = useAppContext();
+  const { courses, addCourse, updateCourse, deleteCourse, currentUser, addToast } = useAppContext();
 
   const isEdit = Boolean(courseId);
   const existing = isEdit ? courses.find((c) => c.id === courseId) : null;
@@ -25,11 +26,14 @@ export default function CourseForm() {
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 50);
     return () => clearTimeout(t);
   }, []);
+
+  const isOwnerInstructor = currentUser?.role === "instructor" && (currentUser?.createdCourseIds || []).includes(courseId);
 
   useEffect(() => {
     if (isEdit && existing) {
@@ -49,6 +53,13 @@ export default function CourseForm() {
       );
     }
   }, [isEdit, existing]);
+
+  useEffect(() => {
+    if (isEdit && existing && !isOwnerInstructor) {
+      addToast("You can only edit courses you created.", "error");
+      navigate("/dashboard");
+    }
+  }, [isEdit, existing, isOwnerInstructor, navigate, addToast]);
 
   if (isEdit && !existing) {
     return (
@@ -133,6 +144,18 @@ export default function CourseForm() {
 
     setSubmitted(true);
     setTimeout(() => navigate("/dashboard"), 1200);
+  };
+
+  const handleDeleteCourse = () => {
+    if (!existing) return;
+    const success = deleteCourse(existing.id);
+    if (success) {
+      addToast("Course deleted successfully.", "success");
+      navigate("/dashboard");
+      return;
+    }
+    addToast("Could not delete this course.", "error");
+    setShowDeleteModal(false);
   };
 
   return (
@@ -270,19 +293,29 @@ export default function CourseForm() {
           />
 
           {/* Actions */}
-          <div className="flex gap-3 mt-2">
+          <div className="flex flex-wrap items-center gap-3 mt-2">
             <button
               type="submit"
               disabled={submitted}
-              className="px-8 py-3.5 rounded-lg font-bold text-[0.92rem] cursor-pointer border-none transition-opacity disabled:opacity-50"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-lg font-bold text-[0.92rem] cursor-pointer border-none transition-opacity disabled:opacity-50"
               style={{ backgroundColor: "#d97706", color: "#0c0c0e" }}
             >
               {submitted ? "Saving…" : isEdit ? "Save Changes" : "Publish Course"}
             </button>
+            {isEdit && isOwnerInstructor && (
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(true)}
+                className="w-full sm:w-auto px-6 py-3.5 rounded-lg text-[0.92rem] cursor-pointer border border-[rgba(239,68,68,0.3)] text-[#ef4444]"
+                style={{ backgroundColor: "rgba(239,68,68,0.08)" }}
+              >
+                Delete Course
+              </button>
+            )}
             <button
               type="button"
               onClick={() => navigate("/dashboard")}
-              className="px-6 py-3.5 rounded-lg text-[0.92rem] cursor-pointer border text-text-muted"
+              className="w-full sm:w-auto px-6 py-3.5 rounded-lg text-[0.92rem] cursor-pointer border text-text-muted"
               style={{ backgroundColor: "transparent", borderColor: "rgba(255,255,255,0.1)" }}
             >
               Cancel
@@ -290,6 +323,29 @@ export default function CourseForm() {
           </div>
         </form>
       </div>
+
+      <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Delete Course?">
+        <p className="text-[#9ca3af] mb-6 text-[0.95rem] leading-relaxed">
+          Are you sure you want to delete <strong className="text-[#f5f2ec]">{existing?.title}</strong>?
+          This will remove it for all users.
+        </p>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={handleDeleteCourse}
+            className="flex-1 py-3 rounded-lg font-bold text-[0.9rem] cursor-pointer border-none text-white bg-[#ef4444]"
+          >
+            Yes, Delete
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowDeleteModal(false)}
+            className="flex-1 py-3 rounded-lg font-medium text-[0.9rem] cursor-pointer text-[#e8e6e0] border border-[rgba(255,255,255,0.12)] bg-transparent"
+          >
+            Cancel
+          </button>
+        </div>
+      </Modal>
     </main>
   );
 }

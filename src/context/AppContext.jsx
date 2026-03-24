@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { mockCourses } from "../data/mockCourses";
 import { mockUsers } from "../data/mockUsers";
+import { sanitizeInput } from "../utils/validators";
 
 const AppContext = createContext(null);
 
@@ -61,6 +62,28 @@ export function AppProvider({ children }) {
 
   function removeToast(id) {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  }
+
+  function updateProfile(fields) {
+    if (!currentUser) return;
+
+    const allowedKeys = ["name", "phone", "bio", "expertise", "website", "profileImage"];
+    const safeUpdates = {};
+
+    allowedKeys.forEach((key) => {
+      if (!(key in fields)) return;
+      if (key === "profileImage") {
+        safeUpdates.profileImage = fields.profileImage || "";
+      } else if (key === "website") {
+        safeUpdates.website = fields.website?.trim() || "";
+      } else {
+        safeUpdates[key] = sanitizeInput(fields[key] || "");
+      }
+    });
+
+    const updated = { ...currentUser, ...safeUpdates };
+    setCurrentUser(updated);
+    setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
   }
 
   function enrollCourse(courseId) {
@@ -135,6 +158,46 @@ export function AppProvider({ children }) {
     setCourses((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
   }
 
+  function deleteCourse(courseId) {
+    if (!currentUser || currentUser.role !== "instructor") return false;
+    if (!(currentUser.createdCourseIds || []).includes(courseId)) return false;
+
+    setCourses((prev) => prev.filter((c) => c.id !== courseId));
+
+    setUsers((prev) => prev.map((u) => ({
+      ...u,
+      createdCourseIds: (u.createdCourseIds || []).filter((id) => id !== courseId),
+      enrolledCourseIds: (u.enrolledCourseIds || []).filter((id) => id !== courseId),
+      savedCourseIds: (u.savedCourseIds || []).filter((id) => id !== courseId),
+      completedCourseIds: (u.completedCourseIds || []).filter((id) => id !== courseId),
+    })));
+
+    setCurrentUser((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        createdCourseIds: (prev.createdCourseIds || []).filter((id) => id !== courseId),
+        enrolledCourseIds: (prev.enrolledCourseIds || []).filter((id) => id !== courseId),
+        savedCourseIds: (prev.savedCourseIds || []).filter((id) => id !== courseId),
+        completedCourseIds: (prev.completedCourseIds || []).filter((id) => id !== courseId),
+      };
+    });
+
+    setLessonProgress((prev) => {
+      const next = { ...prev };
+      delete next[courseId];
+      return next;
+    });
+
+    setCompletedCourses((prev) => {
+      const next = new Set(prev);
+      next.delete(courseId);
+      return next;
+    });
+
+    return true;
+  }
+
   /** Mark a lesson complete and persist in context */
   function markLessonComplete(courseId, lessonId) {
     setLessonProgress((prev) => ({
@@ -178,6 +241,8 @@ export function AppProvider({ children }) {
         currentUser, setCurrentUser,
         logout,
         addCourse, updateCourse,
+        deleteCourse,
+        updateProfile,
         enrollCourse, unenrollCourse,
         saveCourse, unsaveCourse,
         lessonProgress, markLessonComplete,
