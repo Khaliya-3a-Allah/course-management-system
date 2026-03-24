@@ -50,19 +50,15 @@ export default function Courses() {
   const hasActiveFilters = filters.category.length > 0 || filters.level.length > 0;
   const activeFilterCount = filters.category.length + filters.level.length;
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const pageStart = (currentPage - 1) * pageSize;
+  const effectivePage = Math.min(currentPage, totalPages);
+  const pageStart = (effectivePage - 1) * pageSize;
   const paginatedCourses = filtered.slice(pageStart, pageStart + pageSize);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [query, filters]);
-
-  useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(totalPages);
-  }, [currentPage, totalPages]);
+  function handleQueryChange(q) { setQuery(q); setCurrentPage(1); }
+  function handleFiltersChange(f) { setFilters(f); setCurrentPage(1); }
 
   return (
-    <div
+    <main
       className="min-h-screen bg-base text-[#e8e6e0]"
       style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(12px)", transition: "opacity 0.5s ease, transform 0.5s ease" }}
     >
@@ -98,7 +94,7 @@ export default function Courses() {
               </div>
             </div>
             <div className="w-full max-w-[560px]">
-              <SearchBar value={query} onChange={setQuery} />
+              <SearchBar value={query} onChange={handleQueryChange} />
             </div>
           </div>
         </div>
@@ -118,12 +114,11 @@ export default function Courses() {
                 <button
                   key={cat.name}
                   onClick={() => {
-                    setFilters((prev) => {
-                      const current = prev.category || [];
-                      const next = current.includes(cat.name)
-                        ? current.filter((item) => item !== cat.name)
-                        : [...current, cat.name];
-                      return { ...prev, category: next };
+                    handleFiltersChange({
+                      ...filters,
+                      category: filters.category.includes(cat.name)
+                        ? filters.category.filter((item) => item !== cat.name)
+                        : [...filters.category, cat.name],
                     });
                   }}
                   className={`px-3 py-1.5 rounded-full text-[0.77rem] border transition-all ${
@@ -159,12 +154,12 @@ export default function Courses() {
             aria-label="Course filters"
           >
             <div className="rounded-xl border border-[rgba(255,255,255,0.07)] bg-sidebar p-4 md:p-4 md:sticky md:top-24">
-              <FilterPanel courses={courses} filters={filters} onChange={setFilters} />
+              <FilterPanel courses={courses} filters={filters} onChange={handleFiltersChange} />
             </div>
           </aside>
 
           {/* Main */}
-          <main className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0">
             <section className="rounded-xl border border-[rgba(255,255,255,0.07)] bg-surface/80 px-4 py-4 md:px-5 md:py-4 mb-5">
               <div className="flex flex-wrap items-center gap-2 md:gap-3">
                 <p
@@ -184,7 +179,7 @@ export default function Courses() {
 
                 {hasActiveFilters && (
                   <button
-                    onClick={() => setFilters({ category: [], level: [] })}
+                    onClick={() => handleFiltersChange({ category: [], level: [] })}
                     className="ml-auto px-3 py-1.5 rounded-lg text-[0.75rem] font-semibold text-[#f5c27a] border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.1)]"
                   >
                     Clear filters
@@ -229,7 +224,7 @@ export default function Courses() {
                   Try a different search term or clear your filters.
                 </p>
                 <button
-                  onClick={() => { setQuery(""); setFilters({ category: [], level: [] }); }}
+                  onClick={() => { handleQueryChange(""); handleFiltersChange({ category: [], level: [] }); }}
                   className="px-6 py-2.5 rounded-lg font-semibold text-[0.88rem] cursor-pointer border border-[rgba(217,119,6,0.3)] bg-[rgba(217,119,6,0.1)] text-[#d97706]"
                 >
                   Clear all filters
@@ -251,8 +246,8 @@ export default function Courses() {
                 {totalPages > 1 && (
                   <nav className="mt-6 flex items-center justify-center gap-2" aria-label="Courses pagination">
                     <button
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(Math.max(1, effectivePage - 1))}
+                      disabled={effectivePage === 1}
                       className="px-3 py-1.5 rounded-lg text-[0.82rem] border border-[rgba(255,255,255,0.1)] text-text-secondary disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       Prev
@@ -262,9 +257,9 @@ export default function Courses() {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        aria-current={currentPage === page ? "page" : undefined}
+                        aria-current={effectivePage === page ? "page" : undefined}
                         className={`min-w-8 h-8 rounded-lg text-[0.8rem] border ${
-                          currentPage === page
+                          effectivePage === page
                             ? "border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.14)] text-[#f6c56b]"
                             : "border-[rgba(255,255,255,0.1)] text-text-secondary"
                         }`}
@@ -274,8 +269,8 @@ export default function Courses() {
                     ))}
 
                     <button
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(Math.min(totalPages, effectivePage + 1))}
+                      disabled={effectivePage === totalPages}
                       className="px-3 py-1.5 rounded-lg text-[0.82rem] border border-[rgba(255,255,255,0.1)] text-text-secondary disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       Next
@@ -284,9 +279,9 @@ export default function Courses() {
                 )}
               </>
             )}
-          </main>
+          </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
