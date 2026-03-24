@@ -15,6 +15,7 @@ export default function AutocompleteInput({
   placeholder = "Type to search...",
   label = "Select option",
   error,
+  id,
 }) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -121,6 +122,7 @@ export default function AutocompleteInput({
     <div ref={wrapperRef} className="relative" aria-label={label}>
       <input
         ref={inputRef}
+        id={id}
         type="text"
         value={displayValue}
         onChange={handleInputChange}

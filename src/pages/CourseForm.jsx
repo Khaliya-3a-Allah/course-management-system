@@ -212,14 +212,16 @@ export default function CourseForm() {
               placeholder="e.g. React from Zero to Hero"
               aria-required="true"
               aria-invalid={!!errors.title}
+              aria-describedby={errors.title ? "f-title-error" : undefined}
               className={INPUT_CLASS}
               style={buildInputBorder(errors.title)}
             />
           </FormField>
 
           {/* Category */}
-          <FormField label="Category *" error={errors.category}>
+          <FormField label="Category *" htmlFor="f-category" error={errors.category}>
             <AutocompleteInput
+              id="f-category"
               options={INTERESTS}
               value={form.category}
               onChange={(val) => set("category", val)}
@@ -237,6 +239,7 @@ export default function CourseForm() {
               onChange={(e) => set("level", e.target.value)}
               aria-required="true"
               aria-invalid={!!errors.level}
+              aria-describedby={errors.level ? "f-level-error" : undefined}
               className={`${INPUT_CLASS} cursor-pointer`}
               style={buildInputBorder(errors.level)}
             >
@@ -254,6 +257,7 @@ export default function CourseForm() {
               placeholder="Describe what students will learn..."
               aria-required="true"
               aria-invalid={!!errors.description}
+              aria-describedby={errors.description ? "f-desc-error" : undefined}
               rows={5}
               className={`${INPUT_CLASS} resize-y`}
               style={{ ...buildInputBorder(errors.description), minHeight: "120px" }}
@@ -268,6 +272,7 @@ export default function CourseForm() {
               onChange={(e) => set("thumbnail", e.target.value)}
               placeholder="https://example.com/image.jpg"
               aria-invalid={!!errors.thumbnail}
+              aria-describedby={errors.thumbnail ? "f-thumb-error" : "f-thumb-hint"}
               className={INPUT_CLASS}
               style={buildInputBorder(errors.thumbnail)}
             />
@@ -280,6 +285,7 @@ export default function CourseForm() {
               value={form.tags}
               onChange={(e) => set("tags", e.target.value)}
               placeholder="React, JavaScript, Frontend"
+              aria-describedby="f-tags-hint"
               className={INPUT_CLASS}
               style={buildInputBorder(false)}
             />

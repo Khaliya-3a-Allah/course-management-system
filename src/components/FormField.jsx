@@ -8,10 +8,10 @@ export default function FormField({ label, htmlFor, error, hint, children }) {
       <label htmlFor={htmlFor} className="text-[0.82rem] font-semibold text-text-secondary tracking-wide">
         {label}
       </label>
-      {hint && <p className="text-[0.73rem] text-text-faint m-0">{hint}</p>}
+      {hint && <p id={htmlFor ? `${htmlFor}-hint` : undefined} className="text-[0.73rem] text-text-faint m-0">{hint}</p>}
       {children}
       {error && (
-        <p className="text-[0.77rem] text-red-400 m-0" role="alert">
+        <p id={htmlFor ? `${htmlFor}-error` : undefined} className="text-[0.77rem] text-red-400 m-0" role="alert">
           {error}
         </p>
       )}
