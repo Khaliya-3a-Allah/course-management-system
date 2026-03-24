@@ -199,6 +199,12 @@ export default function Dashboard() {
             >
               Edit Profile
             </button>
+            <Link
+              to="/certificates"
+              className="px-5 py-2.5 rounded-lg no-underline font-bold text-[0.88rem] border border-[rgba(255,255,255,0.14)] text-[#e8e6e0]"
+            >
+              Certificates
+            </Link>
             {isInstructor && (
               <Link to="/course-form" className="px-5 py-2.5 rounded-lg no-underline font-bold text-[0.88rem] bg-[#d97706] text-[#0c0c0e]">
                 + Add Course
