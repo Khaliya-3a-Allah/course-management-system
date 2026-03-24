@@ -5,9 +5,13 @@ Frontend application for browsing courses, enrolling as a student, creating cour
 ## Team Members
 
 | Name | Student ID | GitHub | Email |
+
 | Mohamad Karim Mehaydli | 202400046 | Klol120 | mohamadkarim.mehaydli@lau.edu |
+
 | Jad Al Hassan | 202400472 | jadalhassan | jad.alhassan@lau.edu |
+
 | Ahmad Hajj Khalil | 202208592 | TODO | ahmad.hajjkhalil@lau.edu |
+
 | Sami Bou Khaled | 202303124 | TODO | sami.boukhaled01@lau.edu |
 
 ## Assigned Topic
