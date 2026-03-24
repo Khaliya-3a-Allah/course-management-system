@@ -46,10 +46,10 @@ export default function CourseDetails() {
 
   if (!course) {
     return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center bg-[#0c0c0e] text-[#9ca3af] p-8 text-center">
-        <span className="text-[0.75rem] tracking-[0.22em] uppercase text-[#6b7280] mb-4">Not Found</span>
-        <h2 className="font-['Playfair_Display',serif] text-[1.75rem] text-[#f5f2ec] mb-2">Course Not Found</h2>
-        <p className="text-[#6b7280] mb-6">The course you're looking for doesn't exist or has been removed.</p>
+      <div className="min-h-[80vh] flex flex-col items-center justify-center bg-base text-text-muted p-8 text-center">
+        <span className="text-[0.75rem] tracking-[0.22em] uppercase text-text-dim mb-4">Not Found</span>
+        <h2 className="font-['Playfair_Display',serif] text-[1.75rem] text-text-primary mb-2">Course Not Found</h2>
+        <p className="text-text-dim mb-6">The course you're looking for doesn't exist or has been removed.</p>
         <Link to="/courses" className="text-[#d97706] no-underline font-semibold">← Back to All Courses</Link>
       </div>
     );
@@ -87,62 +87,85 @@ export default function CourseDetails() {
   return (
     <>
       <div
-        className="min-h-screen bg-[#0c0c0e] text-[#e8e6e0]"
+        className="min-h-screen bg-base text-text-secondary"
         style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(20px)", transition: "opacity 0.6s ease, transform 0.6s ease" }}
       >
         <style>{`
           .star-rate-btn { background: none !important; border: none !important; cursor: pointer; padding: 0 3px; font-size: 1.8rem; line-height: 1; transition: transform 0.1s; }
           .star-rate-btn:hover { transform: scale(1.2); }
           .star-rate-btn:disabled { cursor: default; }
-          .review-ta { width: 100%; background: #0c0c0e; border: 1px solid rgba(255,255,255,0.09); border-radius: 8px; color: #e8e6e0; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; padding: 0.65rem 0.9rem; resize: vertical; min-height: 80px; box-sizing: border-box; outline: none; transition: border-color 0.2s; }
+          .review-ta { width: 100%; background: var(--color-surface); border: 1px solid var(--color-input-border); border-radius: 8px; color: var(--color-text-secondary); font-family: 'DM Sans', sans-serif; font-size: 0.88rem; padding: 0.65rem 0.9rem; resize: vertical; min-height: 80px; box-sizing: border-box; outline: none; transition: border-color 0.2s; }
           .review-ta:focus { border-color: rgba(217,119,6,0.4); }
-          .review-ta::placeholder { color: #4b5563; }
+          .review-ta::placeholder { color: var(--color-text-dim); }
         `}</style>
 
         {/* Hero */}
-        <header className="relative min-h-[420px] flex items-end overflow-hidden">
-          <div className="absolute inset-0 z-[1]" style={{ background: "linear-gradient(to top, #0c0c0e 40%, rgba(12,12,14,0.5) 100%)" }} aria-hidden="true" />
-          {course.thumbnail && (
-            <img
-              src={course.thumbnail}
-              alt={`${course.title} thumbnail`}
-              className="absolute inset-0 w-full h-full object-cover"
-              style={{ filter: "grayscale(40%) brightness(0.35)" }}
-            />
-          )}
-          <div className="relative z-[2] px-8 py-10 max-w-[820px] w-full">
-            <Link to="/courses" className="text-[#d97706] no-underline text-[0.85rem] inline-block mb-4">← All Courses</Link>
-            <div className="flex gap-[0.6rem] mb-4 flex-wrap">
-              <span
-                className="px-3 py-[0.2rem] rounded-full text-[0.72rem] font-bold text-[#0c0c0e] uppercase"
-                style={{ backgroundColor: levelColors[course.level] || "#6b7280" }}
-              >
-                {course.level}
-              </span>
-              <span className="px-3 py-[0.2rem] rounded-full text-[0.72rem] font-semibold bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.15)] text-[#d1cfc8] uppercase">
-                {course.category}
-              </span>
-              {isCompleted && (
-                <span className="px-3 py-[0.2rem] rounded-full text-[0.72rem] font-bold bg-[rgba(34,197,94,0.15)] border border-[rgba(34,197,94,0.3)] text-[#22c55e]">
-                  ✓ Completed
+        <header className="relative overflow-hidden border-b border-[rgba(255,255,255,0.06)] bg-gradient-to-b from-sidebar to-base">
+          <div className="pointer-events-none absolute -top-24 -left-20 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(217,119,6,0.14)_0%,rgba(217,119,6,0)_72%)]" aria-hidden="true" />
+          <div className="pointer-events-none absolute -bottom-28 right-8 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(245,158,11,0.12)_0%,rgba(245,158,11,0)_70%)]" aria-hidden="true" />
+
+          <div className="relative z-[2] max-w-[1200px] mx-auto px-5 md:px-8 py-10 md:py-12 grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-8 items-center">
+            <div>
+              <Link to="/courses" className="text-[#d97706] no-underline text-[0.85rem] inline-block mb-4">← All Courses</Link>
+              <div className="flex gap-[0.6rem] mb-4 flex-wrap">
+                <span
+                  className="px-3 py-[0.2rem] rounded-full text-[0.72rem] font-bold text-[#0c0c0e] uppercase"
+                  style={{ backgroundColor: levelColors[course.level] || "#6b7280" }}
+                >
+                  {course.level}
                 </span>
+                <span className="px-3 py-[0.2rem] rounded-full text-[0.72rem] font-semibold bg-[rgba(217,119,6,0.1)] border border-[rgba(217,119,6,0.24)] text-[#d97706] uppercase">
+                  {course.category}
+                </span>
+                {isCompleted && (
+                  <span className="px-3 py-[0.2rem] rounded-full text-[0.72rem] font-bold bg-[rgba(34,197,94,0.15)] border border-[rgba(34,197,94,0.3)] text-[#22c55e]">
+                    ✓ Completed
+                  </span>
+                )}
+              </div>
+
+              <h1
+                className="font-['Playfair_Display',serif] font-bold leading-[1.15] text-text-primary mb-[0.6rem]"
+                style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)" }}
+              >
+                {course.title}
+              </h1>
+
+              <p className="text-[0.95rem] text-text-muted mb-[0.8rem]">
+                By <span className="text-[#d97706] font-semibold">{course.instructorName}</span>
+              </p>
+
+              <div className="flex items-center gap-[2px]" aria-label={`Rating: ${course.rating?.toFixed(1)} out of 5`}>
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className="text-[1.1rem]" style={{ color: i < Math.round(course.rating) ? "#f59e0b" : "#94a3b8" }} aria-hidden="true">★</span>
+                ))}
+                <span className="text-text-muted text-[0.9rem] ml-2">{course.rating?.toFixed(1)}</span>
+              </div>
+            </div>
+
+            <figure className="m-0 rounded-2xl border border-[rgba(255,255,255,0.12)] bg-surface p-3 shadow-[0_20px_55px_rgba(15,23,42,0.16)]">
+              <div className="flex items-center justify-between px-2 pb-2 border-b border-[rgba(255,255,255,0.08)]">
+                <div className="flex items-center gap-1.5" aria-hidden="true">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e]" />
+                </div>
+                <span className="text-[0.68rem] tracking-[0.14em] uppercase text-text-faint font-semibold">Course Preview</span>
+              </div>
+
+              {course.thumbnail ? (
+                <img
+                  src={course.thumbnail}
+                  alt={`${course.title} thumbnail`}
+                  className="w-full h-[220px] md:h-[300px] object-cover rounded-xl mt-3"
+                  style={{ filter: "saturate(1.05) contrast(1.03)" }}
+                />
+              ) : (
+                <div className="w-full h-[220px] md:h-[300px] rounded-xl mt-3 bg-surface-muted flex items-center justify-center text-text-dim text-[0.85rem] font-semibold">
+                  No preview image
+                </div>
               )}
-            </div>
-            <h1
-              className="font-['Playfair_Display',serif] font-bold leading-[1.15] text-[#f5f2ec] mb-[0.6rem]"
-              style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)" }}
-            >
-              {course.title}
-            </h1>
-            <p className="text-[0.95rem] text-[#9ca3af] mb-[0.8rem]">
-              By <span className="text-[#d97706] font-semibold">{course.instructorName}</span>
-            </p>
-            <div className="flex items-center gap-[2px]" aria-label={`Rating: ${course.rating?.toFixed(1)} out of 5`}>
-              {[...Array(5)].map((_, i) => (
-                <span key={i} className="text-[1.1rem]" style={{ color: i < Math.round(course.rating) ? "#f59e0b" : "#4b5563" }} aria-hidden="true">★</span>
-              ))}
-              <span className="text-[#9ca3af] text-[0.9rem] ml-2">{course.rating?.toFixed(1)}</span>
-            </div>
+            </figure>
           </div>
         </header>
 

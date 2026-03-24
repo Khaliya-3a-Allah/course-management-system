@@ -44,7 +44,7 @@ export default function CourseCard({ course }) {
             {course.category}
           </p>
 
-          <h3 className="font-heading text-[1.03rem] m-0 leading-snug text-text-primary group-hover:text-[#fff7e8] transition-colors">
+          <h3 className="font-heading text-[1.03rem] m-0 leading-snug text-text-primary group-hover:text-brand-light transition-colors">
             {course.title}
           </h3>
 

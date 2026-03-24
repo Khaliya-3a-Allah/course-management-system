@@ -241,7 +241,7 @@ export default function Dashboard() {
               onClick={() => setActiveTab(tab.id)}
               className="flex items-center gap-2 px-4 py-2.5 border-none cursor-pointer text-[0.9rem] font-medium whitespace-nowrap -mb-px border-b-2 transition-colors bg-transparent"
               style={{
-                color: activeTab === tab.id ? "#f5f2ec" : "#6b7280",
+                color: activeTab === tab.id ? "var(--color-text-primary)" : "var(--color-text-dim)",
                 borderBottomColor: activeTab === tab.id ? "#d97706" : "transparent",
               }}
             >
@@ -249,8 +249,8 @@ export default function Dashboard() {
               <span
                 className="px-2 py-0.5 rounded-full text-[0.7rem] font-bold"
                 style={{
-                  backgroundColor: activeTab === tab.id ? "rgba(217,119,6,0.15)" : "#1a1a1e",
-                  color: activeTab === tab.id ? "#d97706" : "#6b7280",
+                  backgroundColor: activeTab === tab.id ? "rgba(217,119,6,0.15)" : "var(--color-surface-muted)",
+                  color: activeTab === tab.id ? "#d97706" : "var(--color-text-dim)",
                 }}
               >
                 {tab.count}

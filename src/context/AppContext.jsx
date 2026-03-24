@@ -6,6 +6,22 @@ import { sanitizeInput } from "../utils/validators";
 const AppContext = createContext(null);
 
 const STORAGE_KEY = "courseApp_currentUser";
+const THEME_KEY = "courseApp_theme";
+
+function loadThemeFromStorage() {
+  try {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === "light" || stored === "dark") return stored;
+  } catch {
+    // Fall through to system preference
+  }
+
+  if (typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: light)").matches) {
+    return "light";
+  }
+
+  return "dark";
+}
 
 function loadUserFromStorage() {
   try {
@@ -41,6 +57,7 @@ export function AppProvider({ children }) {
   const [completedCourses, setCompletedCourses] = useState(new Set());
   // toast notifications
   const [toasts, setToasts] = useState([]);
+  const [theme, setTheme] = useState(loadThemeFromStorage);
 
   useEffect(() => {
     saveUserToStorage(currentUser);
@@ -50,9 +67,23 @@ export function AppProvider({ children }) {
     setCompletedCourses(new Set(currentUser?.completedCourseIds || []));
   }, [currentUser?.id, currentUser?.completedCourseIds]);
 
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    document.documentElement.style.colorScheme = theme;
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      // Ignore persistence issues and keep runtime theme state
+    }
+  }, [theme]);
+
   const logout = useCallback(() => {
     setCurrentUser(null);
     localStorage.removeItem(STORAGE_KEY);
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   }, []);
 
   function addToast(message, variant = "success") {
@@ -239,6 +270,7 @@ export function AppProvider({ children }) {
         courses, setCourses,
         users, setUsers,
         currentUser, setCurrentUser,
+        theme, setTheme, toggleTheme,
         logout,
         addCourse, updateCourse,
         deleteCourse,

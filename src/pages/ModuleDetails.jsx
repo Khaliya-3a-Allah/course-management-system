@@ -403,7 +403,7 @@ export default function ModuleDetails() {
 
   return (
     <div
-      className="min-h-screen bg-base text-[#e8e6e0] font-body"
+      className="min-h-screen bg-base text-text-secondary font-body"
       style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(16px)", transition: "opacity 0.55s ease, transform 0.55s ease" }}
     >
       <style>{`
@@ -421,8 +421,8 @@ export default function ModuleDetails() {
           .vp-custom-controls { display: block !important; }
           .vp-wrap { cursor: pointer; }
         }
-        .module-sidebar button { background-color: #111114 !important; }
-        .lesson-btn { background-color: #0e0e11 !important; }
+        .module-sidebar button { background-color: var(--color-sidebar) !important; }
+        .lesson-btn { background-color: var(--color-surface-muted) !important; }
         .lesson-btn:hover { background-color: rgba(217,119,6,0.05) !important; }
         .lesson-btn.active { background-color: rgba(217,119,6,0.07) !important; }
         .module-btn-active { background-color: rgba(217,119,6,0.06) !important; border-left: 3px solid #d97706 !important; }
@@ -431,16 +431,16 @@ export default function ModuleDetails() {
         .star-btn { background: none !important; border: none !important; cursor: pointer; padding: 0 3px; font-size: 2.2rem; line-height: 1; transition: transform 0.1s; }
         .star-btn:hover { transform: scale(1.25); }
         .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .review-textarea { width: 100%; background: #0c0c0e; border: 1px solid rgba(255,255,255,0.09); border-radius: 8px; color: #e8e6e0; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; padding: 0.75rem 1rem; resize: vertical; min-height: 90px; box-sizing: border-box; outline: none; transition: border-color 0.2s; }
+        .review-textarea { width: 100%; background: var(--color-surface); border: 1px solid var(--color-input-border); border-radius: 8px; color: var(--color-text-secondary); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; padding: 0.75rem 1rem; resize: vertical; min-height: 90px; box-sizing: border-box; outline: none; transition: border-color 0.2s; }
         .review-textarea:focus { border-color: rgba(217,119,6,0.4); }
-        .review-textarea::placeholder { color: #4b5563; }
+        .review-textarea::placeholder { color: var(--color-text-dim); }
       `}</style>
 
       {/* Top Bar */}
       <header className="sticky top-0 z-10 border-b border-[rgba(255,255,255,0.06)] px-6 bg-sidebar">
         <div className="max-w-[1280px] mx-auto h-[53px] flex items-center gap-3 text-[0.85rem] flex-wrap">
           <Link to={`/courses/${courseId}`} className="no-underline font-semibold text-brand">← {course.title}</Link>
-          <span className="text-[#374151]" aria-hidden="true">/</span>
+          <span className="text-text-faint" aria-hidden="true">/</span>
           <span className="text-text-muted font-normal flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{module.title}</span>
           <div className="flex items-center gap-2.5 shrink-0" aria-label={`Progress: ${progressPct}%`}>
             <span className="text-[0.75rem] font-bold min-w-[2.5rem] text-right text-brand">{progressPct}%</span>
@@ -533,7 +533,7 @@ export default function ModuleDetails() {
                               <span
                                 className="text-[0.82rem] font-medium"
                                 style={{
-                                  color: isDone ? "#6b7280" : isActiveLesson ? "#f5f2ec" : "#9ca3af",
+                                  color: isDone ? "var(--color-text-dim)" : isActiveLesson ? "var(--color-text-primary)" : "var(--color-text-muted)",
                                   textDecoration: isDone ? "line-through" : "none",
                                 }}
                               >
@@ -602,7 +602,7 @@ export default function ModuleDetails() {
                 {(!isFirstLesson || prevModule) && (
                   <button
                     onClick={goToPrevLesson}
-                    className="px-5 py-2.5 rounded-lg font-medium text-[0.88rem] cursor-pointer border border-[rgba(255,255,255,0.08)] bg-[#1a1a1e] text-text-secondary"
+                    className="px-5 py-2.5 rounded-lg font-medium text-[0.88rem] cursor-pointer border border-[rgba(255,255,255,0.08)] bg-surface text-text-secondary"
                   >
                     ← {isFirstLesson && prevModule ? "Prev Module" : "Prev Lesson"}
                   </button>

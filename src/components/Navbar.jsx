@@ -5,7 +5,7 @@ import Modal from "./Modal";
 import { CloseIcon, MenuIcon } from "./Icons";
 
 export default function Navbar() {
-  const { currentUser, logout } = useAppContext();
+  const { currentUser, logout, theme, toggleTheme } = useAppContext();
   const location = useLocation();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -24,7 +24,7 @@ export default function Navbar() {
   return (
     <>
       <header
-        className="sticky top-0 z-[100] border-b border-[rgba(255,255,255,0.07)] bg-[rgba(12,12,14,0.96)]"
+        className="sticky top-0 z-[100] border-b border-[rgba(255,255,255,0.07)] bg-sidebar/95"
         style={{ backdropFilter: "blur(12px)" }}
       >
         <nav
@@ -36,10 +36,13 @@ export default function Navbar() {
             to="/"
             onClick={closeMenu}
             aria-label="Courseware home"
-            className="flex items-center gap-2 no-underline shrink-0"
+            className="flex items-center gap-2.5 no-underline shrink-0 leading-none"
           >
-            <span className="text-brand text-xl" aria-hidden="true">◈</span>
-            <span className="font-heading text-[1.1rem] text-text-primary font-bold">
+            <span
+              className="inline-block w-2.5 h-2.5 bg-brand rotate-45 rounded-[1px]"
+              aria-hidden="true"
+            />
+            <span className="font-heading text-[1.1rem] text-text-primary font-bold leading-none">
               Courseware
             </span>
           </Link>
@@ -62,8 +65,8 @@ export default function Navbar() {
                   aria-current={isActive(to) ? "page" : undefined}
                   className={`px-3 py-1.5 rounded-md no-underline text-[0.88rem] font-medium transition-colors ${
                     isActive(to)
-                      ? "text-text-primary bg-[rgba(255,255,255,0.05)]"
-                      : "text-text-dim bg-transparent"
+                      ? "text-text-primary bg-[rgba(245,158,11,0.14)]"
+                      : "text-text-dim bg-transparent hover:text-text-primary"
                   }`}
                 >
                   {label}
@@ -74,6 +77,13 @@ export default function Navbar() {
 
           {/* Desktop auth */}
           <div className="hidden sm:flex items-center gap-3 shrink-0">
+            <button
+              onClick={toggleTheme}
+              className="px-3 py-1.5 rounded-md text-[0.83rem] font-medium text-text-dim cursor-pointer border border-[rgba(255,255,255,0.1)] transition-colors hover:text-text-primary bg-transparent"
+              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            >
+              {theme === "dark" ? "Light" : "Dark"} mode
+            </button>
             {currentUser ? (
               <>
                 <span className="text-[0.85rem] text-text-muted">
@@ -144,6 +154,16 @@ export default function Navbar() {
                 </li>
               ))}
             </ul>
+
+            <hr className="my-2 border-[rgba(255,255,255,0.06)]" />
+
+            <button
+              onClick={toggleTheme}
+              className="py-3 px-2 text-left border-none cursor-pointer text-[0.95rem] text-text-secondary bg-transparent"
+              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            >
+              {theme === "dark" ? "Light" : "Dark"} mode
+            </button>
 
             <hr className="my-2 border-[rgba(255,255,255,0.06)]" />
 
