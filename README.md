@@ -7,8 +7,8 @@ Frontend application for browsing courses, enrolling as a student, creating cour
 | Name | Student ID | GitHub | Email |
 | Mohamad Karim Mehaydli | 202400046 | Klol120 | mohamadkarim.mehaydli@lau.edu |
 | Jad Al Hassan | 202400472 | jadalhassan | jad.alhassan@lau.edu |
-| Ahmad Hajj Khalil | 202208592 | TODO | ahmadhajjkhalil@lau.edu |
-| Sami Bou Khaled | TODO | TODO | TODO |
+| Ahmad Hajj Khalil | 202208592 | TODO | ahmad.hajjkhalil@lau.edu |
+| Sami Bou Khaled | 202303124 | TODO | sami.boukhaled01@lau.edu |
 
 ## Assigned Topic
 
@@ -102,8 +102,8 @@ npm run deploy     # Build and deploy dist/ via gh-pages
 | Team Member | Primary Contributions | Page/View 1 | Page/View 2 |
 | Mohamad Karim Mehaydli | Main overview | Home Page | Courses Page | Certificates Page | Support Page |
 | Jad Al Hassan | Built the base | Module Detials Page | Course Details Page |
-| Ahmad Khalil | TODO | Dashboard Page | Course Form Page |
-| Sami Bou Khaled | Provided Login/Register Verification | Login Page | Register Page |
+| Ahmad Khalil | Enhanced Dashboard and Forms | Dashboard Page | Course Form Page |
+| Sami Bou Khaled | Provided Verification | Login Page | Register Page |
 
 ## Mock Data and Interaction Simulation
 
