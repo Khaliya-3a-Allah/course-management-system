@@ -66,9 +66,9 @@ export default function CourseCard({ course }) {
           )}
 
           {/* Footer */}
-          <footer className="flex justify-between items-center mt-auto pt-3 border-t border-[rgba(255,255,255,0.07)]">
+          <footer className="flex justify-between items-center gap-2 mt-auto pt-3 border-t border-[rgba(255,255,255,0.07)]">
             {/* Stars */}
-            <div className="flex items-center gap-px" aria-label={`Rating: ${course.rating?.toFixed(1)} out of 5`}>
+            <div className="flex items-center gap-px shrink-0" aria-label={`Rating: ${course.rating?.toFixed(1)} out of 5`}>
               {[...Array(5)].map((_, i) => (
                 <span
                   key={i}
@@ -84,7 +84,7 @@ export default function CourseCard({ course }) {
               </span>
             </div>
 
-            <span className="text-[0.72rem] text-text-faint">
+            <span className="hidden sm:inline text-[0.72rem] text-text-faint">
               {course.modules?.length || 0} modules
             </span>
           </footer>
