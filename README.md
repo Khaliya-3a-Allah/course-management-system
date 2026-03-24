@@ -10,9 +10,9 @@ Frontend application for browsing courses, enrolling as a student, creating cour
 
 | Jad Al Hassan | 202400472 | jadalhassan | jad.alhassan@lau.edu |
 
-| Ahmad Hajj Khalil | 202208592 | TODO | ahmad.hajjkhalil@lau.edu |
+| Ahmad Hajj Khalil | 202208592 | ahmadkhalil | ahmad.hajjkhalil@lau.edu |
 
-| Sami Bou Khaled | 202303124 | TODO | sami.boukhaled01@lau.edu |
+| Sami Bou Khaled | 202303124 | simenzzz | sami.boukhaled01@lau.edu |
 
 ## Assigned Topic
 
