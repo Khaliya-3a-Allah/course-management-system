@@ -104,9 +104,13 @@ npm run deploy     # Build and deploy dist/ via gh-pages
 ## Team Contributions
 
 | Team Member | Primary Contributions | Page/View 1 | Page/View 2 |
+
 | Mohamad Karim Mehaydli | Main overview | Home Page | Courses Page | Certificates Page | Support Page |
+
 | Jad Al Hassan | Built the base | Module Detials Page | Course Details Page |
+
 | Ahmad Khalil | Enhanced Dashboard and Forms | Dashboard Page | Course Form Page |
+
 | Sami Bou Khaled | Provided Verification | Login Page | Register Page |
 
 ## Mock Data and Interaction Simulation
