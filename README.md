@@ -6,9 +6,9 @@ Frontend application for browsing courses, enrolling as a student, creating cour
 
 | Name | Student ID | GitHub | Email |
 | Mohamad Karim Mehaydli | 202400046 | Klol120 | mohamadkarim.mehaydli@lau.edu |
-| Jad Al Hassan: | 202400472 | jadalhassan | jad.alhassan@lau.edu |
-| TODO: Member 2 | TODO | TODO | TODO |
-| TODO: Member 3 | TODO | TODO | TODO |
+| Jad Al Hassan | 202400472 | jadalhassan | jad.alhassan@lau.edu |
+| Ahmad Hajj Khalil | 202208592 | TODO | ahmadhajjkhalil@lau.edu |
+| Sami Bou Khaled | TODO | TODO | TODO |
 
 ## Assigned Topic
 
@@ -72,10 +72,6 @@ npm run deploy     # Build and deploy dist/ via gh-pages
 
 ## Feature Showcase (Screenshots / GIF)
 
-Add screenshots or a GIF to highlight key flows.
-
-Suggested captures:
-
 1. Home or Courses listing
 <img width="1919" height="907" alt="Screenshot 2026-03-24 225806" src="https://github.com/user-attachments/assets/ec32f4b8-ad17-46c0-85f7-766af356c444" />
 <img width="1918" height="909" alt="Screenshot 2026-03-24 230300" src="https://github.com/user-attachments/assets/1acd32b2-026c-4b00-9a5e-0e4de02fff1e" />
@@ -98,39 +94,16 @@ Suggested captures:
 <img width="739" height="597" alt="image" src="https://github.com/user-attachments/assets/12dd28ae-99b9-4a22-8865-74d57366337b" />
 
 6. Support page ticket submission
-   <img width="1736" height="736" alt="image" src="https://github.com/user-attachments/assets/bd97b97a-4c02-48df-bfd5-7bf2a21cb79f" />
+<img width="1736" height="736" alt="image" src="https://github.com/user-attachments/assets/bd97b97a-4c02-48df-bfd5-7bf2a21cb79f" />
 
-
-Example markdown (replace with your real files/links):
-
-```md
-![Courses Page](./screenshots/courses-page.png)
-![Dashboard](./screenshots/dashboard.png)
-![App Demo](./screenshots/demo.gif)
-```
 
 ## Team Contributions
 
 | Team Member | Primary Contributions | Page/View 1 | Page/View 2 |
-| Mohamad Karim Mehaydli | Main overview | Home Page | Courses Page |
-| Jad Al Hassan: | Built the base | Module Detials Page | Course Details Page |
-| TODO: Member 2 | TODO | TODO | TODO |
-| TODO: Member 3 | TODO | TODO | TODO |
-
-### Available Pages/Views in This Project
-
-Use these names consistently when filling the table above:
-
-1. Home
-2. Courses
-3. Course Details
-4. Module Details
-5. Dashboard
-6. Certificates
-7. Login
-8. Register
-9. Support
-10. Course Form (Create/Edit)
+| Mohamad Karim Mehaydli | Main overview | Home Page | Courses Page | Certificates Page | Support Page |
+| Jad Al Hassan | Built the base | Module Detials Page | Course Details Page |
+| Ahmad Khalil | TODO | Dashboard Page | Course Form Page |
+| Sami Bou Khaled | Provided Login/Register Verification | Login Page | Register Page |
 
 ## Mock Data and Interaction Simulation
 
