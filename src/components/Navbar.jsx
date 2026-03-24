@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import Modal from "./Modal";
 import { CloseIcon, MenuIcon, MoonIcon, SunIcon } from "./Icons";
+import useClickOutside from "../hooks/useClickOutside";
 
 export default function Navbar() {
   const { currentUser, logout, theme, toggleTheme } = useAppContext();
@@ -10,9 +11,17 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutModal, setLogoutModal] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef(null);
+  const enrolledCount = currentUser
+    ? (currentUser.enrolledCourseIds || []).filter(
+        (id) => !(currentUser.completedCourseIds || []).includes(id)
+      ).length
+    : 0;
 
   const isActive = (path) => location.pathname === path;
   const closeMenu = () => setMenuOpen(false);
+  useClickOutside(profileMenuRef, () => setProfileMenuOpen(false));
 
   const confirmLogout = () => {
     logout();
@@ -87,15 +96,84 @@ export default function Navbar() {
             </button>
 
             {currentUser ? (
-              <>
-                <span className="text-[0.85rem] text-text-muted">{currentUser.name.split(" ")[0]}</span>
+              <div className="relative" ref={profileMenuRef}>
                 <button
-                  onClick={() => setLogoutModal(true)}
-                  className="px-3.5 py-1.5 rounded-md text-[0.83rem] text-text-dim cursor-pointer border border-[rgba(255,255,255,0.1)] transition-colors hover:text-text-muted bg-transparent"
+                  onClick={() => setProfileMenuOpen((v) => !v)}
+                  className="h-9 w-9 rounded-full border border-[rgba(255,255,255,0.14)] overflow-hidden cursor-pointer bg-surface-muted"
+                  aria-label="Open profile menu"
+                  aria-expanded={profileMenuOpen}
+                  aria-haspopup="menu"
                 >
-                  Log out
+                  {currentUser.profileImage ? (
+                    <img
+                      src={currentUser.profileImage}
+                      alt={`${currentUser.name} profile`}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="h-full w-full inline-flex items-center justify-center text-[0.78rem] font-bold text-brand">
+                      {currentUser.name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </button>
-              </>
+
+                {profileMenuOpen && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-[calc(100%+8px)] w-64 rounded-xl border border-[rgba(255,255,255,0.1)] bg-surface shadow-[0_14px_34px_rgba(0,0,0,0.35)] p-2 z-[120]"
+                  >
+                    <div className="px-2.5 pt-2 pb-2 mb-1 border-b border-[rgba(255,255,255,0.08)]">
+                      <p className="text-[0.82rem] font-semibold text-text-primary leading-tight">
+                        {currentUser.name}
+                      </p>
+                      <p className="text-[0.74rem] text-text-dim truncate mt-1">
+                        {currentUser.email}
+                      </p>
+                    </div>
+
+                    <Link
+                      to="/dashboard?tab=enrolled"
+                      onClick={() => setProfileMenuOpen(false)}
+                      role="menuitem"
+                      className="flex items-center justify-between rounded-lg px-2.5 py-2 no-underline text-[0.84rem] text-text-secondary hover:bg-[rgba(255,255,255,0.04)]"
+                    >
+                      <span>My Enrolled Courses</span>
+                      <span className="px-2 py-0.5 rounded-full text-[0.72rem] font-bold text-brand bg-[rgba(217,119,6,0.14)]">
+                        {enrolledCount}
+                      </span>
+                    </Link>
+
+                    <div className="my-1 h-px bg-[rgba(255,255,255,0.08)]" />
+
+                    <Link
+                      to="/dashboard"
+                      onClick={() => setProfileMenuOpen(false)}
+                      role="menuitem"
+                      className="block rounded-lg px-2.5 py-2 no-underline text-[0.85rem] text-text-secondary hover:bg-[rgba(255,255,255,0.04)]"
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      to="/certificates"
+                      onClick={() => setProfileMenuOpen(false)}
+                      role="menuitem"
+                      className="block rounded-lg px-2.5 py-2 no-underline text-[0.85rem] text-text-secondary hover:bg-[rgba(255,255,255,0.04)]"
+                    >
+                      Certificates
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        setLogoutModal(true);
+                      }}
+                      role="menuitem"
+                      className="w-full text-left rounded-lg px-2.5 py-2 text-[0.85rem] text-[#ef4444] hover:bg-[rgba(239,68,68,0.08)] border-none cursor-pointer"
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <>
                 <Link

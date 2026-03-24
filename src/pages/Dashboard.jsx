@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import CourseCard from "../components/CourseCard";
 import Modal from "../components/Modal";
@@ -25,6 +25,7 @@ export default function Dashboard() {
     addToast,
   } = useAppContext();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [visible, setVisible] = useState(false);
   const [activeTab, setActiveTab] = useState("enrolled");
   const [unenrollTarget, setUnenrollTarget] = useState(null);
@@ -62,6 +63,14 @@ export default function Dashboard() {
     { id: "saved", label: "Saved", count: savedCourses.length },
     ...(isInstructor ? [{ id: "created", label: "Created", count: createdCourses.length }] : []),
   ];
+
+  useEffect(() => {
+    const requestedTab = searchParams.get("tab");
+    if (!requestedTab) return;
+    if (tabs.some((tab) => tab.id === requestedTab) && requestedTab !== activeTab) {
+      setActiveTab(requestedTab);
+    }
+  }, [searchParams, tabs, activeTab]);
 
   const getTabData = () => {
     switch (activeTab) {
@@ -244,7 +253,10 @@ export default function Dashboard() {
               id={`tab-${tab.id}`}
               aria-selected={activeTab === tab.id}
               aria-controls={`tabpanel-${tab.id}`}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setSearchParams({ tab: tab.id });
+              }}
               className="flex items-center gap-2 px-4 py-2.5 border-none cursor-pointer text-[0.9rem] font-medium whitespace-nowrap -mb-px border-b-2 transition-colors bg-transparent"
               style={{
                 color: activeTab === tab.id ? "var(--color-text-primary)" : "var(--color-text-dim)",
