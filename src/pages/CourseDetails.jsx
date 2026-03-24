@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import Modal from "../components/Modal";
 import { BookIcon, CapIcon, LockIcon, TargetIcon } from "../components/Icons";
 
 export default function CourseDetails() {
   const { courseId } = useParams();
-  const navigate = useNavigate();
   const {
     courses, currentUser,
     enrollCourse, unenrollCourse,
@@ -17,8 +16,6 @@ export default function CourseDetails() {
 
   const course = courses.find((c) => c.id === courseId);
 
-  const [enrolled, setEnrolled] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [unenrollModal, setUnenrollModal] = useState(false);
   const [expandedModule, setExpandedModule] = useState(null);
@@ -34,16 +31,6 @@ export default function CourseDetails() {
     return () => clearTimeout(t);
   }, []);
 
-  useEffect(() => {
-    if (currentUser && course) {
-      setEnrolled(currentUser.enrolledCourseIds?.includes(course.id) ?? false);
-      setSaved(currentUser.savedCourseIds?.includes(course.id) ?? false);
-    } else {
-      setEnrolled(false);
-      setSaved(false);
-    }
-  }, [currentUser?.enrolledCourseIds, currentUser?.savedCourseIds, course?.id]);
-
   if (!course) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center bg-base text-text-muted p-8 text-center">
@@ -55,9 +42,10 @@ export default function CourseDetails() {
     );
   }
 
+  const enrolled = currentUser?.enrolledCourseIds?.includes(course.id) ?? false;
+  const saved = currentUser?.savedCourseIds?.includes(course.id) ?? false;
   const isCompleted = completedCourses.has(course.id);
   const progress = getCourseProgress(course.id);
-  const canRate = isCompleted && enrolled && currentUser && !ratingSubmitted;
 
   const handleEnroll = () => {
     if (!currentUser) { setModalOpen(true); return; }
@@ -86,7 +74,7 @@ export default function CourseDetails() {
 
   return (
     <>
-      <div
+      <main
         className="min-h-screen bg-base text-text-secondary"
         style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(20px)", transition: "opacity 0.6s ease, transform 0.6s ease" }}
       >
@@ -407,7 +395,7 @@ export default function CourseDetails() {
             </div>
           </aside>
         </div>
-      </div>
+      </main>
 
       {/* Auth Modal */}
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Sign In Required">
