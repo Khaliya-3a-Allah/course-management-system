@@ -17,6 +17,8 @@ export default function Courses() {
   });
   const [showFilters, setShowFilters] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 8;
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 50);
@@ -47,6 +49,17 @@ export default function Courses() {
 
   const hasActiveFilters = filters.category.length > 0 || filters.level.length > 0;
   const activeFilterCount = filters.category.length + filters.level.length;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageStart = (currentPage - 1) * pageSize;
+  const paginatedCourses = filtered.slice(pageStart, pageStart + pageSize);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, filters]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   return (
     <div
@@ -163,6 +176,12 @@ export default function Courses() {
                   {query && <> for "<strong className="text-[#d1cfc8]">{query}</strong>"</>}
                 </p>
 
+                {filtered.length > 0 && (
+                  <span className="text-[0.78rem] text-text-dim">
+                    Showing {pageStart + 1}-{Math.min(pageStart + pageSize, filtered.length)}
+                  </span>
+                )}
+
                 {hasActiveFilters && (
                   <button
                     onClick={() => setFilters({ category: [], level: [] })}
@@ -217,17 +236,53 @@ export default function Courses() {
                 </button>
               </section>
             ) : (
-              <ul
-                className="grid gap-5 list-none p-0 m-0"
-                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))" }}
-                aria-label="Course results"
-              >
-                {filtered.map((course, index) => (
+              <>
+                <ul
+                  className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 list-none p-0 m-0"
+                  aria-label="Course results"
+                >
+                {paginatedCourses.map((course, index) => (
                   <li key={course.id} className="course-card-enter" style={{ animationDelay: `${index * 45}ms` }}>
                     <CourseCard course={course} />
                   </li>
                 ))}
-              </ul>
+                </ul>
+
+                {totalPages > 1 && (
+                  <nav className="mt-6 flex items-center justify-center gap-2" aria-label="Courses pagination">
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1.5 rounded-lg text-[0.82rem] border border-[rgba(255,255,255,0.1)] text-text-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Prev
+                    </button>
+
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        aria-current={currentPage === page ? "page" : undefined}
+                        className={`min-w-8 h-8 rounded-lg text-[0.8rem] border ${
+                          currentPage === page
+                            ? "border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.14)] text-[#f6c56b]"
+                            : "border-[rgba(255,255,255,0.1)] text-text-secondary"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1.5 rounded-lg text-[0.82rem] border border-[rgba(255,255,255,0.1)] text-text-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </nav>
+                )}
+              </>
             )}
           </main>
         </div>
