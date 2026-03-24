@@ -189,6 +189,21 @@ export function AppProvider({ children }) {
     setCourses((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
   }
 
+  function submitReview(courseId, rating, comment) {
+    if (!currentUser) return;
+    const updated = {
+      ...currentUser,
+      reviews: { ...(currentUser.reviews || {}), [courseId]: { rating, comment } },
+    };
+    setCurrentUser(updated);
+    setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+    const course = courses.find((c) => c.id === courseId);
+    if (course) {
+      const newRating = ((course.rating || 0) + rating) / 2;
+      updateCourse({ ...course, rating: Math.round(newRating * 10) / 10 });
+    }
+  }
+
   function deleteCourse(courseId) {
     if (!currentUser || currentUser.role !== "instructor") return false;
     if (!(currentUser.createdCourseIds || []).includes(courseId)) return false;
@@ -272,7 +287,7 @@ export function AppProvider({ children }) {
         currentUser, setCurrentUser,
         theme, setTheme, toggleTheme,
         logout,
-        addCourse, updateCourse,
+        addCourse, updateCourse, submitReview,
         deleteCourse,
         updateProfile,
         enrollCourse, unenrollCourse,

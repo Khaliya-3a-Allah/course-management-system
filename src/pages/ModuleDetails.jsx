@@ -310,7 +310,7 @@ const vStyles = {
 export default function ModuleDetails() {
   const { courseId, moduleId } = useParams();
   const navigate = useNavigate();
-  const { courses, updateCourse, currentUser, lessonProgress, markLessonComplete, markCourseComplete, completedCourses } = useAppContext();
+  const { courses, submitReview, currentUser, lessonProgress, markLessonComplete, markCourseComplete, completedCourses } = useAppContext();
 
   const course = courses.find((c) => c.id === courseId);
   const allModules = course?.modules || [];
@@ -324,9 +324,9 @@ export default function ModuleDetails() {
   const [showCompletion, setShowCompletion] = useState(false);
   const [completionShown, setCompletionShown] = useState(false);
   const [hoveredStar, setHoveredStar] = useState(0);
-  const [selectedRating, setSelectedRating] = useState(0);
-  const [reviewMessage, setReviewMessage] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [selectedRating, setSelectedRating] = useState(() => currentUser?.reviews?.[courseId]?.rating ?? 0);
+  const [reviewMessage, setReviewMessage] = useState(() => currentUser?.reviews?.[courseId]?.comment ?? "");
+  const submitted = !!currentUser?.reviews?.[courseId];
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 50);
@@ -396,9 +396,7 @@ export default function ModuleDetails() {
 
   const handleSubmitReview = () => {
     if (selectedRating === 0) return;
-    const newRating = ((course.rating || 0) + selectedRating) / 2;
-    updateCourse({ ...course, rating: Math.round(newRating * 10) / 10 });
-    setSubmitted(true);
+    submitReview(courseId, selectedRating, reviewMessage);
   };
 
   return (

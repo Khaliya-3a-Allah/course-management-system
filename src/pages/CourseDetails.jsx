@@ -11,7 +11,7 @@ export default function CourseDetails() {
     enrollCourse, unenrollCourse,
     saveCourse, unsaveCourse,
     completedCourses, getCourseProgress,
-    updateCourse,
+    submitReview,
   } = useAppContext();
 
   const course = courses.find((c) => c.id === courseId);
@@ -22,9 +22,8 @@ export default function CourseDetails() {
   const [visible, setVisible] = useState(false);
 
   const [hoveredStar, setHoveredStar] = useState(0);
-  const [selectedRating, setSelectedRating] = useState(0);
-  const [reviewMessage, setReviewMessage] = useState("");
-  const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  const [selectedRating, setSelectedRating] = useState(() => currentUser?.reviews?.[courseId]?.rating ?? 0);
+  const [reviewMessage, setReviewMessage] = useState(() => currentUser?.reviews?.[courseId]?.comment ?? "");
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 50);
@@ -44,6 +43,7 @@ export default function CourseDetails() {
 
   const enrolled = currentUser?.enrolledCourseIds?.includes(course.id) ?? false;
   const saved = currentUser?.savedCourseIds?.includes(course.id) ?? false;
+  const ratingSubmitted = !!currentUser?.reviews?.[course.id];
   const isCompleted = completedCourses.has(course.id);
   const progress = getCourseProgress(course.id);
 
@@ -65,9 +65,7 @@ export default function CourseDetails() {
 
   const handleSubmitRating = () => {
     if (selectedRating === 0) return;
-    const newRating = ((course.rating || 0) + selectedRating) / 2;
-    updateCourse({ ...course, rating: Math.round(newRating * 10) / 10 });
-    setRatingSubmitted(true);
+    submitReview(course.id, selectedRating, reviewMessage);
   };
 
   const levelColors = { Beginner: "#22c55e", Intermediate: "#f59e0b", Advanced: "#ef4444" };
