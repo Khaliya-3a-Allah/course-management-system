@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import CourseCard from "../components/CourseCard";
@@ -27,7 +27,6 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [visible, setVisible] = useState(false);
-  const [activeTab, setActiveTab] = useState("enrolled");
   const [unenrollTarget, setUnenrollTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -47,30 +46,38 @@ export default function Dashboard() {
     return () => clearTimeout(t);
   }, [currentUser, navigate]);
 
-  if (!currentUser) return null;
+  const isInstructor = currentUser?.role === "instructor";
 
-  const isInstructor = currentUser.role === "instructor";
-  const roleColor = isInstructor ? "#d97706" : "#6366f1";
+  const enrolledCourses = useMemo(
+    () => courses.filter((c) => currentUser?.enrolledCourseIds?.includes(c.id) && !completedCourses.has(c.id)),
+    [courses, currentUser?.enrolledCourseIds, completedCourses]
+  );
+  const completedCoursesList = useMemo(
+    () => courses.filter((c) => completedCourses.has(c.id)),
+    [courses, completedCourses]
+  );
+  const savedCourses = useMemo(
+    () => courses.filter((c) => currentUser?.savedCourseIds?.includes(c.id)),
+    [courses, currentUser?.savedCourseIds]
+  );
+  const createdCourses = useMemo(
+    () => courses.filter((c) => currentUser?.createdCourseIds?.includes(c.id)),
+    [courses, currentUser?.createdCourseIds]
+  );
 
-  const enrolledCourses = courses.filter((c) => currentUser.enrolledCourseIds?.includes(c.id) && !completedCourses.has(c.id));
-  const completedCoursesList = courses.filter((c) => completedCourses.has(c.id));
-  const savedCourses = courses.filter((c) => currentUser.savedCourseIds?.includes(c.id));
-  const createdCourses = courses.filter((c) => currentUser.createdCourseIds?.includes(c.id));
-
-  const tabs = [
+  const tabs = useMemo(() => [
     { id: "enrolled", label: "Enrolled", count: enrolledCourses.length },
     { id: "completed", label: "Completed", count: completedCoursesList.length },
     { id: "saved", label: "Saved", count: savedCourses.length },
     ...(isInstructor ? [{ id: "created", label: "Created", count: createdCourses.length }] : []),
-  ];
+  ], [enrolledCourses.length, completedCoursesList.length, savedCourses.length, createdCourses.length, isInstructor]);
 
-  useEffect(() => {
-    const requestedTab = searchParams.get("tab");
-    if (!requestedTab) return;
-    if (tabs.some((tab) => tab.id === requestedTab) && requestedTab !== activeTab) {
-      setActiveTab(requestedTab);
-    }
-  }, [searchParams, tabs, activeTab]);
+  const requestedTab = searchParams.get("tab");
+  const activeTab = (requestedTab && tabs.some((t) => t.id === requestedTab)) ? requestedTab : "enrolled";
+
+  if (!currentUser) return null;
+
+  const roleColor = isInstructor ? "#d97706" : "#6366f1";
 
   const getTabData = () => {
     switch (activeTab) {
@@ -230,8 +237,8 @@ export default function Dashboard() {
               ...(isInstructor ? [{ label: "Created", value: createdCourses.length }] : []),
             ].map((s) => (
               <div key={s.label} className="flex flex-col gap-1">
-                <dd className="font-['Playfair_Display',serif] text-[1.75rem] text-[#f5f2ec] m-0">{s.value}</dd>
                 <dt className="text-[0.75rem] text-[#6b7280] tracking-wide uppercase m-0">{s.label}</dt>
+                <dd className="font-['Playfair_Display',serif] text-[1.75rem] text-[#f5f2ec] m-0">{s.value}</dd>
               </div>
             ))}
           </dl>
@@ -253,10 +260,7 @@ export default function Dashboard() {
               id={`tab-${tab.id}`}
               aria-selected={activeTab === tab.id}
               aria-controls={`tabpanel-${tab.id}`}
-              onClick={() => {
-                setActiveTab(tab.id);
-                setSearchParams({ tab: tab.id });
-              }}
+              onClick={() => setSearchParams({ tab: tab.id })}
               className="flex items-center gap-2 px-4 py-2.5 border-none cursor-pointer text-[0.9rem] font-medium whitespace-nowrap -mb-px border-b-2 transition-colors bg-transparent"
               style={{
                 color: activeTab === tab.id ? "var(--color-text-primary)" : "var(--color-text-dim)",
@@ -278,7 +282,7 @@ export default function Dashboard() {
         </div>
 
         {/* Tab panel */}
-        <div role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
+        <div role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`} tabIndex={0}>
           {activeData.length === 0 ? (
             <section className="flex flex-col items-center py-20 px-8 text-center gap-3">
               <span className="text-[0.74rem] uppercase tracking-[0.2em] text-[#6b7280]" aria-hidden="true">
@@ -286,9 +290,9 @@ export default function Dashboard() {
               </span>
               <p className="text-[#6b7280] text-[0.92rem]">{emptyMessages[activeTab]}</p>
               {activeTab === "created" ? (
-                <Link to="/course-form" className="no-underline font-semibold text-[0.88rem] text-[#d97706]">Create your first course →</Link>
+                <Link to="/course-form" className="no-underline font-semibold text-[0.88rem] text-[#d97706]">Create your first course</Link>
               ) : (
-                <Link to="/courses" className="no-underline font-semibold text-[0.88rem] text-[#d97706]">Browse courses →</Link>
+                <Link to="/courses" className="no-underline font-semibold text-[0.88rem] text-[#d97706]">Browse courses</Link>
               )}
             </section>
           ) : (
@@ -374,6 +378,7 @@ export default function Dashboard() {
         </p>
         <div className="flex gap-3">
           <button
+            type="button"
             onClick={() => { unenrollCourse(unenrollTarget.id); setUnenrollTarget(null); }}
             className="flex-1 py-3 rounded-lg font-bold text-[0.9rem] cursor-pointer border-none text-white bg-[#ef4444]"
           >
@@ -396,10 +401,11 @@ export default function Dashboard() {
             <input
               value={profileForm.name}
               onChange={(e) => updateProfileField("name", e.target.value)}
+              aria-invalid={!!profileErrors.name}
               className="w-full rounded-lg px-3 py-2.5 border border-[rgba(255,255,255,0.12)] bg-[#121216] text-[#e8e6e0]"
               maxLength={50}
             />
-            {profileErrors.name && <span className="text-[#ef4444] text-[0.74rem]">{profileErrors.name}</span>}
+            {profileErrors.name && <span role="alert" className="text-[#ef4444] text-[0.74rem]">{profileErrors.name}</span>}
           </label>
 
           <label className="flex flex-col gap-1.5 text-[0.82rem] text-[#9ca3af]">
@@ -407,9 +413,10 @@ export default function Dashboard() {
             <input
               value={profileForm.phone}
               onChange={(e) => updateProfileField("phone", e.target.value)}
+              aria-invalid={!!profileErrors.phone}
               className="w-full rounded-lg px-3 py-2.5 border border-[rgba(255,255,255,0.12)] bg-[#121216] text-[#e8e6e0]"
             />
-            {profileErrors.phone && <span className="text-[#ef4444] text-[0.74rem]">{profileErrors.phone}</span>}
+            {profileErrors.phone && <span role="alert" className="text-[#ef4444] text-[0.74rem]">{profileErrors.phone}</span>}
           </label>
 
           <label className="flex flex-col gap-1.5 text-[0.82rem] text-[#9ca3af]">
@@ -419,9 +426,10 @@ export default function Dashboard() {
               onChange={(e) => updateProfileField("bio", e.target.value)}
               rows={3}
               maxLength={300}
+              aria-invalid={!!profileErrors.bio}
               className="w-full rounded-lg px-3 py-2.5 border border-[rgba(255,255,255,0.12)] bg-[#121216] text-[#e8e6e0] resize-y"
             />
-            {profileErrors.bio && <span className="text-[#ef4444] text-[0.74rem]">{profileErrors.bio}</span>}
+            {profileErrors.bio && <span role="alert" className="text-[#ef4444] text-[0.74rem]">{profileErrors.bio}</span>}
           </label>
 
           {isInstructor && (
@@ -431,9 +439,10 @@ export default function Dashboard() {
                 <input
                   value={profileForm.expertise}
                   onChange={(e) => updateProfileField("expertise", e.target.value)}
+                  aria-invalid={!!profileErrors.expertise}
                   className="w-full rounded-lg px-3 py-2.5 border border-[rgba(255,255,255,0.12)] bg-[#121216] text-[#e8e6e0]"
                 />
-                {profileErrors.expertise && <span className="text-[#ef4444] text-[0.74rem]">{profileErrors.expertise}</span>}
+                {profileErrors.expertise && <span role="alert" className="text-[#ef4444] text-[0.74rem]">{profileErrors.expertise}</span>}
               </label>
 
               <label className="flex flex-col gap-1.5 text-[0.82rem] text-[#9ca3af]">
@@ -442,9 +451,10 @@ export default function Dashboard() {
                   value={profileForm.website}
                   onChange={(e) => updateProfileField("website", e.target.value)}
                   placeholder="https://example.com"
+                  aria-invalid={!!profileErrors.website}
                   className="w-full rounded-lg px-3 py-2.5 border border-[rgba(255,255,255,0.12)] bg-[#121216] text-[#e8e6e0]"
                 />
-                {profileErrors.website && <span className="text-[#ef4444] text-[0.74rem]">{profileErrors.website}</span>}
+                {profileErrors.website && <span role="alert" className="text-[#ef4444] text-[0.74rem]">{profileErrors.website}</span>}
               </label>
             </>
           )}
@@ -496,12 +506,14 @@ export default function Dashboard() {
         </p>
         <div className="flex gap-3">
           <button
+            type="button"
             onClick={handleDeleteCourse}
             className="flex-1 py-3 rounded-lg font-bold text-[0.9rem] cursor-pointer border-none text-white bg-[#ef4444]"
           >
             Yes, Delete
           </button>
           <button
+            type="button"
             onClick={() => setDeleteTarget(null)}
             className="flex-1 py-3 rounded-lg font-medium text-[0.9rem] cursor-pointer text-[#e8e6e0] border border-[rgba(255,255,255,0.12)] bg-transparent"
           >

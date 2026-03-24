@@ -184,7 +184,7 @@ export default function Home() {
   ];
 
   return (
-    <div
+    <main
       className="min-h-screen bg-base text-text-secondary font-['DM_Sans',sans-serif]"
       style={{ opacity: visible ? 1 : 0, transition: "opacity 0.6s ease" }}
     >
@@ -251,32 +251,32 @@ export default function Home() {
               className="hero-cta inline-flex items-center gap-2 px-8 py-4 rounded-lg font-bold no-underline text-base bg-gradient-to-r from-[#d97706] to-[#ea580c] text-[#0c0c0e] shadow-lg"
             >
               Explore All Courses
-              <span>→</span>
+              <span aria-hidden="true">→</span>
             </Link>
             <Link
               to="/register"
               className="split-cta inline-flex items-center gap-2 px-8 py-4 rounded-lg font-bold no-underline text-base border-2 border-[rgba(217,119,6,0.5)] bg-[rgba(217,119,6,0.1)] text-[#fbbf24] hover:bg-[rgba(217,119,6,0.15)]"
             >
               Start Free Trial
-              <span>→</span>
+              <span aria-hidden="true">→</span>
             </Link>
           </div>
 
           {/* Quick stats */}
-          <div className="flex flex-wrap gap-8 pt-8 border-t border-[rgba(255,255,255,0.08)]">
+          <dl className="flex flex-wrap gap-8 pt-8 border-t border-[rgba(255,255,255,0.08)]">
             <div>
-              <p className="text-2xl font-bold text-[#d97706]">{courses.length}+</p>
-              <p className="text-sm text-text-muted">Expert Courses</p>
+              <dd className="text-2xl font-bold text-[#d97706] m-0">{courses.length}+</dd>
+              <dt className="text-sm text-text-muted m-0">Expert Courses</dt>
             </div>
             <div>
-              <p className="text-2xl font-bold text-[#d97706]">50K+</p>
-              <p className="text-sm text-text-muted">Active Learners</p>
+              <dd className="text-2xl font-bold text-[#d97706] m-0">50K+</dd>
+              <dt className="text-sm text-text-muted m-0">Active Learners</dt>
             </div>
             <div>
-              <p className="text-2xl font-bold text-[#d97706]">96%</p>
-              <p className="text-sm text-text-muted">Satisfaction Rate</p>
+              <dd className="text-2xl font-bold text-[#d97706] m-0">96%</dd>
+              <dt className="text-sm text-text-muted m-0">Satisfaction Rate</dt>
             </div>
-          </div>
+          </dl>
         </div>
 
         {/* Hero visualization badge */}
@@ -298,10 +298,10 @@ export default function Home() {
       </section>
 
       {/* ── Stats Section ── */}
-      <section className="relative py-20 px-8 bg-gradient-to-b from-sidebar to-base border-b border-[rgba(255,255,255,0.05)]">
+      <section className="relative py-20 px-8 bg-gradient-to-b from-sidebar to-base border-b border-[rgba(255,255,255,0.05)]" aria-labelledby="stats-heading">
         <div className="max-w-[1200px] mx-auto">
           <div className="text-center mb-16">
-            <h2 className="font-['Playfair_Display',serif] text-4xl text-text-primary mb-4">
+            <h2 id="stats-heading" className="font-['Playfair_Display',serif] text-4xl text-text-primary mb-4">
               Trusted by Thousands
             </h2>
             <p className="text-text-muted text-lg max-w-2xl mx-auto">
@@ -309,7 +309,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {stats.map((stat, i) => (
               <div
                 key={i}
@@ -318,13 +318,13 @@ export default function Home() {
                 <div className="w-14 h-14 mx-auto mb-3 rounded-xl border border-[rgba(217,119,6,0.35)] bg-[rgba(217,119,6,0.08)] flex items-center justify-center text-[#fbbf24]">
                   <AppIcon name={stat.icon} className="w-7 h-7" />
                 </div>
-                <p className="text-3xl font-bold bg-gradient-to-r from-[#d97706] to-[#f59e0b] bg-clip-text text-transparent mb-2">
+                <dd className="text-3xl font-bold bg-gradient-to-r from-[#d97706] to-[#f59e0b] bg-clip-text text-transparent mb-2 m-0">
                   {stat.num}
-                </p>
-                <p className="text-text-muted text-sm">{stat.label}</p>
+                </dd>
+                <dt className="text-text-muted text-sm m-0">{stat.label}</dt>
               </div>
             ))}
-          </div>
+          </dl>
         </div>
       </section>
 
@@ -340,7 +340,7 @@ export default function Home() {
             </div>
             <Link to="/courses" className="no-underline text-[0.95rem] font-semibold text-[#d97706] hover:text-[#f59e0b] transition-colors flex items-center gap-2">
               Explore All
-              <span>→</span>
+              <span aria-hidden="true">→</span>
             </Link>
           </div>
         </div>
@@ -392,7 +392,7 @@ export default function Home() {
                       </span>
                     </div>
                     <span className="font-bold text-[1.05rem] text-text-primary group-hover:text-[#fbbf24] transition-colors">{cat}</span>
-                    <p className="text-[0.85rem] text-text-dim">Explore this category →</p>
+                    <p className="text-[0.85rem] text-text-dim">Explore this category <span aria-hidden="true">→</span></p>
                   </Link>
                 </li>
               );
@@ -402,10 +402,10 @@ export default function Home() {
       </section>
 
       {/* ── Why Choose Us ── */}
-      <section className="py-20 px-8 bg-base">
+      <section className="py-20 px-8 bg-base" aria-labelledby="features-heading">
         <div className="max-w-[1200px] mx-auto">
           <div className="text-center mb-16">
-            <h2 className="font-['Playfair_Display',serif] text-4xl text-text-primary mb-4">
+            <h2 id="features-heading" className="font-['Playfair_Display',serif] text-4xl text-text-primary mb-4">
               Why Learn With Us?
             </h2>
             <p className="text-text-muted text-lg max-w-2xl mx-auto">
@@ -436,8 +436,8 @@ export default function Home() {
         aria-labelledby="cta-heading"
       >
         <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at center, rgba(217,119,6,0.1) 0%, transparent 70%)" }} aria-hidden="true" />
-        <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-[#d97706] to-transparent opacity-5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-80 h-80 bg-gradient-to-tl from-[#d97706] to-transparent opacity-5 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-[#d97706] to-transparent opacity-5 rounded-full blur-3xl" aria-hidden="true" />
+        <div className="absolute bottom-0 right-0 w-80 h-80 bg-gradient-to-tl from-[#d97706] to-transparent opacity-5 rounded-full blur-3xl" aria-hidden="true" />
 
         <div className="relative z-10 max-w-2xl mx-auto text-center">
           <h2 id="cta-heading" className="font-['Playfair_Display',serif] text-4xl text-text-primary mb-4">
@@ -452,14 +452,14 @@ export default function Home() {
               className="hero-cta inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-bold no-underline text-base bg-gradient-to-r from-[#d97706] to-[#ea580c] text-[#0c0c0e]"
             >
               Create Free Account
-              <span>→</span>
+              <span aria-hidden="true">→</span>
             </Link>
             <Link
               to="/courses"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-bold no-underline text-base border-2 border-[rgba(217,119,6,0.3)] text-text-secondary hover:border-[rgba(217,119,6,0.6)] hover:bg-[rgba(217,119,6,0.05)] transition-all"
             >
               Browse Courses
-              <span>→</span>
+              <span aria-hidden="true">→</span>
             </Link>
           </div>
 
@@ -468,6 +468,6 @@ export default function Home() {
           </p>
         </div>
       </section>
-    </div>
+    </main>
   );
 }

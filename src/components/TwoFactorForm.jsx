@@ -128,20 +128,26 @@ export default function TwoFactorForm({
               placeholder="000000"
               className="w-full p-4 rounded-lg text-text-primary bg-base outline-none transition-colors font-body text-2xl tracking-[0.6em] text-center"
               style={{ border: "1px solid rgba(255,255,255,0.09)" }}
+              aria-invalid={!!error}
+              aria-describedby={error ? "two-factor-error" : undefined}
               autoFocus
             />
             {error && (
-              <p className="text-[0.77rem] text-red-400 m-0" role="alert">{error}</p>
+              <p id="two-factor-error" className="text-[0.77rem] text-red-400 m-0" role="alert">{error}</p>
             )}
           </div>
 
           {/* Timer and attempts */}
           <div className="flex justify-between items-center flex-wrap gap-2">
-            <span className={`text-[0.78rem] ${isExpired ? "text-red-400 font-semibold" : "text-text-dim"}`}>
+            <span
+              aria-live="polite"
+              aria-atomic="true"
+              className={`text-[0.78rem] ${isExpired ? "text-red-400 font-semibold" : "text-text-dim"}`}
+            >
               {isExpired ? "Code expired" : `Expires in ${formatTime(secondsLeft)}`}
             </span>
             {attempts > 0 && (
-              <span className="text-[0.78rem] text-text-dim">
+              <span aria-live="polite" aria-atomic="true" className="text-[0.78rem] text-text-dim">
                 {attemptsRemaining} of {MAX_ATTEMPTS} attempts left
               </span>
             )}

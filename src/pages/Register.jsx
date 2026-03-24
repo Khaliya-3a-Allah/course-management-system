@@ -146,7 +146,7 @@ export default function Register() {
           )}
 
           <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4" aria-label="Create account">
-            <FormField label="Full Name" error={errors.name}>
+            <FormField label="Full Name" htmlFor="register-name" error={errors.name}>
               <input
                 id="register-name"
                 type="text"
@@ -159,10 +159,11 @@ export default function Register() {
                 maxLength={50}
                 aria-required="true"
                 aria-invalid={!!errors.name}
+                aria-describedby={errors.name ? "register-name-error" : undefined}
               />
             </FormField>
 
-            <FormField label="Email" error={errors.email}>
+            <FormField label="Email" htmlFor="register-email" error={errors.email}>
               <input
                 id="register-email"
                 type="email"
@@ -174,10 +175,11 @@ export default function Register() {
                 autoComplete="email"
                 aria-required="true"
                 aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? "register-email-error" : undefined}
               />
             </FormField>
 
-            <FormField label="Password" error={errors.password} hint="Minimum 6 characters">
+            <FormField label="Password" htmlFor="register-password" error={errors.password} hint="Minimum 6 characters">
               <div className="relative">
                 <input
                   id="register-password"
@@ -190,6 +192,7 @@ export default function Register() {
                   autoComplete="new-password"
                   aria-required="true"
                   aria-invalid={!!errors.password}
+                  aria-describedby={errors.password ? "register-password-error" : "register-password-hint"}
                 />
                 <button
                   type="button"
@@ -202,7 +205,7 @@ export default function Register() {
               </div>
             </FormField>
 
-            <FormField label="Confirm Password" error={errors.confirmPassword}>
+            <FormField label="Confirm Password" htmlFor="register-confirm-password" error={errors.confirmPassword}>
               <div className="relative">
                 <input
                   id="register-confirm-password"
@@ -215,6 +218,7 @@ export default function Register() {
                   autoComplete="new-password"
                   aria-required="true"
                   aria-invalid={!!errors.confirmPassword}
+                  aria-describedby={errors.confirmPassword ? "register-confirm-password-error" : undefined}
                 />
                 <button
                   type="button"
@@ -253,7 +257,7 @@ export default function Register() {
               </div>
             </FormField>
 
-            <FormField label="Phone Number" error={errors.phone} hint="Optional">
+            <FormField label="Phone Number" htmlFor="register-phone" error={errors.phone} hint="Optional">
               <input
                 id="register-phone"
                 type="tel"
@@ -263,10 +267,11 @@ export default function Register() {
                 className={INPUT_CLASS}
                 style={buildInputBorder(errors.phone)}
                 autoComplete="tel"
+                aria-describedby="register-phone-hint"
               />
             </FormField>
 
-            <FormField label="About Me" error={errors.bio} hint="Optional — max 300 characters">
+            <FormField label="About Me" htmlFor="register-bio" error={errors.bio} hint="Optional — max 300 characters">
               <textarea
                 id="register-bio"
                 value={form.bio}
@@ -276,6 +281,7 @@ export default function Register() {
                 maxLength={300}
                 className={INPUT_CLASS}
                 style={{ ...buildInputBorder(errors.bio), resize: "vertical", minHeight: "80px" }}
+                aria-describedby={errors.bio ? "register-bio-error" : "register-bio-hint"}
               />
             </FormField>
 
@@ -296,7 +302,7 @@ export default function Register() {
             {/* Instructor: Expertise + Website */}
             {form.role === "instructor" && (
               <>
-                <FormField label="Area of Expertise" error={errors.expertise} hint="Optional">
+                <FormField label="Area of Expertise" htmlFor="register-expertise" error={errors.expertise} hint="Optional">
                   <input
                     id="register-expertise"
                     type="text"
@@ -306,9 +312,10 @@ export default function Register() {
                     className={INPUT_CLASS}
                     style={buildInputBorder(errors.expertise)}
                     maxLength={100}
+                    aria-describedby={errors.expertise ? "register-expertise-error" : "register-expertise-hint"}
                   />
                 </FormField>
-                <FormField label="Portfolio / Website" error={errors.website} hint="Optional">
+                <FormField label="Portfolio / Website" htmlFor="register-website" error={errors.website} hint="Optional">
                   <input
                     id="register-website"
                     type="url"
@@ -318,6 +325,7 @@ export default function Register() {
                     className={INPUT_CLASS}
                     style={buildInputBorder(errors.website)}
                     autoComplete="url"
+                    aria-describedby={errors.website ? "register-website-error" : "register-website-hint"}
                   />
                 </FormField>
               </>
@@ -332,6 +340,8 @@ export default function Register() {
                 onChange={(e) => updateField("acceptTerms", e.target.checked)}
                 className="w-[18px] h-[18px] mt-0.5 cursor-pointer shrink-0"
                 style={{ accentColor: "#d97706" }}
+                aria-required="true"
+                aria-describedby={errors.acceptTerms ? "register-terms-error" : undefined}
               />
               <label htmlFor="register-terms" className="text-[0.83rem] text-text-muted leading-snug">
                 I agree to the{" "}

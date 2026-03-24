@@ -5,33 +5,33 @@ import Modal from "../components/Modal";
 
 // ── SVG Icons ────────────────────────────────────────────────────────────────
 const IconPlay = () => (
-  <svg width="18" height="18" viewBox="0 0 16 16" fill="#e8e6e0"><polygon points="3,1 15,8 3,15"/></svg>
+  <svg width="18" height="18" viewBox="0 0 16 16" fill="#e8e6e0" aria-hidden="true" focusable="false"><polygon points="3,1 15,8 3,15"/></svg>
 );
 const IconPause = () => (
-  <svg width="18" height="18" viewBox="0 0 16 16" fill="#e8e6e0">
+  <svg width="18" height="18" viewBox="0 0 16 16" fill="#e8e6e0" aria-hidden="true" focusable="false">
     <rect x="2" y="2" width="4" height="12" rx="1"/><rect x="10" y="2" width="4" height="12" rx="1"/>
   </svg>
 );
 const IconVolume = () => (
-  <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#e8e6e0" strokeWidth="1.5" strokeLinecap="round">
+  <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#e8e6e0" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true" focusable="false">
     <polygon points="1,5 5,5 9,1 9,15 5,11 1,11" fill="#e8e6e0" stroke="none"/>
     <path d="M11 5.5a4 4 0 0 1 0 5"/><path d="M13 3.5a7 7 0 0 1 0 9"/>
   </svg>
 );
 const IconVolumeLow = () => (
-  <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#e8e6e0" strokeWidth="1.5" strokeLinecap="round">
+  <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#e8e6e0" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true" focusable="false">
     <polygon points="1,5 5,5 9,1 9,15 5,11 1,11" fill="#e8e6e0" stroke="none"/>
     <path d="M11 5.5a4 4 0 0 1 0 5"/>
   </svg>
 );
 const IconMute = () => (
-  <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#e8e6e0" strokeWidth="1.5" strokeLinecap="round">
+  <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#e8e6e0" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true" focusable="false">
     <polygon points="1,5 5,5 9,1 9,15 5,11 1,11" fill="#e8e6e0" stroke="none"/>
     <line x1="12" y1="5" x2="15" y2="11"/><line x1="15" y1="5" x2="12" y2="11"/>
   </svg>
 );
 const IconFullscreen = () => (
-  <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="#e8e6e0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="#e8e6e0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
     <polyline points="1,5 1,1 5,1"/><polyline points="11,1 15,1 15,5"/>
     <polyline points="15,11 15,15 11,15"/><polyline points="5,15 1,15 1,11"/>
   </svg>
@@ -219,7 +219,7 @@ function VideoPlayer({ src, title, moduleName, duration }) {
       </div>
 
       {/* Big play button */}
-      <button className="vp-big-play" onClick={togglePlay} style={vStyles.bigPlay} aria-label="Play">
+      <button className="vp-big-play" onClick={togglePlay} style={vStyles.bigPlay} aria-label={playing ? "Pause" : "Play"}>
         {playing
           ? <IconPause />
           : <svg width="28" height="28" viewBox="0 0 16 16" fill="#d97706" style={{ marginLeft: "4px" }}><polygon points="3,1 15,8 3,15"/></svg>
@@ -229,7 +229,24 @@ function VideoPlayer({ src, title, moduleName, duration }) {
       {/* Custom controls bar */}
       <div className="vp-custom-controls" style={{ ...vStyles.controls, opacity: showControls ? 1 : 0, transition: "opacity 0.3s" }}>
         {/* Seek bar */}
-        <div className="vp-seek-bar" onClick={handleSeek} onTouchEnd={handleSeek}>
+        <div
+          className="vp-seek-bar"
+          role="slider"
+          tabIndex={0}
+          aria-label="Seek"
+          aria-valuemin={0}
+          aria-valuemax={Math.round(totalDuration) || 0}
+          aria-valuenow={Math.round(currentTime)}
+          aria-valuetext={`${fmt(currentTime)} of ${fmt(totalDuration)}`}
+          onClick={handleSeek}
+          onTouchEnd={handleSeek}
+          onKeyDown={(e) => {
+            if (!videoRef.current || !totalDuration) return;
+            const step = totalDuration * 0.05;
+            if (e.key === "ArrowRight") { videoRef.current.currentTime = Math.min(totalDuration, currentTime + step); e.preventDefault(); }
+            if (e.key === "ArrowLeft") { videoRef.current.currentTime = Math.max(0, currentTime - step); e.preventDefault(); }
+          }}
+        >
           <div className="vp-track" style={vStyles.seekBg}>
             <div style={{ ...vStyles.seekFill, width: `${pct}%` }} />
             <div style={{ ...vStyles.seekThumb, left: `calc(${pct}% - 8px)` }} />
@@ -244,7 +261,7 @@ function VideoPlayer({ src, title, moduleName, duration }) {
               {playing ? <IconPause /> : <IconPlay />}
             </button>
             <span style={vStyles.time}>{fmt(currentTime)} / {fmt(totalDuration)}</span>
-            <button className="vp-btn" onClick={toggleMute} aria-label="Toggle mute">
+            <button className="vp-btn" onClick={toggleMute} aria-label={muted || volume === 0 ? "Unmute" : "Mute"}>
               {muted || volume === 0 ? <IconMute /> : volume < 0.5 ? <IconVolumeLow /> : <IconVolume />}
             </button>
             <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} onChange={handleVolume} className="vp-vol" aria-label="Volume" />
@@ -258,6 +275,8 @@ function VideoPlayer({ src, title, moduleName, duration }) {
                 className="vp-speed-btn"
                 onClick={() => setShowSpeed((v) => !v)}
                 aria-label="Playback speed"
+                aria-haspopup="listbox"
+                aria-expanded={showSpeed}
               >
                 {speed}x
               </button>
@@ -318,8 +337,9 @@ export default function ModuleDetails() {
   const module = allModules[currentModuleIndex];
   const completedLessons = lessonProgress[courseId] || {};
 
-  const [activeLesson, setActiveLesson] = useState(null);
-  const [expandedModules, setExpandedModules] = useState({});
+  const [lastModuleId, setLastModuleId] = useState(moduleId);
+  const [activeLesson, setActiveLesson] = useState(() => module?.lessons?.[0] ?? null);
+  const [expandedModules, setExpandedModules] = useState(() => module ? { [module.id]: true } : {});
   const [visible, setVisible] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
   const [completionShown, setCompletionShown] = useState(false);
@@ -328,17 +348,18 @@ export default function ModuleDetails() {
   const [reviewMessage, setReviewMessage] = useState(() => currentUser?.reviews?.[courseId]?.comment ?? "");
   const submitted = !!currentUser?.reviews?.[courseId];
 
+  // Reset active lesson and expand current module when navigating between modules.
+  // Render-time setState is the React-recommended pattern for derived state on prop changes.
+  if (lastModuleId !== moduleId) {
+    setLastModuleId(moduleId);
+    setActiveLesson(module?.lessons?.[0] ?? null);
+    setExpandedModules((prev) => ({ ...prev, [moduleId]: true }));
+  }
+
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 50);
     return () => clearTimeout(t);
   }, []);
-
-  useEffect(() => {
-    if (module) {
-      setExpandedModules({ [module.id]: true });
-      if (module.lessons?.length > 0) setActiveLesson(module.lessons[0]);
-    }
-  }, [moduleId]);
 
   if (!course) {
     return (
@@ -602,16 +623,16 @@ export default function ModuleDetails() {
                     onClick={goToPrevLesson}
                     className="px-5 py-2.5 rounded-lg font-medium text-[0.88rem] cursor-pointer border border-[rgba(255,255,255,0.08)] bg-surface text-text-secondary"
                   >
-                    ← {isFirstLesson && prevModule ? "Prev Module" : "Prev Lesson"}
+                    <span aria-hidden="true">← </span>{isFirstLesson && prevModule ? "Prev Module" : "Prev Lesson"}
                   </button>
                 )}
                 {!isLastLesson ? (
                   <button onClick={goToNextLesson} className="px-5 py-2.5 rounded-lg font-medium text-[0.88rem] cursor-pointer border border-[rgba(217,119,6,0.3)] bg-[rgba(217,119,6,0.08)] text-brand ml-auto">
-                    Next Lesson →
+                    Next Lesson <span aria-hidden="true">→</span>
                   </button>
                 ) : nextModule ? (
                   <button onClick={goToNextModule} className="px-5 py-2.5 rounded-lg font-medium text-[0.88rem] cursor-pointer border border-[rgba(217,119,6,0.3)] bg-[rgba(217,119,6,0.08)] text-brand ml-auto">
-                    Next Module →
+                    Next Module <span aria-hidden="true">→</span>
                   </button>
                 ) : null}
               </nav>
@@ -655,6 +676,7 @@ export default function ModuleDetails() {
             </div>
             <div className="flex flex-col gap-2.5">
               <button
+                type="button"
                 className="submit-btn w-full py-3.5 rounded-lg font-bold text-[0.92rem] border-none cursor-pointer bg-brand text-base disabled:opacity-40 disabled:cursor-not-allowed"
                 onClick={handleSubmitReview}
                 disabled={selectedRating === 0}
@@ -662,7 +684,7 @@ export default function ModuleDetails() {
               >
                 Submit Review
               </button>
-              <button onClick={() => setShowCompletion(false)} className="w-full py-3 rounded-lg text-[0.88rem] cursor-pointer border border-[rgba(255,255,255,0.07)] bg-transparent text-text-dim">
+              <button type="button" onClick={() => setShowCompletion(false)} className="w-full py-3 rounded-lg text-[0.88rem] cursor-pointer border border-[rgba(255,255,255,0.07)] bg-transparent text-text-dim">
                 Skip for now
               </button>
             </div>
@@ -679,9 +701,9 @@ export default function ModuleDetails() {
             </div>
             <div className="flex flex-col gap-3">
               <Link to="/courses" onClick={() => setShowCompletion(false)} className="block text-center py-3.5 rounded-lg no-underline font-bold text-[0.92rem] bg-brand text-base">
-                Browse More Courses →
+                Browse More Courses <span aria-hidden="true">→</span>
               </Link>
-              <button onClick={() => setShowCompletion(false)} className="w-full py-3 rounded-lg text-[0.88rem] cursor-pointer border border-[rgba(255,255,255,0.07)] bg-transparent text-text-dim">
+              <button type="button" onClick={() => setShowCompletion(false)} className="w-full py-3 rounded-lg text-[0.88rem] cursor-pointer border border-[rgba(255,255,255,0.07)] bg-transparent text-text-dim">
                 Close
               </button>
             </div>

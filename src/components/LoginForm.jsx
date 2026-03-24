@@ -34,7 +34,7 @@ export default function LoginForm({ form, onFieldChange, onSubmit, errors, authE
         )}
 
         <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4" aria-label="Sign in">
-          <FormField label="Email" error={errors.email}>
+          <FormField label="Email" htmlFor="login-email" error={errors.email}>
             <input
               id="login-email"
               type="email"
@@ -46,10 +46,11 @@ export default function LoginForm({ form, onFieldChange, onSubmit, errors, authE
               autoComplete="email"
               aria-required="true"
               aria-invalid={!!errors.email}
+              aria-describedby={errors.email ? "login-email-error" : undefined}
             />
           </FormField>
 
-          <FormField label="Password" error={errors.password}>
+          <FormField label="Password" htmlFor="login-password" error={errors.password}>
             <div className="relative">
               <input
                 id="login-password"
@@ -62,6 +63,7 @@ export default function LoginForm({ form, onFieldChange, onSubmit, errors, authE
                 autoComplete="current-password"
                 aria-required="true"
                 aria-invalid={!!errors.password}
+                aria-describedby={errors.password ? "login-password-error" : undefined}
               />
               <button
                 type="button"
