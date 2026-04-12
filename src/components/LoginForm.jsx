@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { EyeIcon, EyeOffIcon } from "./Icons";
 import FormField, { INPUT_CLASS, buildInputBorder } from "./FormField";
+import EmailAutocompleteInput from "./EmailAutocompleteInput";
 
 /**
  * LoginForm — credentials entry form (email + password).
@@ -35,18 +36,17 @@ export default function LoginForm({ form, onFieldChange, onSubmit, errors, authE
 
         <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4" aria-label="Sign in">
           <FormField label="Email" htmlFor="login-email" error={errors.email}>
-            <input
+            <EmailAutocompleteInput
               id="login-email"
-              type="email"
               value={form.email}
               onChange={(e) => onFieldChange("email", e.target.value)}
               placeholder="you@example.com"
               className={INPUT_CLASS}
               style={buildInputBorder(errors.email)}
               autoComplete="email"
-              aria-required="true"
-              aria-invalid={!!errors.email}
-              aria-describedby={errors.email ? "login-email-error" : undefined}
+              ariaRequired="true"
+              ariaInvalid={!!errors.email}
+              ariaDescribedby={errors.email ? "login-email-error" : undefined}
             />
           </FormField>
 

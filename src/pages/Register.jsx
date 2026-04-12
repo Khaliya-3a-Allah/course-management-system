@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
-import { validateRegisterForm, sanitizeInput } from "../utils/validators";
+import { validateRegisterForm, sanitizeInput, getPasswordStrength } from "../utils/validators";
 import { INTERESTS } from "../data/constants";
 import { EyeIcon, EyeOffIcon } from "../components/Icons";
 import FormField, { INPUT_CLASS, buildInputBorder } from "../components/FormField";
 import AutocompleteSelect from "../components/AutocompleteSelect";
 import Modal from "../components/Modal";
 import TermsContent from "../components/TermsContent";
+import EmailAutocompleteInput from "../components/EmailAutocompleteInput";
 
 export default function Register() {
   const { users, setUsers, setCurrentUser, currentUser, addToast } = useAppContext();
@@ -34,6 +35,8 @@ export default function Register() {
   const [visible, setVisible] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const formRootRef = useRef(null);
+  const passwordStrength = getPasswordStrength(form.password);
+  const strengthColors = ["#7f1d1d", "#b91c1c", "#d97706", "#16a34a", "#22c55e"];
 
   useEffect(() => {
     if (currentUser) {
@@ -204,18 +207,17 @@ export default function Register() {
             </FormField>
 
             <FormField label="Email" htmlFor="register-email" error={errors.email}>
-              <input
+              <EmailAutocompleteInput
                 id="register-email"
-                type="email"
                 value={form.email}
                 onChange={(e) => updateField("email", e.target.value)}
                 placeholder="you@example.com"
                 className={INPUT_CLASS}
                 style={buildInputBorder(errors.email)}
                 autoComplete="email"
-                aria-required="true"
-                aria-invalid={!!errors.email}
-                aria-describedby={errors.email ? "register-email-error" : undefined}
+                ariaRequired="true"
+                ariaInvalid={!!errors.email}
+                ariaDescribedby={errors.email ? "register-email-error" : undefined}
               />
             </FormField>
 
@@ -248,6 +250,30 @@ export default function Register() {
                   {showPassword ? <EyeIcon /> : <EyeOffIcon />}
                 </button>
               </div>
+              {!!form.password && (
+                <div className="mt-2" aria-live="polite">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[0.74rem] text-text-dim">Password strength</span>
+                    <span className="text-[0.74rem] font-semibold" style={{ color: strengthColors[passwordStrength.score] }}>
+                      {passwordStrength.label}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-5 gap-1">
+                    {[0, 1, 2, 3, 4].map((segment) => (
+                      <span
+                        key={segment}
+                        className="h-1.5 rounded-full"
+                        style={{
+                          backgroundColor: segment <= passwordStrength.score - 1
+                            ? strengthColors[passwordStrength.score]
+                            : "rgba(255,255,255,0.12)",
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-[0.72rem] text-text-dim mt-1.5">{passwordStrength.hint}</p>
+                </div>
+              )}
             </FormField>
 
             <FormField label="Confirm Password" htmlFor="register-confirm-password" error={errors.confirmPassword}>

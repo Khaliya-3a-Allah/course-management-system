@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { validateEmail } from "../utils/validators";
+import EmailAutocompleteInput from "../components/EmailAutocompleteInput";
+import paypalIcon from "../assets/PayPal.svg";
 
 function normalizeCardNumber(value) {
   return value.replace(/\D/g, "").slice(0, 19);
@@ -48,6 +50,66 @@ function formatCardForDisplay(value) {
     .trim();
 }
 
+function detectCardBrand(value) {
+  const number = value.replace(/\D/g, "");
+  if (/^4/.test(number)) return "visa";
+  if (/^(5[1-5]|2[2-7])/.test(number)) return "mastercard";
+  return "";
+}
+
+function maskCardNumber(value) {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "N/A";
+  const tail = digits.slice(-4).padStart(4, "*");
+  return `**** **** **** ${tail}`;
+}
+
+function buildReceiptHtml({
+  courseTitle,
+  buyerName,
+  buyerEmail,
+  method,
+  total,
+  discount,
+  price,
+  transactionId,
+  cardNumber,
+}) {
+  const paidWith = method === "paypal" ? "PayPal" : `Card (${maskCardNumber(cardNumber)})`;
+  return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Receipt - ${courseTitle}</title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 28px; color: #111827; }
+      .wrap { max-width: 760px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+      .head { background: linear-gradient(90deg, #d97706, #f59e0b); color: #111827; padding: 18px 22px; font-weight: 700; }
+      .body { padding: 22px; }
+      .row { display: flex; justify-content: space-between; gap: 16px; margin: 9px 0; }
+      .muted { color: #6b7280; }
+      .total { border-top: 1px solid #e5e7eb; margin-top: 14px; padding-top: 14px; font-size: 18px; font-weight: 700; }
+      .pill { display: inline-block; background: #fff7ed; color: #9a3412; padding: 4px 10px; border: 1px solid #fdba74; border-radius: 999px; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="head">Courseware - Payment Receipt</div>
+      <div class="body">
+        <div class="row"><span class="muted">Receipt ID</span><strong>${transactionId}</strong></div>
+        <div class="row"><span class="muted">Course</span><strong>${courseTitle}</strong></div>
+        <div class="row"><span class="muted">Buyer</span><strong>${buyerName || "N/A"}</strong></div>
+        <div class="row"><span class="muted">Email</span><strong>${buyerEmail || "N/A"}</strong></div>
+        <div class="row"><span class="muted">Payment method</span><span class="pill">${paidWith}</span></div>
+        <div class="row"><span class="muted">Subtotal</span><strong>$${price.toFixed(2)}</strong></div>
+        <div class="row"><span class="muted">Discount</span><strong>-$${discount.toFixed(2)}</strong></div>
+        <div class="row total"><span>Total paid</span><span>$${total.toFixed(2)}</span></div>
+      </div>
+    </div>
+  </body>
+</html>`;
+}
+
 export default function Checkout() {
   const { courseId } = useParams();
   const navigate = useNavigate();
@@ -63,6 +125,9 @@ export default function Checkout() {
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState("");
   const [promoError, setPromoError] = useState("");
+  const [referralCode, setReferralCode] = useState("");
+  const [appliedReferral, setAppliedReferral] = useState("");
+  const [referralError, setReferralError] = useState("");
   const [errors, setErrors] = useState({});
   const [isPaying, setIsPaying] = useState(false);
 
@@ -73,14 +138,20 @@ export default function Checkout() {
     cvv: "",
   });
   const [paypalEmail, setPaypalEmail] = useState("");
+  const cardBrand = detectCardBrand(cardForm.number);
+  const canPrintReceipt = isPaidCourse && (alreadyOwned || isPaying || currentUser);
 
-  const discountRate = appliedPromo ? 0.15 : 0;
+  const promoDiscountRate = appliedPromo ? 0.15 : 0;
+  const referralDiscountRate = appliedReferral ? 0.1 : 0;
+  const discountRate = Math.min(promoDiscountRate + referralDiscountRate, 0.3);
 
   const totals = useMemo(() => {
     const discount = Number((price * discountRate).toFixed(2));
+    const promoDiscount = Number((price * promoDiscountRate).toFixed(2));
+    const referralDiscount = Number((price * referralDiscountRate).toFixed(2));
     const finalTotal = Number((price - discount).toFixed(2));
-    return { discount, finalTotal };
-  }, [discountRate, price]);
+    return { discount, promoDiscount, referralDiscount, finalTotal };
+  }, [discountRate, promoDiscountRate, referralDiscountRate, price]);
 
   if (!course) {
     return (
@@ -104,6 +175,19 @@ export default function Checkout() {
     setAppliedPromo(normalized);
     setPromoError("");
     addToast(`Promo code ${normalized} applied (15% off).`, "success");
+  };
+
+  const handleApplyReferral = () => {
+    const normalized = referralCode.trim();
+    if (!normalized) {
+      setReferralError("Enter a referral code first.");
+      setAppliedReferral("");
+      return;
+    }
+
+    setAppliedReferral(normalized);
+    setReferralError("");
+    addToast(`Referral code ${normalized} applied (10% off).`, "success");
   };
 
   const handleCardNumberChange = (value) => {
@@ -181,11 +265,56 @@ export default function Checkout() {
     setIsPaying(true);
 
     window.setTimeout(() => {
+      const receiptData = {
+        courseTitle: course.title,
+        buyerName: currentUser?.name,
+        buyerEmail: currentUser?.email,
+        method,
+        total: totals.finalTotal,
+        discount: totals.discount,
+        price,
+        transactionId: `CW-${Date.now()}`,
+        cardNumber: cardForm.number,
+      };
+
       purchaseCourse(course.id);
       setIsPaying(false);
       addToast("Payment successful. You now own this course!", "success");
+
+      const receiptWin = window.open("", "_blank", "width=920,height=760");
+      if (receiptWin) {
+        receiptWin.document.write(buildReceiptHtml(receiptData));
+        receiptWin.document.close();
+        receiptWin.focus();
+        receiptWin.print();
+      }
+
       navigate(`/courses/${course.id}`);
     }, 700);
+  };
+
+  const handlePrintReceipt = () => {
+    const receiptData = {
+      courseTitle: course.title,
+      buyerName: currentUser?.name,
+      buyerEmail: currentUser?.email,
+      method,
+      total: totals.finalTotal,
+      discount: totals.discount,
+      price,
+      transactionId: `CW-${Date.now()}`,
+      cardNumber: cardForm.number,
+    };
+
+    const receiptWin = window.open("", "_blank", "width=920,height=760");
+    if (!receiptWin) {
+      addToast("Unable to open print window. Please allow pop-ups.", "error");
+      return;
+    }
+    receiptWin.document.write(buildReceiptHtml(receiptData));
+    receiptWin.document.close();
+    receiptWin.focus();
+    receiptWin.print();
   };
 
   return (
@@ -227,27 +356,34 @@ export default function Checkout() {
             </div>
           ) : !currentUser ? null : (
             <>
-              <div className="mt-6 flex flex-wrap gap-2">
+              <div className="mt-6 rounded-xl border border-[rgba(255,255,255,0.1)] bg-base p-1.5 grid grid-cols-2 gap-1.5">
                 <button
                   type="button"
                   onClick={() => { setMethod("card"); setErrors({}); }}
-                  className={`px-4 py-2 rounded-lg border text-[0.85rem] font-semibold ${
+                  className={`px-4 h-12 rounded-lg border text-[0.86rem] font-semibold flex items-center justify-center gap-2 transition-all ${
                     method === "card"
-                      ? "bg-[rgba(217,119,6,0.14)] border-[rgba(217,119,6,0.35)] text-[#f6c56b]"
-                      : "bg-transparent border-[rgba(255,255,255,0.14)] text-text-dim"
+                      ? "bg-[rgba(217,119,6,0.16)] border-[rgba(217,119,6,0.42)] text-[#f6c56b]"
+                      : "bg-transparent border-[rgba(255,255,255,0.08)] text-text-dim hover:text-text-secondary"
                   }`}
                 >
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex items-center rounded-md border border-[rgba(37,99,235,0.35)] bg-[rgba(37,99,235,0.22)] px-1.5 py-0.5 text-[0.62rem] font-bold tracking-wide text-[#93c5fd]"
+                  >
+                    VISA
+                  </span>
                   Credit Card
                 </button>
                 <button
                   type="button"
                   onClick={() => { setMethod("paypal"); setErrors({}); }}
-                  className={`px-4 py-2 rounded-lg border text-[0.85rem] font-semibold ${
+                  className={`px-4 h-12 rounded-lg border text-[0.86rem] font-semibold flex items-center justify-center gap-2 transition-all ${
                     method === "paypal"
-                      ? "bg-[rgba(217,119,6,0.14)] border-[rgba(217,119,6,0.35)] text-[#f6c56b]"
-                      : "bg-transparent border-[rgba(255,255,255,0.14)] text-text-dim"
+                      ? "bg-[rgba(217,119,6,0.16)] border-[rgba(217,119,6,0.42)] text-[#f6c56b]"
+                      : "bg-transparent border-[rgba(255,255,255,0.08)] text-text-dim hover:text-text-secondary"
                   }`}
                 >
+                  <img src={paypalIcon} alt="PayPal" className="w-5 h-5 object-contain" />
                   PayPal
                 </button>
               </div>
@@ -269,14 +405,32 @@ export default function Checkout() {
 
                     <label className="flex flex-col gap-1.5 text-[0.82rem] text-text-dim">
                       Card Number
-                      <input
-                        type="text"
-                        value={formatCardForDisplay(cardForm.number)}
-                        onChange={(e) => handleCardNumberChange(e.target.value)}
-                        className="bg-base border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2.5 text-text-primary"
-                        placeholder="4242 4242 4242 4242"
-                        inputMode="numeric"
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={formatCardForDisplay(cardForm.number)}
+                          onChange={(e) => handleCardNumberChange(e.target.value)}
+                          className="w-full bg-base border border-[rgba(255,255,255,0.12)] rounded-lg px-3 pr-20 py-2.5 text-text-primary"
+                          placeholder="4242 4242 4242 4242"
+                          inputMode="numeric"
+                        />
+                        <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                          {cardBrand === "visa" && (
+                            <span className="inline-flex items-center rounded-md border border-[rgba(37,99,235,0.35)] bg-[rgba(37,99,235,0.2)] px-2 py-0.5 text-[0.68rem] font-bold tracking-wide text-[#93c5fd]">
+                              VISA
+                            </span>
+                          )}
+                          {cardBrand === "mastercard" && (
+                            <span className="inline-flex items-center gap-1 rounded-md border border-[rgba(249,115,22,0.35)] bg-[rgba(249,115,22,0.18)] px-2 py-0.5 text-[0.68rem] font-bold text-[#fdba74]">
+                              <span className="relative inline-flex w-4 h-2.5">
+                                <span className="absolute left-0 top-0 w-2.5 h-2.5 rounded-full bg-[#ef4444]" />
+                                <span className="absolute right-0 top-0 w-2.5 h-2.5 rounded-full bg-[#f59e0b] opacity-90" />
+                              </span>
+                              MC
+                            </span>
+                          )}
+                        </div>
+                      </div>
                       {errors.number && <span className="text-[#f87171] text-[0.76rem]">{errors.number}</span>}
                     </label>
 
@@ -315,8 +469,7 @@ export default function Checkout() {
                 ) : (
                   <label className="flex flex-col gap-1.5 text-[0.82rem] text-text-dim">
                     PayPal Email
-                    <input
-                      type="email"
+                    <EmailAutocompleteInput
                       value={paypalEmail}
                       onChange={(e) => {
                         setPaypalEmail(e.target.value);
@@ -349,6 +502,27 @@ export default function Checkout() {
                   </div>
                   {promoError && <span className="text-[#f87171] text-[0.76rem]">{promoError}</span>}
                 </div>
+
+                <div className="mt-1 flex flex-col gap-1.5">
+                  <label className="text-[0.82rem] text-text-dim">Referral Code</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={referralCode}
+                      onChange={(e) => setReferralCode(e.target.value)}
+                      className="flex-1 bg-base border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2.5 text-text-primary"
+                      placeholder="Enter referral code"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyReferral}
+                      className="px-4 py-2.5 rounded-lg border border-[rgba(34,197,94,0.34)] bg-[rgba(34,197,94,0.12)] text-[#86efac] text-[0.82rem] font-semibold"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                  {referralError && <span className="text-[#f87171] text-[0.76rem]">{referralError}</span>}
+                </div>
               </form>
             </>
           )}
@@ -369,7 +543,11 @@ export default function Checkout() {
             </div>
             <div className="flex items-center justify-between text-[#22c55e]">
               <dt>Promo Discount</dt>
-              <dd>- ${totals.discount.toFixed(2)}</dd>
+              <dd>- ${totals.promoDiscount.toFixed(2)}</dd>
+            </div>
+            <div className="flex items-center justify-between text-[#34d399]">
+              <dt>Referral Discount</dt>
+              <dd>- ${totals.referralDiscount.toFixed(2)}</dd>
             </div>
             <div className="h-px bg-[rgba(255,255,255,0.08)]" />
             <div className="flex items-center justify-between text-[1rem] font-bold text-text-primary">
@@ -386,6 +564,16 @@ export default function Checkout() {
           >
             {isPaidCourse ? (isPaying ? "Processing..." : "Pay Now") : "Enroll Free"}
           </button>
+
+          {canPrintReceipt && (
+            <button
+              type="button"
+              onClick={handlePrintReceipt}
+              className="mt-2 w-full py-2.5 rounded-lg font-semibold text-[0.84rem] border border-[rgba(255,255,255,0.14)] text-text-secondary hover:text-text-primary"
+            >
+              Print Receipt
+            </button>
+          )}
 
           <p className="m-0 mt-3 text-center text-[0.74rem] text-text-faint">
             Valid credit card numbers and valid PayPal emails are accepted.

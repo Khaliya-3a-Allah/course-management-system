@@ -44,6 +44,40 @@ export function validatePassword(value) {
   return "";
 }
 
+export function getPasswordStrength(value) {
+  const password = value || "";
+  if (!password) {
+    return {
+      score: 0,
+      label: "No password yet",
+      hint: "Use 8+ characters with uppercase, lowercase, number, and symbol.",
+    };
+  }
+
+  let score = 0;
+  if (password.length >= 8) score += 1;
+  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score += 1;
+  if (/\d/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+  if (password.length >= 12) score += 1;
+
+  const normalized = Math.min(score, 4);
+  const labels = ["Very weak", "Weak", "Fair", "Good", "Strong"];
+  const hints = [
+    "Add more characters and mix letter cases.",
+    "Include numbers and symbols.",
+    "Add one more complexity rule for better protection.",
+    "Great progress. Longer passphrases are even safer.",
+    "Strong password.",
+  ];
+
+  return {
+    score: normalized,
+    label: labels[normalized],
+    hint: hints[normalized],
+  };
+}
+
 export function validatePasswordMatch(password, confirm) {
   if (!confirm) return "Please confirm your password.";
   return password === confirm ? "" : "Passwords do not match.";

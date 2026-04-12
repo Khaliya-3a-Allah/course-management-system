@@ -1,5 +1,6 @@
 import { useId, useMemo, useState } from "react";
 import { useAppContext } from "../context/AppContext";
+import EmailAutocompleteInput from "../components/EmailAutocompleteInput";
 
 const supportTopics = [
   "Account Access",
@@ -194,18 +195,17 @@ export default function Support() {
 
               <label htmlFor={emailInputId} className="flex flex-col gap-1.5">
                 <span className="text-[0.8rem] text-text-muted font-semibold">Email</span>
-                <input
+                <EmailAutocompleteInput
                   id={emailInputId}
                   name="email"
-                  type="email"
                   value={form.email}
                   onChange={(e) => updateField("email", e.target.value)}
                   autoComplete="email"
                   inputMode="email"
                   required
-                  aria-required="true"
-                  aria-invalid={Boolean(errors.email)}
-                  aria-describedby={errors.email ? emailErrorId : undefined}
+                  ariaRequired="true"
+                  ariaInvalid={Boolean(errors.email)}
+                  ariaDescribedby={errors.email ? emailErrorId : undefined}
                   className="h-11 px-3 rounded-lg border border-[rgba(255,255,255,0.12)] bg-surface-muted text-text-secondary"
                   placeholder="you@example.com"
                 />
