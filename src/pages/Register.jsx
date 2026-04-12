@@ -92,6 +92,7 @@ export default function Register() {
         bio: sanitizeInput(form.bio),
         createdCourseIds: [],
         enrolledCourseIds: [],
+        purchasedCourseIds: [],
         savedCourseIds: [],
         completedCourseIds: [],
       };

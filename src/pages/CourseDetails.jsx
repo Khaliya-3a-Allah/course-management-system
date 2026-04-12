@@ -1,17 +1,19 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import Modal from "../components/Modal";
 import { BookIcon, CapIcon, LockIcon, TargetIcon } from "../components/Icons";
 
 export default function CourseDetails() {
   const { courseId } = useParams();
+  const navigate = useNavigate();
   const {
     courses, currentUser,
     enrollCourse, unenrollCourse,
     saveCourse, unsaveCourse,
     completedCourses, getCourseProgress,
     submitReview,
+    addToast,
   } = useAppContext();
 
   const course = courses.find((c) => c.id === courseId);
@@ -41,15 +43,28 @@ export default function CourseDetails() {
     );
   }
 
+  const price = Number(course.price || 0);
+  const isPaidCourse = price > 0;
+  const owned = isPaidCourse
+    ? (currentUser?.purchasedCourseIds?.includes(course.id) ?? false)
+    : true;
   const enrolled = currentUser?.enrolledCourseIds?.includes(course.id) ?? false;
   const saved = currentUser?.savedCourseIds?.includes(course.id) ?? false;
   const ratingSubmitted = !!currentUser?.reviews?.[course.id];
   const isCompleted = completedCourses.has(course.id);
   const progress = getCourseProgress(course.id);
+  const canAccessContent = enrolled && owned;
 
   const handleEnroll = () => {
     if (!currentUser) { setModalOpen(true); return; }
+
+    if (isPaidCourse && !owned) {
+      navigate(`/checkout/${course.id}`);
+      return;
+    }
+
     enrollCourse(course.id);
+    addToast("You are now enrolled in this course.", "success");
   };
 
   const handleUnenroll = () => {
@@ -303,7 +318,7 @@ export default function CourseDetails() {
                               </li>
                             ))}
                           </ul>
-                          {enrolled ? (
+                          {canAccessContent ? (
                             <Link
                               to={`/courses/${course.id}/modules/${mod.id}`}
                               className="inline-block mt-4 text-[#d97706] no-underline text-[0.85rem] font-semibold"
@@ -311,7 +326,12 @@ export default function CourseDetails() {
                               Open Module →
                             </Link>
                           ) : currentUser ? (
-                            <p className="mt-4 text-[0.83rem] text-[#4b5563] italic inline-flex items-center gap-2"><LockIcon size={14} /> Enroll in this course to access modules</p>
+                            <p className="mt-4 text-[0.83rem] text-[#4b5563] italic inline-flex items-center gap-2">
+                              <LockIcon size={14} />
+                              {isPaidCourse && !owned
+                                ? "Buy this course to access modules"
+                                : "Enroll in this course to access modules"}
+                            </p>
                           ) : (
                             <button
                               onClick={() => setModalOpen(true)}
@@ -355,6 +375,13 @@ export default function CourseDetails() {
                 </div>
               )}
 
+              {isPaidCourse && !owned && (
+                <div className="mb-4 rounded-lg border border-[rgba(245,158,11,0.28)] bg-[rgba(245,158,11,0.1)] px-4 py-3">
+                  <p className="m-0 text-[0.72rem] tracking-[0.18em] uppercase text-[#f6c56b]">Course Price</p>
+                  <p className="m-0 mt-1 text-[1.35rem] font-bold text-[#f5f2ec]">${price}</p>
+                </div>
+              )}
+
               {isCompleted ? (
                 <button
                   disabled
@@ -372,7 +399,7 @@ export default function CourseDetails() {
                       : "bg-[#d97706] text-[#0c0c0e]"
                   }`}
                 >
-                  {enrolled ? "✓ Enrolled" : "Enroll Now"}
+                  {enrolled ? "✓ Enrolled" : isPaidCourse && !owned ? "Buy Course" : "Enroll Now"}
                 </button>
               )}
 
@@ -389,7 +416,11 @@ export default function CourseDetails() {
               </button>
 
               <hr className="border-none h-px bg-[rgba(255,255,255,0.06)] my-5" />
-              <p className="text-[0.78rem] text-[#4b5563] text-center">Enroll to track your progress and access all lessons.</p>
+              <p className="text-[0.78rem] text-[#4b5563] text-center">
+                {isPaidCourse
+                  ? "Buy this course once to own it forever and access all lessons."
+                  : "Enroll to track your progress and access all lessons."}
+              </p>
             </div>
           </aside>
         </div>

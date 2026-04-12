@@ -8,6 +8,18 @@ const AppContext = createContext(null);
 const STORAGE_KEY = "courseApp_currentUser";
 const THEME_KEY = "courseApp_theme";
 
+function normalizeUserCollections(user) {
+  if (!user) return user;
+  return {
+    ...user,
+    createdCourseIds: user.createdCourseIds || [],
+    enrolledCourseIds: user.enrolledCourseIds || [],
+    purchasedCourseIds: user.purchasedCourseIds || [],
+    savedCourseIds: user.savedCourseIds || [],
+    completedCourseIds: user.completedCourseIds || [],
+  };
+}
+
 function loadThemeFromStorage() {
   try {
     const stored = localStorage.getItem(THEME_KEY);
@@ -27,7 +39,7 @@ function loadUserFromStorage() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return null;
-    return JSON.parse(stored);
+    return normalizeUserCollections(JSON.parse(stored));
   } catch {
     localStorage.removeItem(STORAGE_KEY);
     return null;
@@ -49,7 +61,7 @@ function saveUserToStorage(user) {
 
 export function AppProvider({ children }) {
   const [courses, setCourses] = useState(mockCourses);
-  const [users, setUsers] = useState(mockUsers);
+  const [users, setUsers] = useState(() => mockUsers.map(normalizeUserCollections));
   const [currentUser, setCurrentUser] = useState(loadUserFromStorage);
   // courseId -> { lessonId: true }
   const [lessonProgress, setLessonProgress] = useState({});
@@ -112,19 +124,40 @@ export function AppProvider({ children }) {
       }
     });
 
-    const updated = { ...currentUser, ...safeUpdates };
+    const updated = normalizeUserCollections({ ...currentUser, ...safeUpdates });
     setCurrentUser(updated);
     setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
   }
 
   function enrollCourse(courseId) {
     if (!currentUser) return;
+    const enrolledCourseIds = currentUser.enrolledCourseIds || [];
     const updated = {
       ...currentUser,
-      enrolledCourseIds: currentUser.enrolledCourseIds.includes(courseId)
-        ? currentUser.enrolledCourseIds
-        : [...currentUser.enrolledCourseIds, courseId],
+      enrolledCourseIds: enrolledCourseIds.includes(courseId)
+        ? enrolledCourseIds
+        : [...enrolledCourseIds, courseId],
     };
+    setCurrentUser(updated);
+    setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+  }
+
+  function purchaseCourse(courseId) {
+    if (!currentUser) return;
+
+    const purchasedCourseIds = currentUser.purchasedCourseIds || [];
+    const enrolledCourseIds = currentUser.enrolledCourseIds || [];
+
+    const updated = {
+      ...currentUser,
+      purchasedCourseIds: purchasedCourseIds.includes(courseId)
+        ? purchasedCourseIds
+        : [...purchasedCourseIds, courseId],
+      enrolledCourseIds: enrolledCourseIds.includes(courseId)
+        ? enrolledCourseIds
+        : [...enrolledCourseIds, courseId],
+    };
+
     setCurrentUser(updated);
     setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
   }
@@ -133,7 +166,7 @@ export function AppProvider({ children }) {
     if (!currentUser) return;
     const updated = {
       ...currentUser,
-      enrolledCourseIds: currentUser.enrolledCourseIds.filter((id) => id !== courseId),
+      enrolledCourseIds: (currentUser.enrolledCourseIds || []).filter((id) => id !== courseId),
       completedCourseIds: (currentUser.completedCourseIds || []).filter((id) => id !== courseId),
     };
     setCurrentUser(updated);
@@ -153,11 +186,12 @@ export function AppProvider({ children }) {
 
   function saveCourse(courseId) {
     if (!currentUser) return;
+    const savedCourseIds = currentUser.savedCourseIds || [];
     const updated = {
       ...currentUser,
-      savedCourseIds: currentUser.savedCourseIds.includes(courseId)
-        ? currentUser.savedCourseIds
-        : [...currentUser.savedCourseIds, courseId],
+      savedCourseIds: savedCourseIds.includes(courseId)
+        ? savedCourseIds
+        : [...savedCourseIds, courseId],
     };
     setCurrentUser(updated);
     setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
@@ -167,7 +201,7 @@ export function AppProvider({ children }) {
     if (!currentUser) return;
     const updated = {
       ...currentUser,
-      savedCourseIds: currentUser.savedCourseIds.filter((id) => id !== courseId),
+      savedCourseIds: (currentUser.savedCourseIds || []).filter((id) => id !== courseId),
     };
     setCurrentUser(updated);
     setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
@@ -214,6 +248,7 @@ export function AppProvider({ children }) {
       ...u,
       createdCourseIds: (u.createdCourseIds || []).filter((id) => id !== courseId),
       enrolledCourseIds: (u.enrolledCourseIds || []).filter((id) => id !== courseId),
+      purchasedCourseIds: (u.purchasedCourseIds || []).filter((id) => id !== courseId),
       savedCourseIds: (u.savedCourseIds || []).filter((id) => id !== courseId),
       completedCourseIds: (u.completedCourseIds || []).filter((id) => id !== courseId),
     })));
@@ -224,6 +259,7 @@ export function AppProvider({ children }) {
         ...prev,
         createdCourseIds: (prev.createdCourseIds || []).filter((id) => id !== courseId),
         enrolledCourseIds: (prev.enrolledCourseIds || []).filter((id) => id !== courseId),
+        purchasedCourseIds: (prev.purchasedCourseIds || []).filter((id) => id !== courseId),
         savedCourseIds: (prev.savedCourseIds || []).filter((id) => id !== courseId),
         completedCourseIds: (prev.completedCourseIds || []).filter((id) => id !== courseId),
       };
@@ -290,7 +326,7 @@ export function AppProvider({ children }) {
         addCourse, updateCourse, submitReview,
         deleteCourse,
         updateProfile,
-        enrollCourse, unenrollCourse,
+        enrollCourse, purchaseCourse, unenrollCourse,
         saveCourse, unsaveCourse,
         lessonProgress, markLessonComplete,
         completedCourses, markCourseComplete,
