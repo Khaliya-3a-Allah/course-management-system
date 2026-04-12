@@ -10,10 +10,10 @@ export default function CourseDetails() {
   const {
     courses, coursesStatus, coursesError, fetchCourses,
     currentUser,
-    enrollCourse, unenrollCourse,
+    enrollCourse, unenrollCourse, purchaseCourse,
     saveCourse, unsaveCourse,
     completedCourses, getCourseProgress,
-    updateCourse,
+    updateCourse, addToast,
   } = useAppContext();
 
   const course = courses.find((c) => c.id === courseId);
@@ -77,13 +77,22 @@ export default function CourseDetails() {
     );
   }
 
+  const price = Number(course.price || 0);
+  const isPaidCourse = price > 0;
+  const owned = isPaidCourse ? (currentUser?.purchasedCourseIds?.includes(course.id) ?? false) : true;
+
   const isCompleted = completedCourses.has(course.id);
   const progress = getCourseProgress(course.id);
   const canRate = isCompleted && enrolled && currentUser && !ratingSubmitted;
 
   const handleEnroll = () => {
     if (!currentUser) { setModalOpen(true); return; }
+    if (isPaidCourse && !owned) {
+      navigate(`/checkout/${course.id}`);
+      return;
+    }
     enrollCourse(course.id);
+    addToast("You are now enrolled in this course.", "success");
   };
 
   const handleUnenroll = () => {
@@ -300,6 +309,13 @@ export default function CourseDetails() {
                 </div>
               )}
 
+              {isPaidCourse && !owned && (
+                <div style={{ marginBottom: "1rem", padding: "0.75rem 1rem", borderRadius: "8px", border: "1px solid rgba(245,158,11,0.28)", background: "rgba(245,158,11,0.1)" }}>
+                  <p style={{ margin: 0, fontSize: "0.72rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "#f6c56b" }}>Course Price</p>
+                  <p style={{ margin: "0.25rem 0 0", fontSize: "1.35rem", fontWeight: 700, color: "#f5f2ec" }}>${price}</p>
+                </div>
+              )}
+
               {isCompleted ? (
                 <button style={styles.completedBtn} disabled>✓ Completed</button>
               ) : (
@@ -307,7 +323,7 @@ export default function CourseDetails() {
                   onClick={enrolled ? () => setUnenrollModal(true) : handleEnroll}
                   style={enrolled ? styles.enrolledBtn : styles.enrollBtn}
                 >
-                  {enrolled ? "✓ Enrolled" : "Enroll Now"}
+                  {enrolled ? "✓ Enrolled" : isPaidCourse && !owned ? "Buy Course" : "Enroll Now"}
                 </button>
               )}
 
@@ -316,7 +332,9 @@ export default function CourseDetails() {
               </button>
 
               <div style={styles.divider} />
-              <p style={styles.cardNote}>Enroll to track your progress and access all lessons.</p>
+              <p style={styles.cardNote}>
+                {isPaidCourse ? "Buy this course once to own it forever and access all lessons." : "Enroll to track your progress and access all lessons."}
+              </p>
             </div>
           </aside>
         </div>
