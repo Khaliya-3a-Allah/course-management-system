@@ -156,6 +156,12 @@ export default function Checkout() {
   const handlePayment = (event) => {
     event.preventDefault();
 
+    if (!currentUser) {
+      addToast("Please sign in or create an account to complete your purchase.", "info");
+      navigate("/login");
+      return;
+    }
+
     if (!isPaidCourse) {
       enrollCourse(course.id);
       addToast("This is a free course. You are now enrolled.", "success");
@@ -191,6 +197,26 @@ export default function Checkout() {
           <h1 className="m-0 font-['Playfair_Display',serif] text-[1.9rem] text-text-primary">{course.title}</h1>
           <p className="mt-2 mb-0 text-text-dim text-[0.92rem]">Complete payment to unlock full access and mark this course as owned.</p>
 
+          {!currentUser && (
+            <div className="mt-6 rounded-xl border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.1)] p-4">
+              <p className="m-0 text-[0.88rem] text-[#f6c56b] font-semibold">Sign in or create an account to buy this course.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Link
+                  to="/login"
+                  className="px-4 py-2 rounded-lg bg-[#d97706] text-[#0c0c0e] text-[0.84rem] font-bold no-underline"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/register"
+                  className="px-4 py-2 rounded-lg border border-[rgba(255,255,255,0.15)] text-text-secondary text-[0.84rem] font-semibold no-underline"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            </div>
+          )}
+
           {!isPaidCourse ? (
             <div className="mt-6 rounded-xl border border-[rgba(34,197,94,0.3)] bg-[rgba(34,197,94,0.1)] p-4">
               <p className="m-0 text-[#22c55e] font-semibold">This course is free. No payment is needed.</p>
@@ -199,7 +225,7 @@ export default function Checkout() {
             <div className="mt-6 rounded-xl border border-[rgba(34,197,94,0.3)] bg-[rgba(34,197,94,0.1)] p-4">
               <p className="m-0 text-[#22c55e] font-semibold">You already own this course.</p>
             </div>
-          ) : (
+          ) : !currentUser ? null : (
             <>
               <div className="mt-6 flex flex-wrap gap-2">
                 <button

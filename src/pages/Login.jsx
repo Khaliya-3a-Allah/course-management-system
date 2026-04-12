@@ -64,7 +64,7 @@ export default function Login() {
     setPendingUser(matchedUser);
     setVerificationCode(code);
     setIsSubmitting(false);
-    addToast(`Your verification code is: ${code}`, "info");
+    addToast(`Your verification code is: ${code}`, "info", 12000);
   }
 
   function handleVerified() {
@@ -76,7 +76,7 @@ export default function Login() {
   function handleResendCode() {
     const newCode = generateVerificationCode();
     setVerificationCode(newCode);
-    addToast(`New verification code: ${newCode}`, "info");
+    addToast(`New verification code: ${newCode}`, "info", 12000);
   }
 
   function handleBackToLogin(errorMessage) {

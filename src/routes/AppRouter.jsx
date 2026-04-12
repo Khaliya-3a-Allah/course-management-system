@@ -30,6 +30,7 @@ export default function AppRouter() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/support" element={<Support />} />
+          <Route path="/checkout/:courseId" element={<Checkout />} />
 
           {/* Protected routes — require authentication */}
           <Route element={<ProtectedRoute />}>
@@ -37,7 +38,6 @@ export default function AppRouter() {
             <Route path="/certificates" element={<Certificates />} />
             <Route path="/course-form" element={<CourseForm />} />
             <Route path="/course-form/:courseId" element={<CourseForm />} />
-            <Route path="/checkout/:courseId" element={<Checkout />} />
           </Route>
         </Routes>
       </HashRouter>

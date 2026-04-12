@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { validateRegisterForm, sanitizeInput } from "../utils/validators";
@@ -33,6 +33,7 @@ export default function Register() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [visible, setVisible] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const formRootRef = useRef(null);
 
   useEffect(() => {
     if (currentUser) {
@@ -69,7 +70,44 @@ export default function Register() {
 
     const { errors: validationErrors, isValid } = validateRegisterForm(form);
     setErrors(validationErrors);
-    if (!isValid) return;
+    if (!isValid) {
+      formRootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+      const fieldOrder = [
+        "name",
+        "email",
+        "password",
+        "confirmPassword",
+        "role",
+        "phone",
+        "bio",
+        "expertise",
+        "website",
+        "acceptTerms",
+      ];
+      const firstInvalid = fieldOrder.find((key) => validationErrors[key]);
+      const elementMap = {
+        name: "register-name",
+        email: "register-email",
+        password: "register-password",
+        confirmPassword: "register-confirm-password",
+        phone: "register-phone",
+        bio: "register-bio",
+        expertise: "register-expertise",
+        website: "register-website",
+        acceptTerms: "register-terms",
+      };
+
+      if (firstInvalid === "role") {
+        const roleButtons = document.querySelectorAll("button[aria-pressed]");
+        roleButtons[0]?.focus();
+      } else if (firstInvalid && elementMap[firstInvalid]) {
+        const target = document.getElementById(elementMap[firstInvalid]);
+        target?.focus();
+      }
+
+      return;
+    }
 
     const emailAlreadyExists = users.some(
       (user) => user.email.toLowerCase() === form.email.toLowerCase()
@@ -125,6 +163,7 @@ export default function Register() {
       }}
     >
       <article
+        ref={formRootRef}
         className="w-full max-w-[440px] bg-surface rounded-2xl overflow-hidden"
         style={{ border: "1px solid rgba(255,255,255,0.07)" }}
         aria-label="Registration form"
@@ -180,7 +219,12 @@ export default function Register() {
               />
             </FormField>
 
-            <FormField label="Password" htmlFor="register-password" error={errors.password} hint="Minimum 6 characters">
+            <FormField
+              label="Password"
+              htmlFor="register-password"
+              error={errors.password}
+              hint="Use 8+ chars with uppercase, lowercase, number, and symbol"
+            >
               <div className="relative">
                 <input
                   id="register-password"

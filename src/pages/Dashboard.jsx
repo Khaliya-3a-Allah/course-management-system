@@ -31,6 +31,12 @@ export default function Dashboard() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileErrors, setProfileErrors] = useState({});
+  const [animatedCounts, setAnimatedCounts] = useState({
+    enrolled: 0,
+    completed: 0,
+    saved: 0,
+    created: 0,
+  });
   const [profileForm, setProfileForm] = useState({
     name: "",
     phone: "",
@@ -71,6 +77,50 @@ export default function Dashboard() {
     { id: "saved", label: "Saved", count: savedCourses.length },
     ...(isInstructor ? [{ id: "created", label: "Created", count: createdCourses.length }] : []),
   ], [enrolledCourses.length, completedCoursesList.length, savedCourses.length, createdCourses.length, isInstructor]);
+
+  const stats = useMemo(
+    () => [
+      { key: "enrolled", label: "Enrolled", value: enrolledCourses.length },
+      { key: "completed", label: "Completed", value: completedCoursesList.length },
+      { key: "saved", label: "Saved", value: savedCourses.length },
+      ...(isInstructor ? [{ key: "created", label: "Created", value: createdCourses.length }] : []),
+    ],
+    [enrolledCourses.length, completedCoursesList.length, savedCourses.length, createdCourses.length, isInstructor]
+  );
+
+  useEffect(() => {
+    const startValues = { enrolled: 0, completed: 0, saved: 0, created: 0 };
+    const targetValues = {
+      enrolled: enrolledCourses.length,
+      completed: completedCoursesList.length,
+      saved: savedCourses.length,
+      created: createdCourses.length,
+    };
+    const duration = 650;
+    const startTime = performance.now();
+    let frame = null;
+
+    const tick = (now) => {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+
+      setAnimatedCounts({
+        enrolled: Math.round(startValues.enrolled + (targetValues.enrolled - startValues.enrolled) * eased),
+        completed: Math.round(startValues.completed + (targetValues.completed - startValues.completed) * eased),
+        saved: Math.round(startValues.saved + (targetValues.saved - startValues.saved) * eased),
+        created: Math.round(startValues.created + (targetValues.created - startValues.created) * eased),
+      });
+
+      if (progress < 1) {
+        frame = requestAnimationFrame(tick);
+      }
+    };
+
+    frame = requestAnimationFrame(tick);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [enrolledCourses.length, completedCoursesList.length, savedCourses.length, createdCourses.length]);
 
   const requestedTab = searchParams.get("tab");
   const activeTab = (requestedTab && tabs.some((t) => t.id === requestedTab)) ? requestedTab : "enrolled";
@@ -175,14 +225,20 @@ export default function Dashboard() {
 
   return (
     <div
-      className="min-h-screen bg-[#0c0c0e] text-[#e8e6e0] font-['DM_Sans',sans-serif]"
+      className="relative min-h-screen overflow-hidden bg-[#0c0c0e] text-[#e8e6e0] font-['DM_Sans',sans-serif]"
       style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(14px)", transition: "opacity 0.5s ease, transform 0.5s ease" }}
     >
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        <div className="absolute -top-24 left-[12%] h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(217,119,6,0.2)_0%,rgba(217,119,6,0)_72%)] blur-3xl" />
+        <div className="absolute bottom-[-90px] right-[8%] h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(245,158,11,0.16)_0%,rgba(245,158,11,0)_72%)] blur-3xl" />
+        <div className="absolute inset-0 opacity-[0.14]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "56px 56px" }} />
+      </div>
+
       {/* Profile banner */}
-      <header className="bg-[#111114] border-b border-[rgba(255,255,255,0.06)] px-8 py-8">
+      <header className="relative z-10 bg-[#111114]/85 border-b border-[rgba(255,255,255,0.06)] px-4 md:px-8 py-6 md:py-8 backdrop-blur-sm">
         <div className="max-w-[1100px] mx-auto">
           {/* Profile row */}
-          <div className="flex items-center gap-5 mb-7 flex-wrap">
+          <div className="flex items-center gap-4 md:gap-5 mb-6 md:mb-7 flex-wrap">
             {currentUser.profileImage ? (
               <img
                 src={currentUser.profileImage}
@@ -198,7 +254,8 @@ export default function Dashboard() {
               </div>
             )}
             <div className="flex-1">
-              <h1 className="font-['Playfair_Display',serif] text-[1.6rem] text-[#f5f2ec] mb-1">{currentUser.name}</h1>
+              <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#d97706] mb-1">Your Dashboard</p>
+              <h1 className="font-['Playfair_Display',serif] text-[1.8rem] md:text-[2rem] text-[#f5f2ec] mb-1 leading-tight">{currentUser.name}</h1>
               <p className="text-[0.88rem] text-[#6b7280] mb-2">{currentUser.email}</p>
               {!!currentUser.phone && <p className="text-[0.82rem] text-[#9ca3af] mb-1">{currentUser.phone}</p>}
               {!!currentUser.bio && <p className="text-[0.82rem] text-[#9ca3af] max-w-[620px]">{currentUser.bio}</p>}
@@ -229,16 +286,11 @@ export default function Dashboard() {
           </div>
 
           {/* Stats */}
-          <dl className="flex gap-10 overflow-x-auto no-scrollbar pb-1">
-            {[
-              { label: "Enrolled", value: enrolledCourses.length },
-              { label: "Completed", value: completedCoursesList.length },
-              { label: "Saved", value: savedCourses.length },
-              ...(isInstructor ? [{ label: "Created", value: createdCourses.length }] : []),
-            ].map((s) => (
-              <div key={s.label} className="flex flex-col gap-1">
+          <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 pb-1">
+            {stats.map((s) => (
+              <div key={s.label} className="flex flex-col gap-1 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-4 py-3">
                 <dt className="text-[0.75rem] text-[#6b7280] tracking-wide uppercase m-0">{s.label}</dt>
-                <dd className="font-['Playfair_Display',serif] text-[1.75rem] text-[#f5f2ec] m-0">{s.value}</dd>
+                <dd className="font-['Playfair_Display',serif] text-[1.6rem] md:text-[1.75rem] text-[#f5f2ec] m-0">{animatedCounts[s.key]}</dd>
               </div>
             ))}
           </dl>
@@ -246,7 +298,7 @@ export default function Dashboard() {
       </header>
 
       {/* Tabs + content */}
-      <main className="max-w-[1100px] mx-auto px-8 py-8">
+      <main className="relative z-10 max-w-[1100px] mx-auto px-4 md:px-8 py-6 md:py-8">
         {/* Tab list */}
         <div
           role="tablist"
