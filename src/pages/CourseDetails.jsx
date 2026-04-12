@@ -125,15 +125,6 @@ export default function CourseDetails() {
           transition: "opacity 0.6s ease, transform 0.6s ease",
         }}
       >
-        <style>{`
-          .star-rate-btn { background: none !important; border: none !important; cursor: pointer; padding: 0 3px; font-size: 1.8rem; line-height: 1; transition: transform 0.1s; }
-          .star-rate-btn:hover { transform: scale(1.2); }
-          .star-rate-btn:disabled { cursor: default; }
-          .review-ta { width: 100%; background: #0c0c0e; border: 1px solid rgba(255,255,255,0.09); border-radius: 8px; color: #e8e6e0; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; padding: 0.65rem 0.9rem; resize: vertical; min-height: 80px; box-sizing: border-box; outline: none; transition: border-color 0.2s; }
-          .review-ta:focus { border-color: rgba(217,119,6,0.4); }
-          .review-ta::placeholder { color: #4b5563; }
-        `}</style>
-
         {/* Hero */}
         <div style={styles.hero}>
           <div style={styles.heroOverlay} />
@@ -199,7 +190,7 @@ export default function CourseDetails() {
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
                           key={star}
-                          className="star-rate-btn"
+                          className="bg-transparent border-none cursor-pointer px-[3px] text-[1.8rem] leading-none transition-transform hover:scale-110"
                           onClick={() => setSelectedRating(star)}
                           onMouseEnter={() => setHoveredStar(star)}
                           onMouseLeave={() => setHoveredStar(0)}
@@ -220,7 +211,7 @@ export default function CourseDetails() {
                         Leave a review <span style={styles.optional}>(optional)</span>
                       </label>
                       <textarea
-                        className="review-ta"
+                        className="w-full bg-surface border border-[rgba(255,255,255,0.12)] rounded-lg text-text-secondary text-[0.88rem] px-3.5 py-2.5 resize-y min-h-[80px] outline-none focus:border-[rgba(217,119,6,0.4)]"
                         placeholder="What did you think? What was most valuable?"
                         value={reviewMessage}
                         onChange={(e) => setReviewMessage(e.target.value)}

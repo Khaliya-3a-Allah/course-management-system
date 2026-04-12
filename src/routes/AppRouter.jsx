@@ -40,7 +40,6 @@ export default function AppRouter() {
             <Route path="/certificates" element={<Certificates />} />
             <Route path="/course-form" element={<CourseForm />} />
             <Route path="/course-form/:courseId" element={<CourseForm />} />
-            <Route path="/checkout/:courseId" element={<Checkout />} />
           </Route>
         </Routes>
       </HashRouter>
