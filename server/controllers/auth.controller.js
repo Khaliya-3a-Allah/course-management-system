@@ -1,84 +1,103 @@
-import { create, list } from "../data/store.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
+import { create, findById } from "../data/store.js";
 import { ApiError } from "../utils/ApiError.js";
+import { env } from "../config/env.js";
 
-export function register(req, res) {
+// Signs a JWT that expires in env.JWT_EXPIRES_IN (default 7 days)
+function signToken(userId) {
+  return jwt.sign({ id: userId }, env.JWT_SECRET, {
+    expiresIn: env.JWT_EXPIRES_IN,
+  });
+}
+
+export async function register(req, res) {
   const { name, email, password, role = "student" } = req.body || {};
 
   if (!name || !email || !password) {
     throw new ApiError(400, "name, email, and password are required");
   }
 
-  const existing = list("users").find(
-    (user) => user.email.toLowerCase() === String(email).toLowerCase()
-  );
-
+  // Check for duplicate email before hashing (fast short-circuit)
+  const existing = await User.findOne({
+    email: String(email).toLowerCase(),
+  });
   if (existing) {
     throw new ApiError(409, "A user with this email already exists");
   }
 
-  const user = create("users", {
+  // Hash the password with bcrypt (cost factor 12 is a good balance for production)
+  const hashedPassword = await bcrypt.hash(password, 12);
+
+  const user = await create("users", {
     name,
     email: String(email).toLowerCase(),
-    password,
+    password: hashedPassword,
     role,
     phone: "",
     bio: "",
-    createdCourseIds: [],
-    enrolledCourseIds: [],
-    purchasedCourseIds: [],
-    savedCourseIds: [],
-    completedCourseIds: [],
-    reviews: {},
   });
 
-  const { password: _password, ...safeUser } = user;
+  const token = signToken(user.id);
 
-  // Member 2 integration point: replace with JWT issue + secure cookie.
   res.status(201).json({
     success: true,
     message: "Registered successfully",
-    data: safeUser,
+    token,
+    data: user, // password is excluded by store.create (select: false + re-fetch)
   });
 }
 
-export function login(req, res) {
+export async function login(req, res) {
   const { email, password } = req.body || {};
 
   if (!email || !password) {
     throw new ApiError(400, "email and password are required");
   }
 
-  const user = list("users").find(
-    (item) => item.email.toLowerCase() === String(email).toLowerCase()
-  );
+  // Use +password to override the select:false on the password field
+  const user = await User.findOne({
+    email: String(email).toLowerCase(),
+  })
+    .select("+password")
+    .lean({ virtuals: true });
 
-  if (!user || user.password !== password) {
+  if (!user) {
     throw new ApiError(401, "Invalid email or password");
   }
 
-  const { password: _password, ...safeUser } = user;
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    throw new ApiError(401, "Invalid email or password");
+  }
 
-  // Member 2 integration point: return JWT access + refresh tokens.
+  const token = signToken(user.id);
+
+  // Strip the password before sending back to the client
+  const { password: _pw, ...safeUser } = user;
+  void _pw;
+
   res.status(200).json({
     success: true,
     message: "Login successful",
+    token,
     data: safeUser,
   });
 }
 
-export function me(req, res) {
-  // Member 2 integration point: derive user from JWT middleware (req.user).
-  const fallbackUser = list("users")[0] || null;
-  if (!fallbackUser) {
-    throw new ApiError(404, "No users found");
+export async function me(req, res) {
+  // req.user is set by authenticateRequest middleware in auth.routes.js
+  const user = await findById("users", req.user.id);
+  if (!user) {
+    throw new ApiError(404, "User not found");
   }
-
-  const { password: _password, ...safeUser } = fallbackUser;
-  res.status(200).json({ success: true, data: safeUser });
+  res.status(200).json({ success: true, data: user });
 }
 
-export function logout(req, res) {
-  // Member 2 integration point: clear cookie / invalidate refresh token.
+export async function logout(req, res) {
+  // JWT is stateless — the client discards the token on logout.
+  // If you add a token blocklist or refresh token table later, invalidate here.
   res.status(200).json({
     success: true,
     message: "Logout successful",

@@ -1,17 +1,23 @@
 import { Router } from "express";
 import { asyncHandler } from "./asyncHandler.js";
 
-export function createCrudRouter(controllers) {
+// Builds a standard CRUD router.
+// options.authMiddleware   — middleware array applied to POST, PUT, DELETE
+// options.ownerMiddleware  — middleware array applied to PUT and DELETE (ownership check)
+export function createCrudRouter(controllers, options = {}) {
+  const { authMiddleware = [], ownerMiddleware = [] } = options;
   const router = Router();
 
-  router.route("/")
+  router
+    .route("/")
     .get(asyncHandler(controllers.getAll))
-    .post(asyncHandler(controllers.create));
+    .post(...authMiddleware, asyncHandler(controllers.create));
 
-  router.route("/:id")
+  router
+    .route("/:id")
     .get(asyncHandler(controllers.getById))
-    .put(asyncHandler(controllers.update))
-    .delete(asyncHandler(controllers.delete));
+    .put(...authMiddleware, ...ownerMiddleware, asyncHandler(controllers.update))
+    .delete(...authMiddleware, ...ownerMiddleware, asyncHandler(controllers.delete));
 
   return router;
 }

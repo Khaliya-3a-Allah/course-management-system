@@ -3,37 +3,42 @@ import { ApiError } from "../utils/ApiError.js";
 
 export function buildCrudControllers(resourceName) {
   return {
-    getAll(req, res) {
-      const data = list(resourceName);
+    async getAll(req, res) {
+      const data = await list(resourceName);
       res.status(200).json({ success: true, count: data.length, data });
     },
 
-    getById(req, res) {
-      const item = findById(resourceName, req.params.id);
+    async getById(req, res) {
+      const item = await findById(resourceName, req.params.id);
       if (!item) {
         throw new ApiError(404, `${resourceName} item not found`);
       }
       res.status(200).json({ success: true, data: item });
     },
 
-    create(req, res) {
-      const item = create(resourceName, req.body || {});
+    async create(req, res) {
+      const payload = { ...req.body };
+      // Automatically record which user created this document (if authenticated)
+      if (req.user) {
+        payload.createdBy = req.user.id;
+      }
+      const item = await create(resourceName, payload);
       if (!item) {
         throw new ApiError(400, `Unable to create ${resourceName} item with provided data`);
       }
       res.status(201).json({ success: true, data: item });
     },
 
-    update(req, res) {
-      const item = update(resourceName, req.params.id, req.body || {});
+    async update(req, res) {
+      const item = await update(resourceName, req.params.id, req.body || {});
       if (!item) {
         throw new ApiError(404, `${resourceName} item not found`);
       }
       res.status(200).json({ success: true, data: item });
     },
 
-    delete(req, res) {
-      const deleted = remove(resourceName, req.params.id);
+    async delete(req, res) {
+      const deleted = await remove(resourceName, req.params.id);
       if (!deleted) {
         throw new ApiError(404, `${resourceName} item not found`);
       }

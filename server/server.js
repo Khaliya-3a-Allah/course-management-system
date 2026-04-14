@@ -1,7 +1,10 @@
 import app from "./app.js";
 import { env } from "./config/env.js";
+import { connectDB } from "./db/connection.js";
 
-app.listen(env.PORT, () => {
-  // Keep startup log simple and easy to read for students.
-  console.log(`Courseware API running on http://localhost:${env.PORT}${env.API_PREFIX}`);
+// Connect to MongoDB first, then start the HTTP server
+connectDB().then(() => {
+  app.listen(env.PORT, () => {
+    console.log(`Courseware API running on http://localhost:${env.PORT}${env.API_PREFIX}`);
+  });
 });

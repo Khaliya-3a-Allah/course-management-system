@@ -13,4 +13,7 @@ export const env = {
   API_PREFIX: process.env.API_PREFIX || "/api/v1",
   CLIENT_ORIGIN: process.env.CLIENT_ORIGIN || "http://localhost:5173",
   ENABLE_REQUEST_LOGS: process.env.ENABLE_REQUEST_LOGS !== "false",
+  MONGODB_URI: process.env.MONGODB_URI || "",
+  JWT_SECRET: process.env.JWT_SECRET || "change_this_secret_in_production",
+  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "7d",
 };

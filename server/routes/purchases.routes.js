@@ -6,11 +6,26 @@ import {
   deletePurchase,
 } from "../controllers/purchases.controller.js";
 import { createCrudRouter } from "../utils/createCrudRouter.js";
+import {
+  authenticateRequest,
+  authorizeOwner,
+} from "../middleware/authPlaceholder.js";
 
-export const purchasesRouter = createCrudRouter({
-  getAll: getAllPurchases,
-  getById: getPurchaseById,
-  create: createPurchase,
-  update: updatePurchase,
-  delete: deletePurchase,
-});
+// GET /purchases        — public
+// GET /purchases/:id    — public
+// POST /purchases       — authenticated
+// PUT /purchases/:id    — authenticated + must be owner
+// DELETE /purchases/:id — authenticated + must be owner
+export const purchasesRouter = createCrudRouter(
+  {
+    getAll: getAllPurchases,
+    getById: getPurchaseById,
+    create: createPurchase,
+    update: updatePurchase,
+    delete: deletePurchase,
+  },
+  {
+    authMiddleware: [authenticateRequest],
+    ownerMiddleware: [authorizeOwner("purchases")],
+  }
+);
