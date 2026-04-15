@@ -2,12 +2,18 @@ import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import Modal from "../components/Modal";
+<<<<<<< Updated upstream
+=======
+import ResourceState from "../components/ResourceState";
+import { BookIcon, CapIcon, LockIcon, TargetIcon } from "../components/Icons";
+>>>>>>> Stashed changes
 
 export default function CourseDetails() {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const {
-    courses, currentUser,
+    courses, coursesStatus, coursesError, fetchCourses,
+    currentUser,
     enrollCourse, unenrollCourse,
     saveCourse, unsaveCourse,
     completedCourses, getCourseProgress,
@@ -45,6 +51,26 @@ export default function CourseDetails() {
   }, [currentUser?.enrolledCourseIds, currentUser?.savedCourseIds, course?.id]);
 
   if (!course) {
+    const isLoading = coursesStatus === "loading" || coursesStatus === "idle";
+    const hasError = coursesStatus === "error";
+
+    if (isLoading || hasError) {
+      return (
+        <div className="min-h-[80vh] flex items-center justify-center bg-base p-8">
+          <div className="w-full max-w-md">
+            <ResourceState
+              status={coursesStatus}
+              error={coursesError}
+              onRetry={fetchCourses}
+              loadingLabel="Loading course…"
+            >
+              {null}
+            </ResourceState>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div style={styles.notFound}>
         <span style={styles.notFoundIcon}>⚠</span>

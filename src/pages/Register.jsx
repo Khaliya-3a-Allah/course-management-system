@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
+<<<<<<< Updated upstream
 import { validateRegisterForm, sanitizeInput } from "../utils/validators";
 import { CATEGORIES, INTERESTS } from "../data/constants";
+=======
+import { validateRegisterForm, getPasswordStrength } from "../utils/validators";
+import { INTERESTS } from "../data/constants";
+>>>>>>> Stashed changes
 import { EyeIcon, EyeOffIcon } from "../components/Icons";
 import FormField, { buildInputStyle } from "../components/FormField";
 import AutocompleteSelect from "../components/AutocompleteSelect";
@@ -10,7 +15,7 @@ import Modal from "../components/Modal";
 import TermsContent from "../components/TermsContent";
 
 export default function Register() {
-  const { users, setUsers, setCurrentUser, currentUser, addToast } = useAppContext();
+  const { register, currentUser, addToast } = useAppContext();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -63,12 +68,50 @@ export default function Register() {
     setAuthError("");
   }
 
-  function handleSubmit(event) {
+  function scrollToFirstError(validationErrors) {
+    formRootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    const fieldOrder = [
+      "name",
+      "email",
+      "password",
+      "confirmPassword",
+      "role",
+      "phone",
+      "bio",
+      "expertise",
+      "website",
+      "acceptTerms",
+    ];
+    const firstInvalid = fieldOrder.find((key) => validationErrors[key]);
+    const elementMap = {
+      name: "register-name",
+      email: "register-email",
+      password: "register-password",
+      confirmPassword: "register-confirm-password",
+      phone: "register-phone",
+      bio: "register-bio",
+      expertise: "register-expertise",
+      website: "register-website",
+      acceptTerms: "register-terms",
+    };
+
+    if (firstInvalid === "role") {
+      const roleButtons = document.querySelectorAll("button[aria-pressed]");
+      roleButtons[0]?.focus();
+    } else if (firstInvalid && elementMap[firstInvalid]) {
+      const target = document.getElementById(elementMap[firstInvalid]);
+      target?.focus();
+    }
+  }
+
+  async function handleSubmit(event) {
     event.preventDefault();
     if (isSubmitting) return;
 
     const { errors: validationErrors, isValid } = validateRegisterForm(form);
     setErrors(validationErrors);
+<<<<<<< Updated upstream
     if (!isValid) return;
 
     const emailAlreadyExists = users.some(
@@ -76,12 +119,16 @@ export default function Register() {
     );
     if (emailAlreadyExists) {
       setAuthError("An account with this email already exists.");
+=======
+    if (!isValid) {
+      scrollToFirstError(validationErrors);
+>>>>>>> Stashed changes
       return;
     }
 
     setIsSubmitting(true);
-
     try {
+<<<<<<< Updated upstream
     const baseUser = {
       id: `u-${Date.now()}`,
       name: sanitizeInput(form.name),
@@ -108,6 +155,13 @@ export default function Register() {
     setCurrentUser(newUser);
     addToast("Account created successfully!", "success");
     navigate("/dashboard");
+=======
+      await register(form);
+      addToast("Account created successfully!", "success");
+      navigate("/dashboard");
+    } catch (error) {
+      setAuthError(describeRegisterError(error));
+>>>>>>> Stashed changes
     } finally {
       setIsSubmitting(false);
     }
@@ -202,7 +256,6 @@ export default function Register() {
               </div>
             </FormField>
 
-            {/* Role Selection */}
             <FormField label="I am a..." error={errors.role}>
               <div style={styles.roleRow} role="group" aria-label="Select role">
                 {["student", "instructor"].map((roleOption) => {
@@ -249,7 +302,6 @@ export default function Register() {
               />
             </FormField>
 
-            {/* Student: Interests */}
             {form.role === "student" && (
               <FormField label="Interests" hint="Optional — select up to 10 topics">
                 <AutocompleteSelect
@@ -263,7 +315,6 @@ export default function Register() {
               </FormField>
             )}
 
-            {/* Instructor: Expertise + Website */}
             {form.role === "instructor" && (
               <>
                 <FormField label="Area of Expertise" error={errors.expertise} hint="Optional">
@@ -291,8 +342,12 @@ export default function Register() {
               </>
             )}
 
+<<<<<<< Updated upstream
             {/* Terms & Conditions */}
             <div style={styles.termsRow}>
+=======
+            <div className="flex items-start gap-2.5 mt-1">
+>>>>>>> Stashed changes
               <input
                 id="register-terms"
                 type="checkbox"
@@ -348,6 +403,7 @@ export default function Register() {
   );
 }
 
+<<<<<<< Updated upstream
 const focusStyles = `
   #register-name:focus,
   #register-email:focus,
@@ -490,3 +546,20 @@ const styles = {
   },
   switchLink: { color: "#d97706", textDecoration: "none", fontWeight: 600 },
 };
+=======
+function describeRegisterError(error) {
+  if (error?.status === 0) {
+    return "We couldn't reach the server. Check your connection and try again.";
+  }
+  if (error?.status === 409) {
+    return "An account with this email already exists.";
+  }
+  if (error?.status === 400) {
+    return error.message || "Please correct the highlighted fields and try again.";
+  }
+  if (error?.status >= 500) {
+    return "The server is having trouble right now. Please try again in a moment.";
+  }
+  return error?.message || "Sign-up failed. Please try again.";
+}
+>>>>>>> Stashed changes

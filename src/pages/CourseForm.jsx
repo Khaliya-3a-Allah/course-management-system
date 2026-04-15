@@ -32,6 +32,15 @@ export default function CourseForm() {
     return () => clearTimeout(t);
   }, []);
 
+<<<<<<< Updated upstream
+=======
+  const ownerId = existing?.instructorId || existing?.creator || null;
+  const isOwnerInstructor =
+    Boolean(currentUser) &&
+    (currentUser.role === "admin" ||
+      (currentUser.role === "instructor" && ownerId && currentUser.id === ownerId));
+
+>>>>>>> Stashed changes
   useEffect(() => {
     if (isEdit && existing) {
       setForm({
@@ -65,6 +74,7 @@ export default function CourseForm() {
     setErrors(errs);
     if (!isValid) return;
 
+<<<<<<< Updated upstream
     const tagsArr = form.tags
       .split(",")
       .map((t) => t.trim())
@@ -82,11 +92,85 @@ export default function CourseForm() {
         instructorName: form.instructorName || currentUser?.name || "",
       });
     }
+=======
+  const handleSubmit = async (e) => {
+    e?.preventDefault();
+    if (submitted) return;
+
+    const { errors: formErrs, isValid: formValid } = validateCourseForm(form);
+    const { errors: modErrs, isValid: modsValid } = validateModules(modules);
+
+    const allErrors = { ...formErrs };
+    if (Object.keys(modErrs).length > 0) {
+      allErrors.modules = modErrs;
+    }
+
+    setErrors(allErrors);
+    if (!formValid || !modsValid) return;
+
+    const sanitizedForm = {
+      title: sanitizeInput(form.title),
+      category: form.category,
+      level: form.level,
+      description: sanitizeInput(form.description),
+      thumbnail: form.thumbnail.trim(),
+      tags: form.tags,
+    };
+    const tagsArr = sanitizedForm.tags.split(",").map((t) => sanitizeInput(t)).filter(Boolean);
+>>>>>>> Stashed changes
 
     setSubmitted(true);
-    setTimeout(() => navigate("/dashboard"), 1200);
+    try {
+      if (isEdit) {
+        await updateCourse({
+          id: existing.id,
+          ...sanitizedForm,
+          tags: tagsArr,
+        });
+      } else {
+        await addCourse({
+          ...sanitizedForm,
+          tags: tagsArr,
+          rating: 0,
+        });
+      }
+      setTimeout(() => navigate("/dashboard"), 1200);
+    } catch (error) {
+      setSubmitted(false);
+      if (error.status === 403) {
+        addToast("You are not authorized to modify this course.", "error");
+        navigate("/dashboard");
+        return;
+      }
+      if (error.status === 401) {
+        addToast("Your session has expired. Please sign in again.", "error");
+        navigate("/login");
+        return;
+      }
+      addToast(error.message || "Could not save the course. Please try again.", "error");
+    }
   };
 
+<<<<<<< Updated upstream
+=======
+  const handleDeleteCourse = async () => {
+    if (!existing) return;
+    try {
+      await deleteCourse(existing.id);
+      addToast("Course deleted successfully.", "success");
+      navigate("/dashboard");
+    } catch (error) {
+      setShowDeleteModal(false);
+      if (error.status === 403) {
+        addToast("You are not authorized to delete this course.", "error");
+        navigate("/dashboard");
+        return;
+      }
+      addToast(error.message || "Could not delete this course.", "error");
+    }
+  };
+
+>>>>>>> Stashed changes
   return (
     <div
       style={{

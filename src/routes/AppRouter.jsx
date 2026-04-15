@@ -3,6 +3,7 @@ import { AppProvider } from "../context/AppContext";
 import Navbar from "../components/Navbar";
 import ToastContainer from "../components/Toast";
 import ProtectedRoute from "../components/ProtectedRoute";
+import ColdStartBanner from "../components/ColdStartBanner";
 import Home from "../pages/Home";
 import Courses from "../pages/Courses";
 import CourseDetails from "../pages/CourseDetails";
@@ -16,6 +17,7 @@ export default function AppRouter() {
   return (
     <AppProvider>
       <HashRouter>
+        <ColdStartBanner />
         <Navbar />
         <ToastContainer />
         <Routes>

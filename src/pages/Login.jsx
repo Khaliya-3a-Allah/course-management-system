@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { validateLoginForm } from "../utils/validators";
-import { generateVerificationCode } from "../utils/codeGenerator";
+import { describeLoginError, describeTwoFactorError } from "../utils/authErrors";
 import LoginForm from "../components/LoginForm";
 import TwoFactorForm from "../components/TwoFactorForm";
 
 export default function Login() {
-  const { users, setCurrentUser, currentUser, addToast } = useAppContext();
+  const { login, completeTwoFactor, currentUser, addToast } = useAppContext();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({ email: "", password: "" });
@@ -16,9 +16,8 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [visible, setVisible] = useState(false);
 
-  // 2FA state
-  const [pendingUser, setPendingUser] = useState(null);
-  const [verificationCode, setVerificationCode] = useState("");
+  // 2FA challenge state — populated when /auth/login returns twoFactorRequired
+  const [challenge, setChallenge] = useState(null);
 
   useEffect(() => {
     if (currentUser) {
@@ -37,7 +36,7 @@ export default function Login() {
     setAuthError("");
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     if (isSubmitting) return;
 
@@ -47,17 +46,28 @@ export default function Login() {
 
     setIsSubmitting(true);
 
-    const matchedUser = users.find(
-      (user) =>
-        user.email.toLowerCase() === form.email.toLowerCase() &&
-        user.password === form.password
-    );
+    try {
+      const result = await login({
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+      });
 
-    if (!matchedUser) {
-      setAuthError("Incorrect email or password. Try alex@example.com / password123");
+      if (result.twoFactorRequired) {
+        setChallenge({
+          token: result.challengeToken,
+          email: result.email,
+        });
+        return;
+      }
+
+      addToast(`Welcome back, ${result.user.name}!`, "success");
+      navigate("/dashboard");
+    } catch (error) {
+      setAuthError(describeLoginError(error));
+    } finally {
       setIsSubmitting(false);
-      return;
     }
+<<<<<<< Updated upstream
 
     // Credentials valid — enter 2FA step
     const code = generateVerificationCode();
@@ -77,11 +87,26 @@ export default function Login() {
     const newCode = generateVerificationCode();
     setVerificationCode(newCode);
     addToast(`New verification code: ${newCode}`, "info");
+=======
+  }
+
+  async function handleTwoFactorSubmit(code) {
+    try {
+      const result = await completeTwoFactor({
+        challengeToken: challenge.token,
+        code,
+      });
+      addToast(`Welcome back, ${result.user.name}!`, "success");
+      navigate("/dashboard");
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: describeTwoFactorError(error) };
+    }
+>>>>>>> Stashed changes
   }
 
   function handleBackToLogin(errorMessage) {
-    setPendingUser(null);
-    setVerificationCode("");
+    setChallenge(null);
     if (errorMessage) {
       addToast(errorMessage, "error");
     }
@@ -96,12 +121,10 @@ export default function Login() {
         transition: "opacity 0.5s ease, transform 0.5s ease",
       }}
     >
-      {pendingUser ? (
+      {challenge ? (
         <TwoFactorForm
-          userEmail={pendingUser.email}
-          verificationCode={verificationCode}
-          onVerified={handleVerified}
-          onResendCode={handleResendCode}
+          userEmail={challenge.email}
+          onSubmitCode={handleTwoFactorSubmit}
           onBack={handleBackToLogin}
         />
       ) : (
