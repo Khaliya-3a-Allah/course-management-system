@@ -1,0 +1,83 @@
+import mongoose from "mongoose";
+import User from "../models/User.js";
+import Course from "../models/Course.js";
+import Module from "../models/Module.js";
+import Lesson from "../models/Lesson.js";
+import Enrollment from "../models/Enrollment.js";
+import Purchase from "../models/Purchase.js";
+import Progress from "../models/Progress.js";
+import Review from "../models/Review.js";
+import Certificate from "../models/Certificate.js";
+import SupportTicket from "../models/SupportTicket.js";
+
+// Maps resource name strings to their Mongoose models
+const modelMap = {
+  users: User,
+  courses: Course,
+  modules: Module,
+  lessons: Lesson,
+  enrollments: Enrollment,
+  purchases: Purchase,
+  progress: Progress,
+  reviews: Review,
+  certificates: Certificate,
+  supportTickets: SupportTicket,
+};
+
+function getModel(resourceName) {
+  const Model = modelMap[resourceName];
+  if (!Model) throw new Error(`Unknown resource: ${resourceName}`);
+  return Model;
+}
+
+function isValidId(id) {
+  return mongoose.isValidObjectId(id);
+}
+
+// Return all documents for a resource
+export async function list(resourceName) {
+  const Model = getModel(resourceName);
+  return Model.find({}).lean({ virtuals: true });
+}
+
+// Return documents for a resource filtered by userId
+export async function listByUser(resourceName, userId) {
+  const Model = getModel(resourceName);
+  return Model.find({ userId }).lean({ virtuals: true });
+}
+
+// Return a single document by id (returns null for invalid or missing ids)
+export async function findById(resourceName, id) {
+  if (!isValidId(id)) return null;
+  const Model = getModel(resourceName);
+  return Model.findById(id).lean({ virtuals: true });
+}
+
+// Create a new document and return it (without the password field for users)
+export async function create(resourceName, payload) {
+  const Model = getModel(resourceName);
+  const doc = await Model.create(payload);
+  // Re-fetch so select:false fields (like password) are excluded from the response
+  return Model.findById(doc._id).lean({ virtuals: true });
+}
+
+// Update a document by id and return the updated version (null if not found)
+export async function update(resourceName, id, payload) {
+  if (!isValidId(id)) return null;
+  const Model = getModel(resourceName);
+  // Strip id fields from payload to avoid overwrite errors
+  const { _id, id: _id2, ...safePayload } = payload;
+  void _id;
+  void _id2;
+  return Model.findByIdAndUpdate(id, safePayload, {
+    new: true,
+    runValidators: true,
+  }).lean({ virtuals: true });
+}
+
+// Delete a document by id and return the deleted document (null if not found)
+export async function remove(resourceName, id) {
+  if (!isValidId(id)) return null;
+  const Model = getModel(resourceName);
+  return Model.findByIdAndDelete(id).lean({ virtuals: true });
+}

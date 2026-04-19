@@ -16,7 +16,6 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [visible, setVisible] = useState(false);
 
-  // 2FA challenge state — populated when /auth/login returns twoFactorRequired
   const [challenge, setChallenge] = useState(null);
 
   useEffect(() => {
@@ -67,27 +66,6 @@ export default function Login() {
     } finally {
       setIsSubmitting(false);
     }
-<<<<<<< Updated upstream
-
-    // Credentials valid — enter 2FA step
-    const code = generateVerificationCode();
-    setPendingUser(matchedUser);
-    setVerificationCode(code);
-    setIsSubmitting(false);
-    addToast(`Your verification code is: ${code}`, "info");
-  }
-
-  function handleVerified() {
-    setCurrentUser(pendingUser);
-    addToast(`Welcome back, ${pendingUser.name}!`, "success");
-    navigate("/dashboard");
-  }
-
-  function handleResendCode() {
-    const newCode = generateVerificationCode();
-    setVerificationCode(newCode);
-    addToast(`New verification code: ${newCode}`, "info");
-=======
   }
 
   async function handleTwoFactorSubmit(code) {
@@ -102,7 +80,6 @@ export default function Login() {
     } catch (error) {
       return { success: false, message: describeTwoFactorError(error) };
     }
->>>>>>> Stashed changes
   }
 
   function handleBackToLogin(errorMessage) {

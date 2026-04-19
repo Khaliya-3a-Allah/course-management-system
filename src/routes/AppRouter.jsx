@@ -10,8 +10,11 @@ import CourseDetails from "../pages/CourseDetails";
 import ModuleDetails from "../pages/ModuleDetails";
 import CourseForm from "../pages/CourseForm";
 import Dashboard from "../pages/Dashboard";
+import Certificates from "../pages/Certificates";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
+import Support from "../pages/Support";
+import Checkout from "../pages/Checkout";
 
 export default function AppRouter() {
   return (
@@ -28,10 +31,13 @@ export default function AppRouter() {
           <Route path="/courses/:courseId/modules/:moduleId" element={<ModuleDetails />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/support" element={<Support />} />
+          <Route path="/checkout/:courseId" element={<Checkout />} />
 
           {/* Protected routes — require authentication */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/certificates" element={<Certificates />} />
             <Route path="/course-form" element={<CourseForm />} />
             <Route path="/course-form/:courseId" element={<CourseForm />} />
           </Route>

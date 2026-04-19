@@ -3,21 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import CourseCard from "../components/CourseCard";
 import Modal from "../components/Modal";
-<<<<<<< Updated upstream
-=======
 import TwoFactorEnroll from "../components/TwoFactorEnroll";
-import {
-  validateName,
-  validatePhone,
-  validateBio,
-  validateExpertise,
-  validateOptionalUrl,
-  sanitizeInput,
-} from "../utils/validators";
->>>>>>> Stashed changes
 
 export default function Dashboard() {
-  const { currentUser, courses, unenrollCourse, unsaveCourse, completedCourses, getCourseProgress } = useAppContext();
+  const { currentUser, courses, unenrollCourse, unsaveCourse, completedCourses, getCourseProgress, addToast } = useAppContext();
   const navigate = useNavigate();
   const [visible, setVisible] = useState(false);
   const [activeTab, setActiveTab] = useState("enrolled");
@@ -31,30 +20,7 @@ export default function Dashboard() {
 
   if (!currentUser) return null;
 
-<<<<<<< Updated upstream
-  const isInstructor = currentUser.role === "instructor";
-=======
-  const enrolledCourses = useMemo(
-    () => courses.filter((c) => currentUser?.enrolledCourseIds?.includes(c.id) && !completedCourses.has(c.id)),
-    [courses, currentUser?.enrolledCourseIds, completedCourses]
-  );
-  const completedCoursesList = useMemo(
-    () => courses.filter((c) => completedCourses.has(c.id)),
-    [courses, completedCourses]
-  );
-  const savedCourses = useMemo(
-    () => courses.filter((c) => currentUser?.savedCourseIds?.includes(c.id)),
-    [courses, currentUser?.savedCourseIds]
-  );
-  const createdCourses = useMemo(
-    () => {
-      if (!currentUser) return [];
-      if (currentUser.role === "admin") return courses;
-      return courses.filter((c) => c.instructorId && c.instructorId === currentUser.id);
-    },
-    [courses, currentUser]
-  );
->>>>>>> Stashed changes
+  const isInstructor = currentUser.role === "instructor" || currentUser.role === "admin";
 
   const enrolledCourses = courses.filter((c) =>
     currentUser.enrolledCourseIds?.includes(c.id) && !completedCourses.has(c.id)
@@ -83,109 +49,14 @@ export default function Dashboard() {
   const activeData = getTabData();
   const roleColor = isInstructor ? "#d97706" : "#6366f1";
 
-<<<<<<< Updated upstream
-  const handleUnenrollConfirm = () => {
+  const handleUnenrollConfirm = async () => {
     if (!unenrollTarget) return;
-    unenrollCourse(unenrollTarget.id);
+    try {
+      await unenrollCourse(unenrollTarget.id);
+    } catch (error) {
+      addToast(error.message || "Could not unenroll.", "error");
+    }
     setUnenrollTarget(null);
-=======
-  const emptyMessages = {
-    enrolled: "No courses in progress.",
-    completed: "You haven't completed any courses yet.",
-    saved: "You haven't saved any courses yet.",
-    created: "You haven't created any courses yet.",
-  };
-
-  const openProfileEditor = () => {
-    setProfileForm({
-      name: currentUser.name || "",
-      phone: currentUser.phone || "",
-      bio: currentUser.bio || "",
-      expertise: currentUser.expertise || "",
-      website: currentUser.website || "",
-      profileImage: currentUser.profileImage || "",
-    });
-    setProfileErrors({});
-    setShowProfileModal(true);
-  };
-
-  const updateProfileField = (key, value) => {
-    setProfileForm((prev) => ({ ...prev, [key]: value }));
-    if (profileErrors[key]) {
-      setProfileErrors((prev) => ({ ...prev, [key]: "" }));
-    }
-  };
-
-  const handleProfileImageChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setProfileErrors((prev) => ({ ...prev, profileImage: "Please upload an image file." }));
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      updateProfileField("profileImage", String(reader.result || ""));
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleSaveProfile = async (e) => {
-    e.preventDefault();
-
-    const errors = {
-      name: validateName(profileForm.name),
-      phone: validatePhone(profileForm.phone),
-      bio: validateBio(profileForm.bio),
-      expertise: isInstructor ? validateExpertise(profileForm.expertise) : "",
-      website: isInstructor ? validateOptionalUrl(profileForm.website) : "",
-      profileImage: "",
-    };
-
-    const hasErrors = Object.values(errors).some(Boolean);
-    setProfileErrors(errors);
-    if (hasErrors) return;
-
-    try {
-      await updateProfile({
-        name: sanitizeInput(profileForm.name),
-        phone: sanitizeInput(profileForm.phone),
-        bio: sanitizeInput(profileForm.bio),
-        expertise: isInstructor ? sanitizeInput(profileForm.expertise) : "",
-        website: isInstructor ? profileForm.website.trim() : "",
-        profileImage: profileForm.profileImage,
-      });
-      setShowProfileModal(false);
-      addToast("Profile updated successfully.", "success");
-    } catch (error) {
-      addToast(
-        error.message || "Could not save your profile. Please try again.",
-        "error"
-      );
-    }
-  };
-
-  const handleDeleteCourse = async () => {
-    if (!deleteTarget) return;
-    const target = deleteTarget;
-    setDeleteTarget(null);
-    try {
-      await deleteCourse(target.id);
-      addToast("Course deleted successfully.", "success");
-    } catch (error) {
-      if (error.status === 403) {
-        addToast("You are not authorized to delete this course.", "error");
-        return;
-      }
-      if (error.status === 401) {
-        addToast("Your session has expired. Please sign in again.", "error");
-        navigate("/login");
-        return;
-      }
-      addToast(error.message || "Could not delete this course.", "error");
-    }
->>>>>>> Stashed changes
   };
 
   return (
@@ -247,17 +118,12 @@ export default function Dashboard() {
           ))}
         </div>
 
-<<<<<<< Updated upstream
-        <div role="tabpanel">
-=======
         {/* Security section */}
         <div className="mb-6">
           <TwoFactorEnroll />
         </div>
 
-        {/* Tab panel */}
-        <div role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`} tabIndex={0} className="dash-surface rounded-2xl border border-[rgba(255,255,255,0.08)] p-4 md:p-5">
->>>>>>> Stashed changes
+        <div role="tabpanel">
           {activeData.length === 0 ? (
             <div style={styles.emptyTab}>
               <span style={styles.emptyIcon}>
@@ -279,7 +145,6 @@ export default function Dashboard() {
             <div style={styles.grid}>
               {activeData.map((course) => {
                 const progress = getCourseProgress(course.id);
-                const isCompleted = completedCourses.has(course.id);
                 return (
                   <div key={course.id} style={styles.cardWrap}>
                     <CourseCard course={course} />

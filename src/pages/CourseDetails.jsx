@@ -2,11 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import Modal from "../components/Modal";
-<<<<<<< Updated upstream
-=======
 import ResourceState from "../components/ResourceState";
-import { BookIcon, CapIcon, LockIcon, TargetIcon } from "../components/Icons";
->>>>>>> Stashed changes
 
 export default function CourseDetails() {
   const { courseId } = useParams();

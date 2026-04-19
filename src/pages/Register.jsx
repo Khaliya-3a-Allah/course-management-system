@@ -1,13 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
-<<<<<<< Updated upstream
-import { validateRegisterForm, sanitizeInput } from "../utils/validators";
-import { CATEGORIES, INTERESTS } from "../data/constants";
-=======
-import { validateRegisterForm, getPasswordStrength } from "../utils/validators";
+import { validateRegisterForm } from "../utils/validators";
+import { describeRegisterError } from "../utils/authErrors";
 import { INTERESTS } from "../data/constants";
->>>>>>> Stashed changes
 import { EyeIcon, EyeOffIcon } from "../components/Icons";
 import FormField, { buildInputStyle } from "../components/FormField";
 import AutocompleteSelect from "../components/AutocompleteSelect";
@@ -17,6 +13,7 @@ import TermsContent from "../components/TermsContent";
 export default function Register() {
   const { register, currentUser, addToast } = useAppContext();
   const navigate = useNavigate();
+  const formRootRef = useRef(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -111,57 +108,18 @@ export default function Register() {
 
     const { errors: validationErrors, isValid } = validateRegisterForm(form);
     setErrors(validationErrors);
-<<<<<<< Updated upstream
-    if (!isValid) return;
-
-    const emailAlreadyExists = users.some(
-      (user) => user.email.toLowerCase() === form.email.toLowerCase()
-    );
-    if (emailAlreadyExists) {
-      setAuthError("An account with this email already exists.");
-=======
     if (!isValid) {
       scrollToFirstError(validationErrors);
->>>>>>> Stashed changes
       return;
     }
 
     setIsSubmitting(true);
     try {
-<<<<<<< Updated upstream
-    const baseUser = {
-      id: `u-${Date.now()}`,
-      name: sanitizeInput(form.name),
-      email: form.email.trim().toLowerCase(),
-      password: form.password,
-      role: form.role,
-      phone: sanitizeInput(form.phone),
-      bio: sanitizeInput(form.bio),
-      createdCourseIds: [],
-      enrolledCourseIds: [],
-      savedCourseIds: [],
-    };
-
-    const newUser =
-      form.role === "student"
-        ? { ...baseUser, interests: form.interests.filter((i) => INTERESTS.includes(i)) }
-        : {
-            ...baseUser,
-            expertise: sanitizeInput(form.expertise),
-            website: form.website.trim(),
-          };
-
-    setUsers((prev) => [...prev, newUser]);
-    setCurrentUser(newUser);
-    addToast("Account created successfully!", "success");
-    navigate("/dashboard");
-=======
       await register(form);
       addToast("Account created successfully!", "success");
       navigate("/dashboard");
     } catch (error) {
       setAuthError(describeRegisterError(error));
->>>>>>> Stashed changes
     } finally {
       setIsSubmitting(false);
     }
@@ -342,12 +300,7 @@ export default function Register() {
               </>
             )}
 
-<<<<<<< Updated upstream
-            {/* Terms & Conditions */}
             <div style={styles.termsRow}>
-=======
-            <div className="flex items-start gap-2.5 mt-1">
->>>>>>> Stashed changes
               <input
                 id="register-terms"
                 type="checkbox"
@@ -403,7 +356,6 @@ export default function Register() {
   );
 }
 
-<<<<<<< Updated upstream
 const focusStyles = `
   #register-name:focus,
   #register-email:focus,
@@ -546,20 +498,3 @@ const styles = {
   },
   switchLink: { color: "#d97706", textDecoration: "none", fontWeight: 600 },
 };
-=======
-function describeRegisterError(error) {
-  if (error?.status === 0) {
-    return "We couldn't reach the server. Check your connection and try again.";
-  }
-  if (error?.status === 409) {
-    return "An account with this email already exists.";
-  }
-  if (error?.status === 400) {
-    return error.message || "Please correct the highlighted fields and try again.";
-  }
-  if (error?.status >= 500) {
-    return "The server is having trouble right now. Please try again in a moment.";
-  }
-  return error?.message || "Sign-up failed. Please try again.";
-}
->>>>>>> Stashed changes

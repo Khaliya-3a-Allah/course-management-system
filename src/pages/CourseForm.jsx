@@ -17,7 +17,7 @@ const emptyForm = {
 export default function CourseForm() {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const { courses, addCourse, updateCourse, currentUser } = useAppContext();
+  const { courses, addCourse, updateCourse, deleteCourse, currentUser, addToast } = useAppContext();
 
   const isEdit = Boolean(courseId);
   const existing = isEdit ? courses.find((c) => c.id === courseId) : null;
@@ -26,21 +26,13 @@ export default function CourseForm() {
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 50);
     return () => clearTimeout(t);
   }, []);
 
-<<<<<<< Updated upstream
-=======
-  const ownerId = existing?.instructorId || existing?.creator || null;
-  const isOwnerInstructor =
-    Boolean(currentUser) &&
-    (currentUser.role === "admin" ||
-      (currentUser.role === "instructor" && ownerId && currentUser.id === ownerId));
-
->>>>>>> Stashed changes
   useEffect(() => {
     if (isEdit && existing) {
       setForm({
@@ -69,67 +61,30 @@ export default function CourseForm() {
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: "" }));
   };
 
-  const handleSubmit = () => {
-    const { errors: errs, isValid } = validateCourseForm(form);
-    setErrors(errs);
-    if (!isValid) return;
-
-<<<<<<< Updated upstream
-    const tagsArr = form.tags
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
-
-    if (isEdit) {
-      updateCourse({ ...existing, ...form, tags: tagsArr });
-    } else {
-      addCourse({
-        id: `c-${Date.now()}`,
-        ...form,
-        tags: tagsArr,
-        rating: 0,
-        modules: [],
-        instructorName: form.instructorName || currentUser?.name || "",
-      });
-    }
-=======
   const handleSubmit = async (e) => {
     e?.preventDefault();
     if (submitted) return;
 
-    const { errors: formErrs, isValid: formValid } = validateCourseForm(form);
-    const { errors: modErrs, isValid: modsValid } = validateModules(modules);
+    const { errors: formErrs, isValid } = validateCourseForm(form);
+    setErrors(formErrs);
+    if (!isValid) return;
 
-    const allErrors = { ...formErrs };
-    if (Object.keys(modErrs).length > 0) {
-      allErrors.modules = modErrs;
-    }
-
-    setErrors(allErrors);
-    if (!formValid || !modsValid) return;
-
-    const sanitizedForm = {
-      title: sanitizeInput(form.title),
-      category: form.category,
-      level: form.level,
-      description: sanitizeInput(form.description),
-      thumbnail: form.thumbnail.trim(),
-      tags: form.tags,
-    };
-    const tagsArr = sanitizedForm.tags.split(",").map((t) => sanitizeInput(t)).filter(Boolean);
->>>>>>> Stashed changes
+    const tagsArr = form.tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
 
     setSubmitted(true);
     try {
       if (isEdit) {
         await updateCourse({
           id: existing.id,
-          ...sanitizedForm,
+          ...form,
           tags: tagsArr,
         });
       } else {
         await addCourse({
-          ...sanitizedForm,
+          ...form,
           tags: tagsArr,
           rating: 0,
         });
@@ -151,8 +106,6 @@ export default function CourseForm() {
     }
   };
 
-<<<<<<< Updated upstream
-=======
   const handleDeleteCourse = async () => {
     if (!existing) return;
     try {
@@ -170,7 +123,6 @@ export default function CourseForm() {
     }
   };
 
->>>>>>> Stashed changes
   return (
     <div
       style={{
@@ -289,8 +241,33 @@ export default function CourseForm() {
             <button onClick={() => navigate("/dashboard")} style={styles.cancelBtn}>
               Cancel
             </button>
+            {isEdit && (
+              <button onClick={() => setShowDeleteModal(true)} style={styles.deleteBtn}>
+                Delete Course
+              </button>
+            )}
           </div>
         </div>
+
+        {/* Delete confirmation modal */}
+        {showDeleteModal && (
+          <div style={styles.modalOverlay}>
+            <div style={styles.modalContent}>
+              <h3 style={styles.modalTitle}>Delete Course?</h3>
+              <p style={styles.modalText}>
+                This action cannot be undone. The course "{existing?.title}" will be permanently removed.
+              </p>
+              <div style={styles.modalActions}>
+                <button onClick={handleDeleteCourse} style={styles.modalConfirmBtn}>
+                  Yes, Delete
+                </button>
+                <button onClick={() => setShowDeleteModal(false)} style={styles.modalCancelBtn}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -340,4 +317,12 @@ const styles = {
   notFound: { minHeight: "60vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: "#0c0c0e", gap: "1rem" },
   nfTitle: { fontFamily: "'Playfair Display', serif", color: "#f5f2ec", fontSize: "1.5rem" },
   nfLink: { color: "#d97706", textDecoration: "none", fontWeight: 600 },
+  deleteBtn: { padding: "0.85rem 1.5rem", backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "8px", color: "#ef4444", fontFamily: "'DM Sans', sans-serif", fontSize: "0.92rem", cursor: "pointer", fontWeight: 500 },
+  modalOverlay: { position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 },
+  modalContent: { backgroundColor: "#16161a", borderRadius: "12px", padding: "2rem", maxWidth: "420px", width: "90%", border: "1px solid rgba(255,255,255,0.08)" },
+  modalTitle: { fontFamily: "'Playfair Display', serif", fontSize: "1.3rem", color: "#f5f2ec", margin: "0 0 0.75rem" },
+  modalText: { color: "#9ca3af", fontSize: "0.9rem", lineHeight: 1.6, marginBottom: "1.5rem" },
+  modalActions: { display: "flex", gap: "0.75rem" },
+  modalConfirmBtn: { flex: 1, padding: "0.75rem", backgroundColor: "#ef4444", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" },
+  modalCancelBtn: { flex: 1, padding: "0.75rem", backgroundColor: "transparent", color: "#e8e6e0", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "8px", fontWeight: 500, fontSize: "0.9rem", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" },
 };

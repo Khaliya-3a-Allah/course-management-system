@@ -60,3 +60,19 @@ export function describeTwoFactorDisableError(error) {
   }
   return error?.message || "Could not disable 2FA. Please try again.";
 }
+
+export function describeRegisterError(error) {
+  if (error?.status === 0) {
+    return "We couldn't reach the server. Check your connection and try again.";
+  }
+  if (error?.status === 409) {
+    return "An account with this email already exists.";
+  }
+  if (error?.status === 400) {
+    return error.message || "Please correct the highlighted fields and try again.";
+  }
+  if (error?.status >= 500) {
+    return "The server is having trouble right now. Please try again in a moment.";
+  }
+  return error?.message || "Sign-up failed. Please try again.";
+}
