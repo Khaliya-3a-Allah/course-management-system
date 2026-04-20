@@ -11,8 +11,8 @@ import {
   authorizeOwner,
 } from "../middleware/authPlaceholder.js";
 
-// GET /progress        — public
-// GET /progress/:id    — public
+// GET /progress        — authenticated
+// GET /progress/:id    — authenticated
 // POST /progress       — authenticated
 // PUT /progress/:id    — authenticated + must be owner
 // DELETE /progress/:id — authenticated + must be owner
@@ -25,6 +25,7 @@ export const progressRouter = createCrudRouter(
     delete: deleteProgress,
   },
   {
+    readMiddleware: [authenticateRequest],
     authMiddleware: [authenticateRequest],
     ownerMiddleware: [authorizeOwner("progress")],
   }

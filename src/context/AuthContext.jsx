@@ -79,7 +79,7 @@ export function AuthProvider({ children }) {
           currentUser ? AUTH_STATUS.AUTHENTICATED : AUTH_STATUS.UNAUTHENTICATED
         );
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- rehydrate runs once on mount; excluding currentUser avoids infinite re-trigger
   }, []);
 
   // Persist user to localStorage on changes
@@ -145,8 +145,11 @@ export function AuthProvider({ children }) {
             writeUser(normalized);
             setCurrentUser(normalized);
           }
-        } catch {
-          // Profile extras are optional — swallow
+        } catch (profileError) {
+          // Profile extras are optional — the account is still created.
+          if (import.meta.env.DEV) {
+            console.warn("Failed to save profile extras:", profileError);
+          }
         }
       }
 

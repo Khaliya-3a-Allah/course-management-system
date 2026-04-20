@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { ApiError } from "../utils/ApiError.js";
 import User from "../models/User.js";
 import Course from "../models/Course.js";
 import Module from "../models/Module.js";
@@ -42,6 +43,9 @@ export async function list(resourceName) {
 
 // Return documents for a resource filtered by userId
 export async function listByUser(resourceName, userId) {
+  if (!isValidId(userId)) {
+    throw new ApiError(400, "Invalid user ID");
+  }
   const Model = getModel(resourceName);
   return Model.find({ userId }).lean({ virtuals: true });
 }

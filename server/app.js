@@ -9,6 +9,10 @@ import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
 
+// Render/Heroku/Cyclic sit behind exactly one reverse proxy.
+// Required for req.ip to reflect the real client IP (used by rate limiters).
+app.set("trust proxy", 1);
+
 app.use(helmet());
 app.use(cors({ origin: env.CLIENT_ORIGIN }));
 

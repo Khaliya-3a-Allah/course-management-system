@@ -34,5 +34,7 @@ const purchaseSchema = new mongoose.Schema(
   }
 );
 
+purchaseSchema.index({ userId: 1, courseId: 1 }, { unique: true });
+
 const Purchase = mongoose.model("Purchase", purchaseSchema);
 export default Purchase;

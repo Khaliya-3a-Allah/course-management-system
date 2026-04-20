@@ -7,16 +7,19 @@ import {
 } from "../controllers/twoFactor.controller.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { authenticateRequest } from "../middleware/authPlaceholder.js";
+import { createLimiter } from "../utils/rateLimiters.js";
 
 const router = Router();
 
-// Setup and enable happen from a fully-authenticated session.
+const totpLimiter = createLimiter();
+
+// Setup and disable happen from a fully-authenticated session.
 router.post("/setup", authenticateRequest, asyncHandler(setup2FA));
-router.post("/enable", authenticateRequest, asyncHandler(enable2FA));
+router.post("/enable", authenticateRequest, totpLimiter, asyncHandler(enable2FA));
 router.post("/disable", authenticateRequest, asyncHandler(disable2FA));
 
 // Verify is the second step of login — authorized by a purpose-scoped
 // challenge JWT, validated inside the controller.
-router.post("/verify", asyncHandler(verify2FA));
+router.post("/verify", totpLimiter, asyncHandler(verify2FA));
 
 export const twoFactorRouter = router;

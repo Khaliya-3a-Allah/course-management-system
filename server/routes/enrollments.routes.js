@@ -11,8 +11,8 @@ import {
   authorizeOwner,
 } from "../middleware/authPlaceholder.js";
 
-// GET /enrollments        — public
-// GET /enrollments/:id    — public
+// GET /enrollments        — authenticated
+// GET /enrollments/:id    — authenticated
 // POST /enrollments       — authenticated
 // PUT /enrollments/:id    — authenticated + must be owner
 // DELETE /enrollments/:id — authenticated + must be owner
@@ -25,6 +25,7 @@ export const enrollmentsRouter = createCrudRouter(
     delete: deleteEnrollment,
   },
   {
+    readMiddleware: [authenticateRequest],
     authMiddleware: [authenticateRequest],
     ownerMiddleware: [authorizeOwner("enrollments")],
   }

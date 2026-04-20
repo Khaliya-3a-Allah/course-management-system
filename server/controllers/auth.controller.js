@@ -4,11 +4,26 @@ import { create, findById } from "../data/store.js";
 import { ApiError } from "../utils/ApiError.js";
 import { signSessionToken, signChallengeToken } from "../utils/tokens.js";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 8;
+
 export async function register(req, res) {
   const { name, email, password, role = "student" } = req.body || {};
 
   if (!name || !email || !password) {
     throw new ApiError(400, "name, email, and password are required");
+  }
+
+  if (!EMAIL_REGEX.test(String(email))) {
+    throw new ApiError(400, "Please provide a valid email address");
+  }
+
+  if (String(password).length < MIN_PASSWORD_LENGTH) {
+    throw new ApiError(400, `Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+  }
+
+  if (new TextEncoder().encode(String(password)).length > 72) {
+    throw new ApiError(400, "Password cannot exceed 72 bytes");
   }
 
   // Check for duplicate email before hashing (fast short-circuit)
@@ -19,6 +34,9 @@ export async function register(req, res) {
     throw new ApiError(409, "A user with this email already exists");
   }
 
+  const SELF_ASSIGNABLE_ROLES = ["student", "instructor"];
+  const safeRole = SELF_ASSIGNABLE_ROLES.includes(role) ? role : "student";
+
   // Hash the password with bcrypt (cost factor 12 is a good balance for production)
   const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -26,7 +44,7 @@ export async function register(req, res) {
     name,
     email: String(email).toLowerCase(),
     password: hashedPassword,
-    role,
+    role: safeRole,
     phone: "",
     bio: "",
   });
@@ -46,6 +64,10 @@ export async function login(req, res) {
 
   if (!email || !password) {
     throw new ApiError(400, "email and password are required");
+  }
+
+  if (!EMAIL_REGEX.test(String(email))) {
+    throw new ApiError(401, "Invalid email or password");
   }
 
   // Use +password to override the select:false on the password field
