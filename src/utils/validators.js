@@ -36,7 +36,46 @@ export function validateEmail(value) {
 
 export function validatePassword(value) {
   if (!value) return "Password is required.";
-  return value.length >= 6 ? "" : "Password must be at least 6 characters.";
+  if (value.length < 8) return "Password must be at least 8 characters.";
+  if (!/[A-Z]/.test(value)) return "Password must include at least one uppercase letter.";
+  if (!/[a-z]/.test(value)) return "Password must include at least one lowercase letter.";
+  if (!/\d/.test(value)) return "Password must include at least one number.";
+  if (!/[^A-Za-z0-9]/.test(value)) return "Password must include at least one special character.";
+  return "";
+}
+
+export function getPasswordStrength(value) {
+  const password = value || "";
+  if (!password) {
+    return {
+      score: 0,
+      label: "No password yet",
+      hint: "Use 8+ characters with uppercase, lowercase, number, and symbol.",
+    };
+  }
+
+  let score = 0;
+  if (password.length >= 8) score += 1;
+  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score += 1;
+  if (/\d/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+  if (password.length >= 12) score += 1;
+
+  const normalized = Math.min(score, 4);
+  const labels = ["Very weak", "Weak", "Fair", "Good", "Strong"];
+  const hints = [
+    "Add more characters and mix letter cases.",
+    "Include numbers and symbols.",
+    "Add one more complexity rule for better protection.",
+    "Great progress. Longer passphrases are even safer.",
+    "Strong password.",
+  ];
+
+  return {
+    score: normalized,
+    label: labels[normalized],
+    hint: hints[normalized],
+  };
 }
 
 export function validatePasswordMatch(password, confirm) {
@@ -148,9 +187,59 @@ export function validateCourseForm(data) {
     title: validateMinLength(data.title, 3, "Title"),
     category: validateRequired(data.category, "Category"),
     level: validateRequired(data.level, "Level"),
-    instructorName: validateRequired(data.instructorName, "Instructor name"),
     description: validateRequired(data.description, "Description"),
     thumbnail: data.thumbnail ? validateUrl(data.thumbnail) : "",
   };
   return { errors, isValid: Object.values(errors).every((e) => !e) };
+}
+
+export function validateModules(modules) {
+  const errors = {};
+  let isValid = true;
+
+  modules.forEach((mod, modIndex) => {
+    const modErrors = {};
+
+    const titleErr = validateRequired(mod.title, "Module title");
+    if (titleErr) {
+      modErrors.title = titleErr;
+      isValid = false;
+    }
+
+    const lessonErrors = {};
+    (mod.lessons || []).forEach((lesson, lesIndex) => {
+      const lesErr = {};
+
+      const lesTitleErr = validateRequired(lesson.title, "Lesson title");
+      if (lesTitleErr) {
+        lesErr.title = lesTitleErr;
+        isValid = false;
+      }
+
+      const durErr = validateRequired(lesson.duration, "Duration");
+      if (durErr) {
+        lesErr.duration = durErr;
+        isValid = false;
+      }
+
+      const urlErr = lesson.videoUrl ? validateOptionalUrl(lesson.videoUrl) : "";
+      if (urlErr) {
+        lesErr.videoUrl = urlErr;
+        isValid = false;
+      }
+
+      if (Object.keys(lesErr).length > 0) {
+        lessonErrors[lesIndex] = lesErr;
+      }
+    });
+
+    if (Object.keys(lessonErrors).length > 0) {
+      modErrors.lessons = lessonErrors;
+    }
+    if (Object.keys(modErrors).length > 0) {
+      errors[modIndex] = modErrors;
+    }
+  });
+
+  return { errors, isValid };
 }

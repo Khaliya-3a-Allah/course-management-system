@@ -17,59 +17,73 @@ export default function FilterPanel({ courses, filters, onChange }) {
     (filters.category?.length > 0) || (filters.level?.length > 0);
 
   return (
-    <aside style={styles.panel} aria-label="Filter courses">
-      <div style={styles.header}>
-        <span style={styles.headerLabel}>Filters</span>
+    <aside
+      className="flex flex-col gap-5 min-w-[200px]"
+      aria-label="Filter courses"
+    >
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <span className="text-[0.7rem] tracking-widest uppercase font-bold text-text-dim">
+          Filters
+        </span>
         {hasFilters && (
           <button
             onClick={() => onChange({ category: [], level: [] })}
-            style={styles.clearAll}
+            className="border-none text-[0.78rem] font-semibold cursor-pointer p-0 hover:opacity-80 transition-opacity text-brand bg-transparent"
+            aria-label="Clear all filters"
           >
             Clear all
           </button>
         )}
       </div>
 
-      {/* Category */}
-      <div style={styles.group}>
-        <p style={styles.groupLabel}>Category</p>
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => toggle("category", cat)}
-            style={isActive("category", cat) ? { ...styles.chip, ...styles.chipActive } : styles.chip}
-            aria-pressed={isActive("category", cat)}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
+      {/* Category group */}
+      <fieldset className="flex flex-col gap-1.5 border-none p-0 m-0">
+        <legend className="text-[0.72rem] tracking-widest uppercase font-bold text-text-faint mb-1.5">
+          Category
+        </legend>
+        <ul className="list-none flex flex-col gap-1.5" role="list">
+          {categories.map((cat) => (
+            <li key={cat}>
+              <button
+                onClick={() => toggle("category", cat)}
+                aria-pressed={isActive("category", cat)}
+                className={`w-full px-3.5 py-2 rounded-md text-[0.83rem] cursor-pointer text-left border transition-all ${
+                  isActive("category", cat)
+                    ? "bg-[rgba(217,119,6,0.1)] border-[rgba(217,119,6,0.4)] text-brand"
+                    : "bg-sidebar border-[rgba(255,255,255,0.08)] text-text-muted"
+                }`}
+              >
+                {cat}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </fieldset>
 
-      {/* Level */}
-      <div style={styles.group}>
-        <p style={styles.groupLabel}>Level</p>
-        {LEVELS.map((lvl) => (
-          <button
-            key={lvl}
-            onClick={() => toggle("level", lvl)}
-            style={isActive("level", lvl) ? { ...styles.chip, ...styles.chipActive } : styles.chip}
-            aria-pressed={isActive("level", lvl)}
-          >
-            {lvl}
-          </button>
-        ))}
-      </div>
+      {/* Level group */}
+      <fieldset className="flex flex-col gap-1.5 border-none p-0 m-0">
+        <legend className="text-[0.72rem] tracking-widest uppercase font-bold text-text-faint mb-1.5">
+          Level
+        </legend>
+        <ul className="list-none flex flex-col gap-1.5" role="list">
+          {LEVELS.map((lvl) => (
+            <li key={lvl}>
+              <button
+                onClick={() => toggle("level", lvl)}
+                aria-pressed={isActive("level", lvl)}
+                className={`w-full px-3.5 py-2 rounded-md text-[0.83rem] cursor-pointer text-left border transition-all ${
+                  isActive("level", lvl)
+                    ? "bg-[rgba(217,119,6,0.1)] border-[rgba(217,119,6,0.4)] text-brand"
+                    : "bg-sidebar border-[rgba(255,255,255,0.08)] text-text-muted"
+                }`}
+              >
+                {lvl}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </fieldset>
     </aside>
   );
 }
-
-const styles = {
-  panel: { display: "flex", flexDirection: "column", gap: "1.25rem", minWidth: "200px" },
-  header: { display: "flex", justifyContent: "space-between", alignItems: "center" },
-  headerLabel: { fontSize: "0.7rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#6b7280", fontWeight: 700 },
-  clearAll: { background: "none", border: "none", color: "#d97706", fontSize: "0.78rem", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, padding: 0 },
-  group: { display: "flex", flexDirection: "column", gap: "0.4rem" },
-  groupLabel: { fontSize: "0.72rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "#4b5563", fontWeight: 700, margin: "0 0 0.35rem" },
-  chip: { padding: "0.45rem 0.85rem", backgroundColor: "#111114", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "6px", color: "#9ca3af", fontSize: "0.83rem", cursor: "pointer", textAlign: "left", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" },
-  chipActive: { backgroundColor: "rgba(217,119,6,0.1)", borderColor: "rgba(217,119,6,0.4)", color: "#d97706" },
-};

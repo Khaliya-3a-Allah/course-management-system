@@ -1,16 +1,51 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import CourseCard from "../components/CourseCard";
 import Modal from "../components/Modal";
 import TwoFactorEnroll from "../components/TwoFactorEnroll";
+import {
+  validateName,
+  validatePhone,
+  validateBio,
+  validateExpertise,
+  validateOptionalUrl,
+  sanitizeInput,
+} from "../utils/validators";
 
 export default function Dashboard() {
-  const { currentUser, courses, unenrollCourse, unsaveCourse, completedCourses, getCourseProgress, addToast } = useAppContext();
+  const {
+    currentUser,
+    courses,
+    unenrollCourse,
+    unsaveCourse,
+    completedCourses,
+    getCourseProgress,
+    updateProfile,
+    deleteCourse,
+    addToast,
+  } = useAppContext();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [visible, setVisible] = useState(false);
-  const [activeTab, setActiveTab] = useState("enrolled");
   const [unenrollTarget, setUnenrollTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileErrors, setProfileErrors] = useState({});
+  const [animatedCounts, setAnimatedCounts] = useState({
+    enrolled: 0,
+    completed: 0,
+    saved: 0,
+    created: 0,
+  });
+  const [profileForm, setProfileForm] = useState({
+    name: "",
+    phone: "",
+    bio: "",
+    expertise: "",
+    website: "",
+    profileImage: "",
+  });
 
   useEffect(() => {
     if (!currentUser) { navigate("/login"); return; }
@@ -18,23 +53,82 @@ export default function Dashboard() {
     return () => clearTimeout(t);
   }, [currentUser, navigate]);
 
-  if (!currentUser) return null;
+  const isInstructor = currentUser?.role === "instructor" || currentUser?.role === "admin";
 
-  const isInstructor = currentUser.role === "instructor" || currentUser.role === "admin";
-
-  const enrolledCourses = courses.filter((c) =>
-    currentUser.enrolledCourseIds?.includes(c.id) && !completedCourses.has(c.id)
+  const enrolledCourses = useMemo(
+    () => courses.filter((c) => currentUser?.enrolledCourseIds?.includes(c.id) && !completedCourses.has(c.id)),
+    [courses, currentUser?.enrolledCourseIds, completedCourses]
   );
-  const completedCoursesList = courses.filter((c) => completedCourses.has(c.id));
-  const savedCourses = courses.filter((c) => currentUser.savedCourseIds?.includes(c.id));
-  const createdCourses = courses.filter((c) => currentUser.createdCourseIds?.includes(c.id));
+  const completedCoursesList = useMemo(
+    () => courses.filter((c) => completedCourses.has(c.id)),
+    [courses, completedCourses]
+  );
+  const savedCourses = useMemo(
+    () => courses.filter((c) => currentUser?.savedCourseIds?.includes(c.id)),
+    [courses, currentUser?.savedCourseIds]
+  );
+  const createdCourses = useMemo(
+    () => courses.filter((c) => currentUser?.createdCourseIds?.includes(c.id)),
+    [courses, currentUser?.createdCourseIds]
+  );
 
-  const tabs = [
+  const tabs = useMemo(() => [
     { id: "enrolled", label: "Enrolled", count: enrolledCourses.length },
     { id: "completed", label: "Completed", count: completedCoursesList.length },
     { id: "saved", label: "Saved", count: savedCourses.length },
     ...(isInstructor ? [{ id: "created", label: "Created", count: createdCourses.length }] : []),
-  ];
+  ], [enrolledCourses.length, completedCoursesList.length, savedCourses.length, createdCourses.length, isInstructor]);
+
+  const stats = useMemo(
+    () => [
+      { key: "enrolled", label: "Enrolled", value: enrolledCourses.length },
+      { key: "completed", label: "Completed", value: completedCoursesList.length },
+      { key: "saved", label: "Saved", value: savedCourses.length },
+      ...(isInstructor ? [{ key: "created", label: "Created", value: createdCourses.length }] : []),
+    ],
+    [enrolledCourses.length, completedCoursesList.length, savedCourses.length, createdCourses.length, isInstructor]
+  );
+
+  useEffect(() => {
+    const startValues = { enrolled: 0, completed: 0, saved: 0, created: 0 };
+    const targetValues = {
+      enrolled: enrolledCourses.length,
+      completed: completedCoursesList.length,
+      saved: savedCourses.length,
+      created: createdCourses.length,
+    };
+    const duration = 650;
+    const startTime = performance.now();
+    let frame = null;
+
+    const tick = (now) => {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+
+      setAnimatedCounts({
+        enrolled: Math.round(startValues.enrolled + (targetValues.enrolled - startValues.enrolled) * eased),
+        completed: Math.round(startValues.completed + (targetValues.completed - startValues.completed) * eased),
+        saved: Math.round(startValues.saved + (targetValues.saved - startValues.saved) * eased),
+        created: Math.round(startValues.created + (targetValues.created - startValues.created) * eased),
+      });
+
+      if (progress < 1) {
+        frame = requestAnimationFrame(tick);
+      }
+    };
+
+    frame = requestAnimationFrame(tick);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [enrolledCourses.length, completedCoursesList.length, savedCourses.length, createdCourses.length]);
+
+  const requestedTab = searchParams.get("tab");
+  const activeTab = (requestedTab && tabs.some((t) => t.id === requestedTab)) ? requestedTab : "enrolled";
+
+  if (!currentUser) return null;
+
+  const roleColor = isInstructor ? "#d97706" : "#6366f1";
 
   const getTabData = () => {
     switch (activeTab) {
@@ -47,7 +141,6 @@ export default function Dashboard() {
   };
 
   const activeData = getTabData();
-  const roleColor = isInstructor ? "#d97706" : "#6366f1";
 
   const handleUnenrollConfirm = async () => {
     if (!unenrollTarget) return;
@@ -59,59 +152,206 @@ export default function Dashboard() {
     setUnenrollTarget(null);
   };
 
+  const emptyMessages = {
+    enrolled: "No courses in progress.",
+    completed: "You haven't completed any courses yet.",
+    saved: "You haven't saved any courses yet.",
+    created: "You haven't created any courses yet.",
+  };
+
+  const openProfileEditor = () => {
+    setProfileForm({
+      name: currentUser.name || "",
+      phone: currentUser.phone || "",
+      bio: currentUser.bio || "",
+      expertise: currentUser.expertise || "",
+      website: currentUser.website || "",
+      profileImage: currentUser.profileImage || "",
+    });
+    setProfileErrors({});
+    setShowProfileModal(true);
+  };
+
+  const updateProfileField = (key, value) => {
+    setProfileForm((prev) => ({ ...prev, [key]: value }));
+    if (profileErrors[key]) {
+      setProfileErrors((prev) => ({ ...prev, [key]: "" }));
+    }
+  };
+
+  const handleProfileImageChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setProfileErrors((prev) => ({ ...prev, profileImage: "Please upload an image file." }));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      updateProfileField("profileImage", String(reader.result || ""));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveProfile = (e) => {
+    e.preventDefault();
+
+    const errors = {
+      name: validateName(profileForm.name),
+      phone: validatePhone(profileForm.phone),
+      bio: validateBio(profileForm.bio),
+      expertise: isInstructor ? validateExpertise(profileForm.expertise) : "",
+      website: isInstructor ? validateOptionalUrl(profileForm.website) : "",
+      profileImage: "",
+    };
+
+    const hasErrors = Object.values(errors).some(Boolean);
+    setProfileErrors(errors);
+    if (hasErrors) return;
+
+    updateProfile({
+      name: sanitizeInput(profileForm.name),
+      phone: sanitizeInput(profileForm.phone),
+      bio: sanitizeInput(profileForm.bio),
+      expertise: isInstructor ? sanitizeInput(profileForm.expertise) : "",
+      website: isInstructor ? profileForm.website.trim() : "",
+      profileImage: profileForm.profileImage,
+    });
+
+    setShowProfileModal(false);
+    addToast("Profile updated successfully.", "success");
+  };
+
+  const handleDeleteCourse = () => {
+    if (!deleteTarget) return;
+    const success = deleteCourse(deleteTarget.id);
+    if (success) {
+      addToast("Course deleted successfully.", "success");
+    } else {
+      addToast("Could not delete this course.", "error");
+    }
+    setDeleteTarget(null);
+  };
+
   return (
     <div
-      style={{
-        ...styles.page,
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(14px)",
-        transition: "opacity 0.5s ease, transform 0.5s ease",
-      }}
+      className="relative min-h-screen overflow-hidden bg-[#0c0c0e] text-[#e8e6e0] font-['DM_Sans',sans-serif]"
+      style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(14px)", transition: "opacity 0.5s ease, transform 0.5s ease" }}
     >
-      {/* Profile Header */}
-      <div style={styles.profileBanner}>
-        <div style={styles.profileInner}>
-          <div style={styles.avatar}>{currentUser.name.charAt(0).toUpperCase()}</div>
-          <div style={styles.profileInfo}>
-            <h1 style={styles.profileName}>{currentUser.name}</h1>
-            <p style={styles.profileEmail}>{currentUser.email}</p>
-            <span style={{ ...styles.roleBadge, backgroundColor: `${roleColor}20`, color: roleColor, border: `1px solid ${roleColor}40` }}>
-              {currentUser.role}
-            </span>
-          </div>
-          {isInstructor && (
-            <Link to="/course-form" style={styles.addCourseBtn}>+ Add Course</Link>
-          )}
-        </div>
-
-        <div style={styles.stats}>
-          {[
-            { label: "Enrolled", value: enrolledCourses.length },
-            { label: "Completed", value: completedCoursesList.length },
-            { label: "Saved", value: savedCourses.length },
-            ...(isInstructor ? [{ label: "Created", value: createdCourses.length }] : []),
-          ].map((s) => (
-            <div key={s.label} style={styles.stat}>
-              <span style={styles.statNum}>{s.value}</span>
-              <span style={styles.statLabel}>{s.label}</span>
-            </div>
-          ))}
-        </div>
+      <style>{`
+        .dash-surface { background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015)); }
+        .dash-stat { transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease; }
+        .dash-stat:hover { transform: translateY(-3px); border-color: rgba(217,119,6,0.35); box-shadow: 0 14px 30px rgba(0,0,0,0.25); }
+        .dash-pill { transition: all 220ms ease; }
+      `}</style>
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        <div className="absolute -top-24 left-[12%] h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(217,119,6,0.2)_0%,rgba(217,119,6,0)_72%)] blur-3xl" />
+        <div className="absolute bottom-[-90px] right-[8%] h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(245,158,11,0.16)_0%,rgba(245,158,11,0)_72%)] blur-3xl" />
+        <div className="absolute inset-0 opacity-[0.14]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "56px 56px" }} />
       </div>
 
-      {/* Tabs */}
-      <div style={styles.body}>
-        <div style={styles.tabs} role="tablist">
+      {/* Profile banner */}
+      <header className="relative z-10 bg-[#111114]/85 border-b border-[rgba(255,255,255,0.06)] px-4 md:px-8 py-6 md:py-8 backdrop-blur-sm">
+        <div className="max-w-[1100px] mx-auto">
+          {/* Profile row */}
+          <div className="dash-surface rounded-2xl border border-[rgba(255,255,255,0.08)] p-4 md:p-5 flex items-center gap-4 md:gap-5 mb-6 md:mb-7 flex-wrap">
+            {currentUser.profileImage ? (
+              <img
+                src={currentUser.profileImage}
+                alt={`${currentUser.name} profile`}
+                className="w-[72px] h-[72px] rounded-full shrink-0 border-2 border-[rgba(217,119,6,0.4)] object-cover"
+              />
+            ) : (
+              <div
+                className="w-[72px] h-[72px] rounded-full flex items-center justify-center font-['Playfair_Display',serif] text-[1.8rem] shrink-0 border-2 border-[rgba(217,119,6,0.4)] bg-[rgba(217,119,6,0.15)] text-[#d97706]"
+                aria-hidden="true"
+              >
+                {currentUser.name.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="flex-1">
+              <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#d97706] mb-1">Your Dashboard</p>
+              <h1 className="font-['Playfair_Display',serif] text-[1.8rem] md:text-[2rem] text-[#f5f2ec] mb-1 leading-tight">{currentUser.name}</h1>
+              <p className="text-[0.88rem] text-[#6b7280] mb-2">{currentUser.email}</p>
+              {!!currentUser.phone && <p className="text-[0.82rem] text-[#9ca3af] mb-1">{currentUser.phone}</p>}
+              {!!currentUser.bio && <p className="text-[0.82rem] text-[#9ca3af] max-w-[620px]">{currentUser.bio}</p>}
+              <span
+                className="inline-block px-3 py-0.5 rounded-full text-[0.72rem] font-bold tracking-widest uppercase"
+                style={{ backgroundColor: `${roleColor}20`, color: roleColor, border: `1px solid ${roleColor}40` }}
+              >
+                {currentUser.role}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2.5">
+              <button
+                onClick={openProfileEditor}
+                className="dash-pill px-4 py-2.5 rounded-lg font-bold text-[0.83rem] border border-[rgba(255,255,255,0.14)] text-[#e8e6e0] hover:border-[rgba(217,119,6,0.4)]"
+              >
+                Edit Profile
+              </button>
+              <Link
+                to="/certificates"
+                className="dash-pill px-4 py-2.5 rounded-lg no-underline font-bold text-[0.83rem] border border-[rgba(255,255,255,0.14)] text-[#e8e6e0] hover:border-[rgba(217,119,6,0.4)]"
+              >
+                Certificates
+              </Link>
+              {isInstructor && (
+                <Link to="/course-form" className="dash-pill px-4 py-2.5 rounded-lg no-underline font-bold text-[0.83rem] bg-[#d97706] text-[#0c0c0e] hover:brightness-110">
+                  + Add Course
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Stats */}
+          <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 pb-1">
+            {stats.map((s, idx) => (
+              <div key={s.label} className="dash-stat relative overflow-hidden flex flex-col gap-1 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-4 py-3">
+                <span
+                  className="absolute left-0 top-0 h-full w-1"
+                  style={{ background: idx % 2 === 0 ? "linear-gradient(180deg, #d97706, transparent)" : "linear-gradient(180deg, #f59e0b, transparent)" }}
+                  aria-hidden="true"
+                />
+                <dt className="text-[0.75rem] text-[#6b7280] tracking-wide uppercase m-0">{s.label}</dt>
+                <dd className="font-['Playfair_Display',serif] text-[1.6rem] md:text-[1.75rem] tabular-nums text-[#f5f2ec] m-0">{animatedCounts[s.key]}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </header>
+
+      {/* Tabs + content */}
+      <main className="relative z-10 max-w-[1100px] mx-auto px-4 md:px-8 py-6 md:py-8">
+        {/* Tab list */}
+        <div
+          role="tablist"
+          aria-label="Dashboard sections"
+          className="flex gap-2 mb-6 overflow-x-auto no-scrollbar rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-1.5"
+        >
           {tabs.map((tab) => (
             <button
               key={tab.id}
               role="tab"
+              id={`tab-${tab.id}`}
               aria-selected={activeTab === tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={activeTab === tab.id ? { ...styles.tab, ...styles.tabActive } : styles.tab}
+              aria-controls={`tabpanel-${tab.id}`}
+              onClick={() => setSearchParams({ tab: tab.id })}
+              className="dash-pill flex items-center gap-2 px-4 py-2.5 border cursor-pointer text-[0.88rem] font-semibold whitespace-nowrap rounded-lg bg-transparent"
+              style={{
+                color: activeTab === tab.id ? "#f5f2ec" : "var(--color-text-dim)",
+                borderColor: activeTab === tab.id ? "rgba(217,119,6,0.35)" : "transparent",
+                backgroundColor: activeTab === tab.id ? "rgba(217,119,6,0.12)" : "transparent",
+              }}
             >
               {tab.label}
-              <span style={activeTab === tab.id ? { ...styles.tabCount, ...styles.tabCountActive } : styles.tabCount}>
+              <span
+                className="px-2 py-0.5 rounded-full text-[0.7rem] font-bold"
+                style={{
+                  backgroundColor: activeTab === tab.id ? "rgba(245,158,11,0.2)" : "var(--color-surface-muted)",
+                  color: activeTab === tab.id ? "#f6c56b" : "var(--color-text-dim)",
+                }}
+              >
                 {tab.count}
               </span>
             </button>
@@ -123,126 +363,246 @@ export default function Dashboard() {
           <TwoFactorEnroll />
         </div>
 
-        <div role="tabpanel">
+        {/* Tab panel */}
+        <div role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`} tabIndex={0} className="dash-surface rounded-2xl border border-[rgba(255,255,255,0.08)] p-4 md:p-5">
           {activeData.length === 0 ? (
-            <div style={styles.emptyTab}>
-              <span style={styles.emptyIcon}>
-                {activeTab === "enrolled" ? "📚" : activeTab === "completed" ? "🎓" : activeTab === "saved" ? "♡" : "✏️"}
+            <section className="flex flex-col items-center py-16 px-6 text-center gap-3">
+              <span className="text-[0.74rem] uppercase tracking-[0.2em] text-[#6b7280]" aria-hidden="true">
+                {activeTab}
               </span>
-              <p style={styles.emptyText}>
-                {activeTab === "enrolled" && "No courses in progress."}
-                {activeTab === "completed" && "You haven't completed any courses yet."}
-                {activeTab === "saved" && "You haven't saved any courses yet."}
-                {activeTab === "created" && "You haven't created any courses yet."}
-              </p>
+              <p className="text-[#6b7280] text-[0.92rem]">{emptyMessages[activeTab]}</p>
               {activeTab === "created" ? (
-                <Link to="/course-form" style={styles.emptyAction}>Create your first course →</Link>
+                <Link to="/course-form" className="no-underline font-semibold text-[0.88rem] text-[#d97706]">Create your first course</Link>
               ) : (
-                <Link to="/courses" style={styles.emptyAction}>Browse courses →</Link>
+                <Link to="/courses" className="no-underline font-semibold text-[0.88rem] text-[#d97706]">Browse courses</Link>
               )}
-            </div>
+            </section>
           ) : (
-            <div style={styles.grid}>
+            <ul
+              className="grid gap-5 list-none p-0 m-0"
+              style={{ gridTemplateColumns: "repeat(auto-fill, minmax(255px, 1fr))" }}
+            >
               {activeData.map((course) => {
                 const progress = getCourseProgress(course.id);
                 return (
-                  <div key={course.id} style={styles.cardWrap}>
+                  <li key={course.id} className="flex flex-col gap-2">
                     <CourseCard course={course} />
 
-                    {/* Progress bar for enrolled courses */}
+                    {/* Progress bar */}
                     {activeTab === "enrolled" && progress > 0 && (
-                      <div style={styles.cardProgressWrap}>
-                        <div style={styles.cardProgressBg}>
-                          <div style={{ ...styles.cardProgressFill, width: `${progress}%` }} />
+                      <div className="flex items-center gap-3" aria-label={`${progress}% complete`}>
+                        <div className="flex-1 h-1 rounded-full overflow-hidden bg-[rgba(255,255,255,0.07)]">
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ width: `${progress}%`, background: "linear-gradient(90deg, #d97706, #f59e0b)" }}
+                          />
                         </div>
-                        <span style={styles.cardProgressPct}>{progress}%</span>
+                        <span className="text-[0.72rem] font-bold shrink-0 text-[#d97706]">{progress}%</span>
                       </div>
                     )}
 
                     {/* Completed badge */}
                     {activeTab === "completed" && (
-                      <div style={styles.completedBadgeRow}>
-                        <span style={styles.completedBadge}>🎓 Completed</span>
-                      </div>
+                      <span className="self-start text-[0.78rem] font-semibold px-3 py-1 rounded-full border border-[rgba(34,197,94,0.2)] bg-[rgba(34,197,94,0.08)] text-[#22c55e]">
+                        Completed
+                      </span>
                     )}
 
-                    <div style={styles.cardActions}>
+                    {/* Actions */}
+                    <div className="flex gap-2">
                       {activeTab === "enrolled" && (
-                        <button onClick={() => setUnenrollTarget(course)} style={styles.unenrollBtn}>
+                        <button
+                          onClick={() => setUnenrollTarget(course)}
+                          className="px-4 py-1.5 rounded-md text-[0.8rem] font-medium cursor-pointer border border-[rgba(239,68,68,0.2)] bg-[rgba(239,68,68,0.08)] text-[#ef4444]"
+                        >
                           Unenroll
                         </button>
                       )}
                       {activeTab === "saved" && (
-                        <button onClick={() => unsaveCourse(course.id)} style={styles.unsaveBtn}>
+                        <button
+                          onClick={() => unsaveCourse(course.id)}
+                          className="px-4 py-1.5 rounded-md text-[0.8rem] font-medium cursor-pointer border border-[rgba(255,255,255,0.08)] bg-[#1a1a1e] text-[#9ca3af]"
+                        >
                           Unsave
                         </button>
                       )}
                       {activeTab === "created" && (
-                        <Link to={`/course-form/${course.id}`} style={styles.editBtn}>✏️ Edit</Link>
+                        <>
+                          <Link
+                            to={`/course-form/${course.id}`}
+                            className="px-4 py-1.5 rounded-md text-[0.8rem] font-medium no-underline border border-[rgba(255,255,255,0.08)] bg-[#1a1a1e] text-[#9ca3af]"
+                          >
+                            Edit
+                          </Link>
+                          <button
+                            onClick={() => setDeleteTarget(course)}
+                            className="px-4 py-1.5 rounded-md text-[0.8rem] font-medium cursor-pointer border border-[rgba(239,68,68,0.2)] bg-[rgba(239,68,68,0.08)] text-[#ef4444]"
+                          >
+                            Delete
+                          </button>
+                        </>
                       )}
                     </div>
-                  </div>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           )}
         </div>
-      </div>
+      </main>
 
-      {/* Unenroll Modal */}
+      {/* Unenroll modal */}
       <Modal isOpen={Boolean(unenrollTarget)} onClose={() => setUnenrollTarget(null)} title="Unenroll from Course?">
-        <p style={styles.modalText}>
+        <p className="text-[#9ca3af] mb-6 text-[0.95rem] leading-relaxed">
           Are you sure you want to unenroll from{" "}
-          <strong style={{ color: "#f5f2ec" }}>{unenrollTarget?.title}</strong>?
+          <strong className="text-[#f5f2ec]">{unenrollTarget?.title}</strong>?
           You will lose access to all modules.
         </p>
-        <div style={styles.modalActions}>
-          <button onClick={handleUnenrollConfirm} style={styles.modalConfirmBtn}>Yes, Unenroll</button>
-          <button onClick={() => setUnenrollTarget(null)} style={styles.modalCancelBtn}>Cancel</button>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => { unenrollCourse(unenrollTarget.id); setUnenrollTarget(null); }}
+            className="flex-1 py-3 rounded-lg font-bold text-[0.9rem] cursor-pointer border-none text-white bg-[#ef4444]"
+          >
+            Yes, Unenroll
+          </button>
+          <button
+            onClick={() => setUnenrollTarget(null)}
+            className="flex-1 py-3 rounded-lg font-medium text-[0.9rem] cursor-pointer text-[#e8e6e0] border border-[rgba(255,255,255,0.12)] bg-transparent"
+          >
+            Cancel
+          </button>
+        </div>
+      </Modal>
+
+      {/* Profile edit modal */}
+      <Modal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} title="Edit Profile">
+        <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
+          <label className="flex flex-col gap-1.5 text-[0.82rem] text-[#9ca3af]">
+            Full Name
+            <input
+              value={profileForm.name}
+              onChange={(e) => updateProfileField("name", e.target.value)}
+              aria-invalid={!!profileErrors.name}
+              className="w-full rounded-lg px-3 py-2.5 border border-[rgba(255,255,255,0.12)] bg-[#121216] text-[#e8e6e0]"
+              maxLength={50}
+            />
+            {profileErrors.name && <span role="alert" className="text-[#ef4444] text-[0.74rem]">{profileErrors.name}</span>}
+          </label>
+
+          <label className="flex flex-col gap-1.5 text-[0.82rem] text-[#9ca3af]">
+            Phone
+            <input
+              value={profileForm.phone}
+              onChange={(e) => updateProfileField("phone", e.target.value)}
+              aria-invalid={!!profileErrors.phone}
+              className="w-full rounded-lg px-3 py-2.5 border border-[rgba(255,255,255,0.12)] bg-[#121216] text-[#e8e6e0]"
+            />
+            {profileErrors.phone && <span role="alert" className="text-[#ef4444] text-[0.74rem]">{profileErrors.phone}</span>}
+          </label>
+
+          <label className="flex flex-col gap-1.5 text-[0.82rem] text-[#9ca3af]">
+            Bio
+            <textarea
+              value={profileForm.bio}
+              onChange={(e) => updateProfileField("bio", e.target.value)}
+              rows={3}
+              maxLength={300}
+              aria-invalid={!!profileErrors.bio}
+              className="w-full rounded-lg px-3 py-2.5 border border-[rgba(255,255,255,0.12)] bg-[#121216] text-[#e8e6e0] resize-y"
+            />
+            {profileErrors.bio && <span role="alert" className="text-[#ef4444] text-[0.74rem]">{profileErrors.bio}</span>}
+          </label>
+
+          {isInstructor && (
+            <>
+              <label className="flex flex-col gap-1.5 text-[0.82rem] text-[#9ca3af]">
+                Expertise
+                <input
+                  value={profileForm.expertise}
+                  onChange={(e) => updateProfileField("expertise", e.target.value)}
+                  aria-invalid={!!profileErrors.expertise}
+                  className="w-full rounded-lg px-3 py-2.5 border border-[rgba(255,255,255,0.12)] bg-[#121216] text-[#e8e6e0]"
+                />
+                {profileErrors.expertise && <span role="alert" className="text-[#ef4444] text-[0.74rem]">{profileErrors.expertise}</span>}
+              </label>
+
+              <label className="flex flex-col gap-1.5 text-[0.82rem] text-[#9ca3af]">
+                Website
+                <input
+                  value={profileForm.website}
+                  onChange={(e) => updateProfileField("website", e.target.value)}
+                  placeholder="https://example.com"
+                  aria-invalid={!!profileErrors.website}
+                  className="w-full rounded-lg px-3 py-2.5 border border-[rgba(255,255,255,0.12)] bg-[#121216] text-[#e8e6e0]"
+                />
+                {profileErrors.website && <span role="alert" className="text-[#ef4444] text-[0.74rem]">{profileErrors.website}</span>}
+              </label>
+            </>
+          )}
+
+          <label className="flex flex-col gap-1.5 text-[0.82rem] text-[#9ca3af]">
+            Profile Picture
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleProfileImageChange}
+              className="w-full rounded-lg px-3 py-2.5 border border-[rgba(255,255,255,0.12)] bg-[#121216] text-[#e8e6e0]"
+            />
+            {profileForm.profileImage && (
+              <div className="flex items-center gap-3 mt-1">
+                <img src={profileForm.profileImage} alt="Profile preview" className="w-12 h-12 rounded-full object-cover border border-[rgba(255,255,255,0.12)]" />
+                <button
+                  type="button"
+                  onClick={() => updateProfileField("profileImage", "")}
+                  className="text-[0.78rem] text-[#ef4444]"
+                >
+                  Remove picture
+                </button>
+              </div>
+            )}
+            {profileErrors.profileImage && <span className="text-[#ef4444] text-[0.74rem]">{profileErrors.profileImage}</span>}
+          </label>
+
+          <div className="flex gap-3 pt-1">
+            <button type="submit" className="flex-1 py-2.5 rounded-lg font-semibold bg-[#d97706] text-[#0c0c0e] border-none">
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowProfileModal(false)}
+              className="flex-1 py-2.5 rounded-lg font-medium text-[#e8e6e0] border border-[rgba(255,255,255,0.12)]"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete created course modal */}
+      <Modal isOpen={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)} title="Delete Course?">
+        <p className="text-[#9ca3af] mb-6 text-[0.95rem] leading-relaxed">
+          Are you sure you want to delete{" "}
+          <strong className="text-[#f5f2ec]">{deleteTarget?.title}</strong>?
+          This will remove it for all users.
+        </p>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={handleDeleteCourse}
+            className="flex-1 py-3 rounded-lg font-bold text-[0.9rem] cursor-pointer border-none text-white bg-[#ef4444]"
+          >
+            Yes, Delete
+          </button>
+          <button
+            type="button"
+            onClick={() => setDeleteTarget(null)}
+            className="flex-1 py-3 rounded-lg font-medium text-[0.9rem] cursor-pointer text-[#e8e6e0] border border-[rgba(255,255,255,0.12)] bg-transparent"
+          >
+            Cancel
+          </button>
         </div>
       </Modal>
     </div>
   );
 }
-
-const styles = {
-  page: { minHeight: "100vh", backgroundColor: "#0c0c0e", color: "#e8e6e0", fontFamily: "'DM Sans', sans-serif" },
-  profileBanner: { backgroundColor: "#111114", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "2rem 1.25rem" },
-  profileInner: { maxWidth: "1100px", margin: "0 auto", display: "flex", alignItems: "center", gap: "1.25rem", marginBottom: "1.75rem", flexWrap: "wrap" },
-  avatar: { width: "72px", height: "72px", borderRadius: "50%", backgroundColor: "rgba(217,119,6,0.15)", border: "2px solid rgba(217,119,6,0.4)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display', serif", fontSize: "1.8rem", color: "#d97706", flexShrink: 0 },
-  profileInfo: { flex: 1 },
-  profileName: { fontFamily: "'Playfair Display', serif", fontSize: "1.6rem", color: "#f5f2ec", margin: "0 0 0.25rem" },
-  profileEmail: { fontSize: "0.88rem", color: "#6b7280", margin: "0 0 0.5rem" },
-  roleBadge: { display: "inline-block", padding: "0.2rem 0.75rem", borderRadius: "999px", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" },
-  addCourseBtn: { padding: "0.7rem 1.25rem", backgroundColor: "#d97706", color: "#0c0c0e", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "0.88rem" },
-  stats: { maxWidth: "1100px", margin: "0 auto", display: "flex", gap: "2.5rem" },
-  stat: { display: "flex", flexDirection: "column", gap: "0.2rem" },
-  statNum: { fontFamily: "'Playfair Display', serif", fontSize: "1.75rem", color: "#f5f2ec" },
-  statLabel: { fontSize: "0.75rem", color: "#6b7280", letterSpacing: "0.05em", textTransform: "uppercase" },
-  body: { maxWidth: "1100px", margin: "0 auto", padding: "2rem 1.25rem" },
-  tabs: { display: "flex", gap: "0.25rem", marginBottom: "2rem", borderBottom: "1px solid rgba(255,255,255,0.07)", overflowX: "auto" },
-  tab: { display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.65rem 1.1rem", background: "none", border: "none", borderBottom: "2px solid transparent", color: "#6b7280", fontFamily: "'DM Sans', sans-serif", fontSize: "0.9rem", fontWeight: 500, cursor: "pointer", marginBottom: "-1px", whiteSpace: "nowrap" },
-  tabActive: { color: "#f5f2ec", borderBottomColor: "#d97706" },
-  tabCount: { padding: "0.1rem 0.5rem", borderRadius: "999px", fontSize: "0.7rem", fontWeight: 700, backgroundColor: "#1a1a1e", color: "#6b7280" },
-  tabCountActive: { backgroundColor: "rgba(217,119,6,0.15)", color: "#d97706" },
-  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(255px, 1fr))", gap: "1.25rem" },
-  cardWrap: { display: "flex", flexDirection: "column", gap: "0.5rem" },
-  cardProgressWrap: { display: "flex", alignItems: "center", gap: "0.75rem" },
-  cardProgressBg: { flex: 1, height: "4px", backgroundColor: "rgba(255,255,255,0.07)", borderRadius: "999px", overflow: "hidden" },
-  cardProgressFill: { height: "100%", background: "linear-gradient(90deg, #d97706, #f59e0b)", borderRadius: "999px", transition: "width 0.5s ease" },
-  cardProgressPct: { fontSize: "0.72rem", color: "#d97706", fontWeight: 700, flexShrink: 0 },
-  completedBadgeRow: { display: "flex" },
-  completedBadge: { fontSize: "0.78rem", color: "#22c55e", backgroundColor: "rgba(34,197,94,0.08)", padding: "0.25rem 0.75rem", borderRadius: "999px", border: "1px solid rgba(34,197,94,0.2)", fontWeight: 600 },
-  cardActions: { display: "flex", gap: "0.5rem" },
-  editBtn: { padding: "0.45rem 1rem", backgroundColor: "#1a1a1e", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "6px", color: "#9ca3af", textDecoration: "none", fontSize: "0.8rem", fontWeight: 500 },
-  unenrollBtn: { padding: "0.45rem 1rem", backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "6px", color: "#ef4444", fontSize: "0.8rem", fontWeight: 500, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" },
-  unsaveBtn: { padding: "0.45rem 1rem", backgroundColor: "#1a1a1e", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "6px", color: "#9ca3af", fontSize: "0.8rem", fontWeight: 500, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" },
-  emptyTab: { display: "flex", flexDirection: "column", alignItems: "center", padding: "5rem 2rem", textAlign: "center", gap: "0.75rem" },
-  emptyIcon: { fontSize: "2.5rem" },
-  emptyText: { color: "#6b7280", fontSize: "0.92rem" },
-  emptyAction: { color: "#d97706", textDecoration: "none", fontWeight: 600, fontSize: "0.88rem" },
-  modalText: { color: "#9ca3af", marginBottom: "1.5rem", fontSize: "0.95rem", lineHeight: 1.6 },
-  modalActions: { display: "flex", gap: "0.75rem" },
-  modalConfirmBtn: { flex: 1, padding: "0.75rem", backgroundColor: "#ef4444", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" },
-  modalCancelBtn: { flex: 1, padding: "0.75rem", backgroundColor: "transparent", color: "#e8e6e0", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "8px", fontWeight: 500, fontSize: "0.9rem", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" },
-};

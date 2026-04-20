@@ -1,115 +1,68 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
+import { CloseIcon } from "./Icons";
 
-/**
- * Modal — reusable overlay dialog
- * Props: isOpen, onClose, title, children
- */
 export default function Modal({ isOpen, onClose, title, children }) {
-  // Close on Escape key
+  // Close on Escape
   useEffect(() => {
     if (!isOpen) return;
-    const handler = (e) => {
-      if (e.key === "Escape") onClose();
-    };
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [isOpen, onClose]);
 
-  // Prevent body scroll while open
+  // Prevent body scroll
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
+    return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
-      style={styles.overlay}
+      className="fixed inset-0 z-[1000] overflow-y-auto bg-[rgba(0,0,0,0.72)]"
+      style={{ backdropFilter: "blur(4px)" }}
       onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
+      role="presentation"
     >
-      <div
-        style={styles.modal}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div style={styles.header}>
-          <h2 style={styles.title}>{title}</h2>
-          <button
-            onClick={onClose}
-            style={styles.closeBtn}
-            aria-label="Close modal"
-          >
-            ✕
-          </button>
+      <div className="min-h-full w-full flex items-start justify-center p-4 sm:py-8">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={title ? "modal-title" : undefined}
+          className="relative w-full max-w-[420px] rounded-2xl border border-[rgba(255,255,255,0.09)] p-0 m-0 bg-surface text-[#e8e6e0]"
+          style={{ boxShadow: "0 25px 60px rgba(0,0,0,0.6)" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <header className="flex items-center justify-between px-6 py-5">
+            {title && (
+              <h2
+                id="modal-title"
+                className="font-heading text-[1.15rem] m-0 text-text-primary"
+              >
+                {title}
+              </h2>
+            )}
+            <button
+              onClick={onClose}
+              aria-label="Close dialog"
+              className="border-none cursor-pointer text-[1rem] leading-none p-1 ml-auto text-text-dim hover:text-text-muted transition-colors bg-transparent"
+            >
+              <CloseIcon size={16} />
+            </button>
+          </header>
+
+          <hr className="border-[rgba(255,255,255,0.06)]" />
+
+          {/* Content */}
+          <div className="p-6">
+            {children}
+          </div>
         </div>
-
-        {/* Divider */}
-        <div style={styles.divider} />
-
-        {/* Content */}
-        <div style={styles.content}>{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
-
-const styles = {
-  overlay: {
-    position: "fixed",
-    inset: 0,
-    backgroundColor: "rgba(0,0,0,0.72)",
-    backdropFilter: "blur(4px)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-    padding: "1rem",
-    animation: "fadeIn 0.2s ease",
-  },
-  modal: {
-    backgroundColor: "#16161a",
-    border: "1px solid rgba(255,255,255,0.09)",
-    borderRadius: "14px",
-    width: "100%",
-    maxWidth: "420px",
-    boxShadow: "0 25px 60px rgba(0,0,0,0.6)",
-    animation: "slideUp 0.25s ease",
-    fontFamily: "'DM Sans', sans-serif",
-    color: "#e8e6e0",
-  },
-  header: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "1.25rem 1.5rem",
-  },
-  title: {
-    fontFamily: "'Playfair Display', serif",
-    fontSize: "1.15rem",
-    color: "#f5f2ec",
-    margin: 0,
-  },
-  closeBtn: {
-    background: "none",
-    border: "none",
-    color: "#6b7280",
-    fontSize: "1rem",
-    cursor: "pointer",
-    padding: "0.25rem",
-    lineHeight: 1,
-    transition: "color 0.15s",
-  },
-  divider: {
-    height: "1px",
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  content: {
-    padding: "1.5rem",
-  },
-};

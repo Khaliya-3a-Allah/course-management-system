@@ -5,33 +5,33 @@ import Modal from "../components/Modal";
 
 // ── SVG Icons ────────────────────────────────────────────────────────────────
 const IconPlay = () => (
-  <svg width="18" height="18" viewBox="0 0 16 16" fill="#e8e6e0"><polygon points="3,1 15,8 3,15"/></svg>
+  <svg width="18" height="18" viewBox="0 0 16 16" fill="#e8e6e0" aria-hidden="true" focusable="false"><polygon points="3,1 15,8 3,15"/></svg>
 );
 const IconPause = () => (
-  <svg width="18" height="18" viewBox="0 0 16 16" fill="#e8e6e0">
+  <svg width="18" height="18" viewBox="0 0 16 16" fill="#e8e6e0" aria-hidden="true" focusable="false">
     <rect x="2" y="2" width="4" height="12" rx="1"/><rect x="10" y="2" width="4" height="12" rx="1"/>
   </svg>
 );
 const IconVolume = () => (
-  <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#e8e6e0" strokeWidth="1.5" strokeLinecap="round">
+  <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#e8e6e0" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true" focusable="false">
     <polygon points="1,5 5,5 9,1 9,15 5,11 1,11" fill="#e8e6e0" stroke="none"/>
     <path d="M11 5.5a4 4 0 0 1 0 5"/><path d="M13 3.5a7 7 0 0 1 0 9"/>
   </svg>
 );
 const IconVolumeLow = () => (
-  <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#e8e6e0" strokeWidth="1.5" strokeLinecap="round">
+  <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#e8e6e0" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true" focusable="false">
     <polygon points="1,5 5,5 9,1 9,15 5,11 1,11" fill="#e8e6e0" stroke="none"/>
     <path d="M11 5.5a4 4 0 0 1 0 5"/>
   </svg>
 );
 const IconMute = () => (
-  <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#e8e6e0" strokeWidth="1.5" strokeLinecap="round">
+  <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#e8e6e0" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true" focusable="false">
     <polygon points="1,5 5,5 9,1 9,15 5,11 1,11" fill="#e8e6e0" stroke="none"/>
     <line x1="12" y1="5" x2="15" y2="11"/><line x1="15" y1="5" x2="12" y2="11"/>
   </svg>
 );
 const IconFullscreen = () => (
-  <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="#e8e6e0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="#e8e6e0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
     <polyline points="1,5 1,1 5,1"/><polyline points="11,1 15,1 15,5"/>
     <polyline points="15,11 15,15 11,15"/><polyline points="5,15 1,15 1,11"/>
   </svg>
@@ -219,7 +219,7 @@ function VideoPlayer({ src, title, moduleName, duration }) {
       </div>
 
       {/* Big play button */}
-      <button className="vp-big-play" onClick={togglePlay} style={vStyles.bigPlay} aria-label="Play">
+      <button className="vp-big-play" onClick={togglePlay} style={vStyles.bigPlay} aria-label={playing ? "Pause" : "Play"}>
         {playing
           ? <IconPause />
           : <svg width="28" height="28" viewBox="0 0 16 16" fill="#d97706" style={{ marginLeft: "4px" }}><polygon points="3,1 15,8 3,15"/></svg>
@@ -229,7 +229,24 @@ function VideoPlayer({ src, title, moduleName, duration }) {
       {/* Custom controls bar */}
       <div className="vp-custom-controls" style={{ ...vStyles.controls, opacity: showControls ? 1 : 0, transition: "opacity 0.3s" }}>
         {/* Seek bar */}
-        <div className="vp-seek-bar" onClick={handleSeek} onTouchEnd={handleSeek}>
+        <div
+          className="vp-seek-bar"
+          role="slider"
+          tabIndex={0}
+          aria-label="Seek"
+          aria-valuemin={0}
+          aria-valuemax={Math.round(totalDuration) || 0}
+          aria-valuenow={Math.round(currentTime)}
+          aria-valuetext={`${fmt(currentTime)} of ${fmt(totalDuration)}`}
+          onClick={handleSeek}
+          onTouchEnd={handleSeek}
+          onKeyDown={(e) => {
+            if (!videoRef.current || !totalDuration) return;
+            const step = totalDuration * 0.05;
+            if (e.key === "ArrowRight") { videoRef.current.currentTime = Math.min(totalDuration, currentTime + step); e.preventDefault(); }
+            if (e.key === "ArrowLeft") { videoRef.current.currentTime = Math.max(0, currentTime - step); e.preventDefault(); }
+          }}
+        >
           <div className="vp-track" style={vStyles.seekBg}>
             <div style={{ ...vStyles.seekFill, width: `${pct}%` }} />
             <div style={{ ...vStyles.seekThumb, left: `calc(${pct}% - 8px)` }} />
@@ -244,7 +261,7 @@ function VideoPlayer({ src, title, moduleName, duration }) {
               {playing ? <IconPause /> : <IconPlay />}
             </button>
             <span style={vStyles.time}>{fmt(currentTime)} / {fmt(totalDuration)}</span>
-            <button className="vp-btn" onClick={toggleMute} aria-label="Toggle mute">
+            <button className="vp-btn" onClick={toggleMute} aria-label={muted || volume === 0 ? "Unmute" : "Mute"}>
               {muted || volume === 0 ? <IconMute /> : volume < 0.5 ? <IconVolumeLow /> : <IconVolume />}
             </button>
             <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} onChange={handleVolume} className="vp-vol" aria-label="Volume" />
@@ -258,6 +275,8 @@ function VideoPlayer({ src, title, moduleName, duration }) {
                 className="vp-speed-btn"
                 onClick={() => setShowSpeed((v) => !v)}
                 aria-label="Playback speed"
+                aria-haspopup="listbox"
+                aria-expanded={showSpeed}
               >
                 {speed}x
               </button>
@@ -310,7 +329,7 @@ const vStyles = {
 export default function ModuleDetails() {
   const { courseId, moduleId } = useParams();
   const navigate = useNavigate();
-  const { courses, updateCourse, currentUser, lessonProgress, markLessonComplete, markCourseComplete, completedCourses } = useAppContext();
+  const { courses, submitReview, currentUser, lessonProgress, markLessonComplete, markCourseComplete, completedCourses } = useAppContext();
 
   const course = courses.find((c) => c.id === courseId);
   const allModules = course?.modules || [];
@@ -318,42 +337,81 @@ export default function ModuleDetails() {
   const module = allModules[currentModuleIndex];
   const completedLessons = lessonProgress[courseId] || {};
 
-  const [activeLesson, setActiveLesson] = useState(null);
-  const [expandedModules, setExpandedModules] = useState({});
+  const [lastModuleId, setLastModuleId] = useState(moduleId);
+  const [activeLesson, setActiveLesson] = useState(() => module?.lessons?.[0] ?? null);
+  const [expandedModules, setExpandedModules] = useState(() => module ? { [module.id]: true } : {});
   const [visible, setVisible] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
   const [completionShown, setCompletionShown] = useState(false);
   const [hoveredStar, setHoveredStar] = useState(0);
-  const [selectedRating, setSelectedRating] = useState(0);
-  const [reviewMessage, setReviewMessage] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [selectedRating, setSelectedRating] = useState(() => currentUser?.reviews?.[courseId]?.rating ?? 0);
+  const [reviewMessage, setReviewMessage] = useState(() => currentUser?.reviews?.[courseId]?.comment ?? "");
+  const submitted = !!currentUser?.reviews?.[courseId];
+
+  // Reset active lesson and expand current module when navigating between modules.
+  // Render-time setState is the React-recommended pattern for derived state on prop changes.
+  if (lastModuleId !== moduleId) {
+    setLastModuleId(moduleId);
+    setActiveLesson(module?.lessons?.[0] ?? null);
+    setExpandedModules((prev) => ({ ...prev, [moduleId]: true }));
+  }
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 50);
     return () => clearTimeout(t);
   }, []);
 
-  useEffect(() => {
-    if (module) {
-      setExpandedModules({ [module.id]: true });
-      if (module.lessons?.length > 0) setActiveLesson(module.lessons[0]);
-    }
-  }, [moduleId]);
-
   if (!course) {
     return (
-      <div style={styles.notFound}>
-        <h2 style={styles.nfTitle}>Course Not Found</h2>
-        <Link to="/courses" style={styles.backLink}>← All Courses</Link>
+      <div className="min-h-[80vh] flex flex-col items-center justify-center bg-base gap-4">
+        <h2 className="font-heading text-[1.5rem] text-text-primary">Course Not Found</h2>
+        <Link to="/courses" className="no-underline font-semibold text-brand">← All Courses</Link>
       </div>
     );
   }
 
   if (!module) {
     return (
-      <div style={styles.notFound}>
-        <h2 style={styles.nfTitle}>Module Not Found</h2>
-        <Link to={`/courses/${courseId}`} style={styles.backLink}>← Back to Course</Link>
+      <div className="min-h-[80vh] flex flex-col items-center justify-center bg-base gap-4">
+        <h2 className="font-heading text-[1.5rem] text-text-primary">Module Not Found</h2>
+        <Link to={`/courses/${courseId}`} className="no-underline font-semibold text-brand">← Back to Course</Link>
+      </div>
+    );
+  }
+
+  const price = Number(course.price || 0);
+  const isPaidCourse = price > 0;
+  const owned = isPaidCourse
+    ? (currentUser?.purchasedCourseIds?.includes(courseId) ?? false)
+    : true;
+  const enrolled = currentUser?.enrolledCourseIds?.includes(courseId) ?? false;
+
+  if (!currentUser) {
+    return (
+      <div className="min-h-[80vh] flex flex-col items-center justify-center bg-base gap-4 text-center px-6">
+        <h2 className="font-heading text-[1.5rem] text-text-primary">Sign In Required</h2>
+        <p className="text-text-dim m-0">You need to sign in to access course lessons.</p>
+        <Link to="/login" className="no-underline font-semibold text-brand">Go to Login →</Link>
+      </div>
+    );
+  }
+
+  if (!owned) {
+    return (
+      <div className="min-h-[80vh] flex flex-col items-center justify-center bg-base gap-4 text-center px-6">
+        <h2 className="font-heading text-[1.5rem] text-text-primary">Purchase Required</h2>
+        <p className="text-text-dim m-0">Buy this course to unlock all modules and lessons.</p>
+        <Link to={`/checkout/${courseId}`} className="no-underline font-semibold text-brand">Go to Checkout →</Link>
+      </div>
+    );
+  }
+
+  if (!enrolled) {
+    return (
+      <div className="min-h-[80vh] flex flex-col items-center justify-center bg-base gap-4 text-center px-6">
+        <h2 className="font-heading text-[1.5rem] text-text-primary">Enrollment Required</h2>
+        <p className="text-text-dim m-0">Enroll in this course before opening lessons.</p>
+        <Link to={`/courses/${courseId}`} className="no-underline font-semibold text-brand">Back to Course →</Link>
       </div>
     );
   }
@@ -396,13 +454,14 @@ export default function ModuleDetails() {
 
   const handleSubmitReview = () => {
     if (selectedRating === 0) return;
-    const newRating = ((course.rating || 0) + selectedRating) / 2;
-    updateCourse({ ...course, rating: Math.round(newRating * 10) / 10 });
-    setSubmitted(true);
+    submitReview(courseId, selectedRating, reviewMessage);
   };
 
   return (
-    <div style={{ ...styles.page, opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(16px)", transition: "opacity 0.55s ease, transform 0.55s ease" }}>
+    <div
+      className="min-h-screen bg-base text-text-secondary font-body"
+      style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(16px)", transition: "opacity 0.55s ease, transform 0.55s ease" }}
+    >
       <style>{`
         @keyframes fadeSlide { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 640px) {
@@ -410,7 +469,6 @@ export default function ModuleDetails() {
           .module-sidebar { border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.06); max-height: 280px; overflow-y: auto; }
           .module-main { padding: 0.75rem !important; }
         }
-        /* Desktop: hide native video controls, show custom */
         @media (min-width: 641px) {
           .vp-wrap video { pointer-events: none; }
           .vp-wrap video::-webkit-media-controls { display: none !important; }
@@ -419,8 +477,8 @@ export default function ModuleDetails() {
           .vp-custom-controls { display: block !important; }
           .vp-wrap { cursor: pointer; }
         }
-        .module-sidebar button { background-color: #111114 !important; }
-        .lesson-btn { background-color: #0e0e11 !important; }
+        .module-sidebar button { background-color: var(--color-sidebar) !important; }
+        .lesson-btn { background-color: var(--color-surface-muted) !important; }
         .lesson-btn:hover { background-color: rgba(217,119,6,0.05) !important; }
         .lesson-btn.active { background-color: rgba(217,119,6,0.07) !important; }
         .module-btn-active { background-color: rgba(217,119,6,0.06) !important; border-left: 3px solid #d97706 !important; }
@@ -429,36 +487,45 @@ export default function ModuleDetails() {
         .star-btn { background: none !important; border: none !important; cursor: pointer; padding: 0 3px; font-size: 2.2rem; line-height: 1; transition: transform 0.1s; }
         .star-btn:hover { transform: scale(1.25); }
         .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .review-textarea { width: 100%; background: #0c0c0e; border: 1px solid rgba(255,255,255,0.09); border-radius: 8px; color: #e8e6e0; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; padding: 0.75rem 1rem; resize: vertical; min-height: 90px; box-sizing: border-box; outline: none; transition: border-color 0.2s; }
+        .review-textarea { width: 100%; background: var(--color-surface); border: 1px solid var(--color-input-border); border-radius: 8px; color: var(--color-text-secondary); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; padding: 0.75rem 1rem; resize: vertical; min-height: 90px; box-sizing: border-box; outline: none; transition: border-color 0.2s; }
         .review-textarea:focus { border-color: rgba(217,119,6,0.4); }
-        .review-textarea::placeholder { color: #4b5563; }
+        .review-textarea::placeholder { color: var(--color-text-dim); }
       `}</style>
 
       {/* Top Bar */}
-      <div style={styles.topBar}>
-        <div style={styles.topBarInner}>
-          <Link to={`/courses/${courseId}`} style={styles.backBtn}>← {course.title}</Link>
-          <span style={styles.topBarDivider}>/</span>
-          <span style={styles.topBarModule}>{module.title}</span>
-          <div style={styles.topBarProgress}>
-            <span style={styles.topBarPct}>{progressPct}%</span>
-            <div style={styles.topBarBarWrap}><div className="progress-fill" style={{ width: `${progressPct}%` }} /></div>
+      <header className="sticky top-0 z-10 border-b border-[rgba(255,255,255,0.06)] px-6 bg-sidebar">
+        <div className="max-w-[1280px] mx-auto h-[53px] flex items-center gap-3 text-[0.85rem] flex-wrap">
+          <Link to={`/courses/${courseId}`} className="no-underline font-semibold text-brand">← {course.title}</Link>
+          <span className="text-text-faint" aria-hidden="true">/</span>
+          <span className="text-text-muted font-normal flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{module.title}</span>
+          <div className="flex items-center gap-2.5 shrink-0" aria-label={`Progress: ${progressPct}%`}>
+            <span className="text-[0.75rem] font-bold min-w-[2.5rem] text-right text-brand">{progressPct}%</span>
+            <div className="w-[100px] h-1 rounded-full overflow-hidden bg-[rgba(255,255,255,0.08)]">
+              <div className="progress-fill" style={{ width: `${progressPct}%` }} />
+            </div>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Layout */}
-      <div className="module-layout" style={styles.layout}>
-
+      <div
+        className="module-layout max-w-[1280px] mx-auto grid"
+        style={{ gridTemplateColumns: "300px 1fr", minHeight: "calc(100vh - 53px)" }}
+      >
         {/* Sidebar */}
-        <aside className="module-sidebar" style={styles.sidebar}>
-          <div style={styles.sidebarHeader}>
-            <div style={styles.progressHeader}>
-              <p style={styles.sidebarLabel}>Course Content</p>
-              <span style={styles.progressPctBig}>{progressPct}%</span>
+        <aside
+          className="module-sidebar border-r border-[rgba(255,255,255,0.06)] overflow-y-auto bg-sidebar"
+          aria-label="Course content"
+        >
+          <div className="px-5 pt-5 pb-4 border-b border-[rgba(255,255,255,0.05)]">
+            <div className="flex justify-between items-center mb-2.5">
+              <p className="text-[0.65rem] tracking-widest uppercase font-bold text-text-faint m-0">Course Content</p>
+              <span className="text-[0.85rem] font-bold text-brand">{progressPct}%</span>
             </div>
-            <div style={styles.progressBarWrap}><div className="progress-fill" style={{ width: `${progressPct}%` }} /></div>
-            <p style={styles.progressSub}>{completedCount} of {totalLessons} lessons completed</p>
+            <div className="w-full h-1.5 rounded-full overflow-hidden mb-2 bg-[rgba(255,255,255,0.07)]">
+              <div className="progress-fill" style={{ width: `${progressPct}%` }} />
+            </div>
+            <p className="text-[0.72rem] text-text-faint m-0">{completedCount} of {totalLessons} lessons completed</p>
           </div>
 
           <nav aria-label="Course modules">
@@ -471,48 +538,67 @@ export default function ModuleDetails() {
               const modPct = modTotal > 0 ? Math.round((modDone / modTotal) * 100) : 0;
 
               return (
-                <div key={mod.id} style={styles.moduleGroup}>
+                <div key={mod.id} className="border-b border-[rgba(255,255,255,0.04)]">
                   <button
-                    className={isCurrentModule ? "module-btn-active" : ""}
+                    className={`w-full flex items-center gap-3 px-5 py-3.5 border-none cursor-pointer text-left${isCurrentModule ? " module-btn-active" : ""}`}
                     onClick={() => { toggleModule(mod.id); if (!isCurrentModule) navigate(`/courses/${courseId}/modules/${mod.id}`); }}
-                    style={styles.moduleBtn}
+                    aria-expanded={isExpanded}
+                    aria-controls={`mod-lessons-${mod.id}`}
                   >
-                    <span style={{ ...styles.modNum, color: modComplete ? "#22c55e" : isCurrentModule ? "#d97706" : "rgba(217,119,6,0.3)" }}>
+                    <span
+                      className="font-heading text-[1rem] min-w-[1.75rem] font-bold"
+                      style={{ color: modComplete ? "#22c55e" : isCurrentModule ? "#d97706" : "rgba(217,119,6,0.3)" }}
+                    >
                       {modComplete ? "✓" : String(modIdx + 1).padStart(2, "0")}
                     </span>
-                    <span style={styles.modInfo}>
-                      <span style={styles.modTitle}>{mod.title}</span>
-                      <span style={styles.modProgressRow}>
-                        <span style={styles.modProgressBarWrap}>
-                          <span style={{ ...styles.modProgressFill, width: `${modPct}%`, backgroundColor: modComplete ? "#22c55e" : "#d97706" }} />
+                    <span className="flex-1 flex flex-col gap-1.5 min-w-0">
+                      <span className="text-[0.85rem] text-text-secondary font-medium">{mod.title}</span>
+                      <span className="flex items-center gap-2">
+                        <span className="flex-1 h-[3px] bg-[rgba(255,255,255,0.07)] rounded-full overflow-hidden">
+                          <span
+                            className="block h-full rounded-full transition-[width] duration-500"
+                            style={{ width: `${modPct}%`, backgroundColor: modComplete ? "#22c55e" : "#d97706" }}
+                          />
                         </span>
-                        <span style={styles.modProgressText}>{modDone}/{modTotal}</span>
+                        <span className="text-[0.65rem] text-text-faint shrink-0">{modDone}/{modTotal}</span>
                       </span>
                     </span>
-                    <span style={styles.modChevron}>{isExpanded ? "▲" : "▼"}</span>
+                    <span className="text-[0.6rem] text-text-dim shrink-0" aria-hidden="true">{isExpanded ? "▲" : "▼"}</span>
                   </button>
 
                   {isExpanded && (
-                    <div style={styles.lessonDropdown}>
+                    <div id={`mod-lessons-${mod.id}`} className="border-t border-[rgba(255,255,255,0.03)]">
                       {mod.lessons?.map((lesson) => {
                         const isActiveLesson = isCurrentModule && activeLesson?.id === lesson.id;
                         const isDone = completedLessons[lesson.id];
                         return (
                           <button
                             key={lesson.id}
-                            className={`lesson-btn${isActiveLesson ? " active" : ""}`}
+                            className={`lesson-btn${isActiveLesson ? " active" : ""} w-full flex items-center gap-2.5 px-5 py-2.5 pl-6 border-none border-b border-[rgba(255,255,255,0.03)] cursor-pointer text-left`}
                             onClick={() => setActiveLesson(lesson)}
-                            style={styles.lessonBtn}
+                            aria-pressed={isActiveLesson}
                           >
-                            <span style={{ ...styles.lessonDot, backgroundColor: isDone ? "#22c55e" : isActiveLesson ? "#d97706" : "rgba(255,255,255,0.1)", boxShadow: isActiveLesson && !isDone ? "0 0 0 2px rgba(217,119,6,0.3)" : "none" }} />
-                            <span style={styles.lessonBtnText}>
-                              <span style={{ ...styles.lessonBtnTitle, color: isDone ? "#6b7280" : isActiveLesson ? "#f5f2ec" : "#9ca3af", textDecoration: isDone ? "line-through" : "none" }}>
+                            <span
+                              className="w-2.5 h-2.5 rounded-full shrink-0 transition-all duration-300"
+                              style={{
+                                backgroundColor: isDone ? "#22c55e" : isActiveLesson ? "#d97706" : "rgba(255,255,255,0.1)",
+                                boxShadow: isActiveLesson && !isDone ? "0 0 0 2px rgba(217,119,6,0.3)" : "none",
+                              }}
+                            />
+                            <span className="flex-1 flex flex-col gap-px">
+                              <span
+                                className="text-[0.82rem] font-medium"
+                                style={{
+                                  color: isDone ? "var(--color-text-dim)" : isActiveLesson ? "var(--color-text-primary)" : "var(--color-text-muted)",
+                                  textDecoration: isDone ? "line-through" : "none",
+                                }}
+                              >
                                 {lesson.title}
                               </span>
-                              <span style={styles.lessonBtnDuration}>{lesson.duration}</span>
+                              <span className="text-[0.7rem] text-text-dim">{lesson.duration}</span>
                             </span>
-                            {isActiveLesson && !isDone && <span style={styles.activeIndicator}>▶</span>}
-                            {isDone && <span style={styles.doneCheck}>✓</span>}
+                            {isActiveLesson && !isDone && <span className="text-[0.55rem] text-brand shrink-0" aria-hidden="true">▶</span>}
+                            {isDone && <span className="text-[0.7rem] text-[#22c55e] shrink-0" aria-label="Completed">✓</span>}
                           </button>
                         );
                       })}
@@ -525,7 +611,7 @@ export default function ModuleDetails() {
         </aside>
 
         {/* Main */}
-        <main className="module-main" style={styles.main}>
+        <main className="module-main bg-base overflow-y-auto px-10 py-8">
           {activeLesson ? (
             <div key={activeLesson.id} style={{ animation: "fadeSlide 0.4s ease forwards" }}>
               <VideoPlayer
@@ -535,41 +621,62 @@ export default function ModuleDetails() {
                 duration={activeLesson.duration}
               />
 
-              <div style={styles.lessonMeta}>
-                <span style={styles.lessonMetaDuration}>⏱ {activeLesson.duration}</span>
-                <span style={styles.lessonMetaModule}>{module.title}</span>
-                {completedLessons[activeLesson.id] && <span style={styles.lessonDoneBadge}>✓ Completed</span>}
+              {/* Lesson meta */}
+              <div className="flex gap-3 mb-3 items-center flex-wrap">
+                <span className="text-[0.8rem] text-text-dim">⏱ {activeLesson.duration}</span>
+                <span className="text-[0.75rem] text-text-faint px-2.5 py-0.5 rounded-full border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.04)]">
+                  {module.title}
+                </span>
+                {completedLessons[activeLesson.id] && (
+                  <span className="text-[0.72rem] font-semibold px-2.5 py-0.5 rounded-full border border-[rgba(34,197,94,0.2)] bg-[rgba(34,197,94,0.08)] text-[#22c55e]">
+                    ✓ Completed
+                  </span>
+                )}
               </div>
 
-              <h1 style={styles.lessonTitle}>{activeLesson.title}</h1>
+              <h1 className="font-heading text-text-primary mb-6 leading-snug" style={{ fontSize: "clamp(1.2rem, 3vw, 1.6rem)" }}>
+                {activeLesson.title}
+              </h1>
 
-              <div style={styles.contentCard}>
-                <p style={styles.contentLabel}>Lesson Preview</p>
-                <p style={styles.contentText}>{activeLesson.contentPreview || "No preview content available."}</p>
-              </div>
+              <article className="rounded-xl p-6 mb-6 border border-[rgba(255,255,255,0.06)] bg-surface">
+                <p className="text-[0.65rem] tracking-widest uppercase font-bold mb-3 text-brand">Lesson Preview</p>
+                <p className="text-text-muted leading-[1.8] text-[0.95rem] m-0">
+                  {activeLesson.contentPreview || "No preview content available."}
+                </p>
+              </article>
 
               {!completedLessons[activeLesson.id] && (
-                <button className="mark-complete-btn" onClick={() => handleMarkComplete(activeLesson.id)} style={styles.markCompleteBtn}>
+                <button
+                  className="mark-complete-btn inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-[0.85rem] cursor-pointer mb-6 border border-[rgba(34,197,94,0.25)] bg-[rgba(34,197,94,0.08)] text-[#22c55e]"
+                  onClick={() => handleMarkComplete(activeLesson.id)}
+                >
                   ✓ Mark as Complete
                 </button>
               )}
 
-              <div style={styles.lessonNav}>
+              <nav className="flex justify-between gap-4 mt-2" aria-label="Lesson navigation">
                 {(!isFirstLesson || prevModule) && (
-                  <button onClick={goToPrevLesson} style={styles.navBtn}>
-                    ← {isFirstLesson && prevModule ? "Prev Module" : "Prev Lesson"}
+                  <button
+                    onClick={goToPrevLesson}
+                    className="px-5 py-2.5 rounded-lg font-medium text-[0.88rem] cursor-pointer border border-[rgba(255,255,255,0.08)] bg-surface text-text-secondary"
+                  >
+                    <span aria-hidden="true">← </span>{isFirstLesson && prevModule ? "Prev Module" : "Prev Lesson"}
                   </button>
                 )}
                 {!isLastLesson ? (
-                  <button onClick={goToNextLesson} style={{ ...styles.navBtn, ...styles.navBtnNext }}>Next Lesson →</button>
+                  <button onClick={goToNextLesson} className="px-5 py-2.5 rounded-lg font-medium text-[0.88rem] cursor-pointer border border-[rgba(217,119,6,0.3)] bg-[rgba(217,119,6,0.08)] text-brand ml-auto">
+                    Next Lesson <span aria-hidden="true">→</span>
+                  </button>
                 ) : nextModule ? (
-                  <button onClick={goToNextModule} style={{ ...styles.navBtn, ...styles.navBtnNext }}>Next Module →</button>
+                  <button onClick={goToNextModule} className="px-5 py-2.5 rounded-lg font-medium text-[0.88rem] cursor-pointer border border-[rgba(217,119,6,0.3)] bg-[rgba(217,119,6,0.08)] text-brand ml-auto">
+                    Next Module <span aria-hidden="true">→</span>
+                  </button>
                 ) : null}
-              </div>
+              </nav>
             </div>
           ) : (
-            <div style={styles.selectPrompt}>
-              <span style={styles.selectIcon}>📖</span>
+            <div className="h-[60vh] flex flex-col items-center justify-center gap-4 text-text-faint text-[0.95rem]">
+              <span className="text-[2.5rem]" aria-hidden="true">📖</span>
               <p>Select a lesson from the sidebar to begin.</p>
             </div>
           )}
@@ -579,45 +686,63 @@ export default function ModuleDetails() {
       {/* Completion Modal */}
       <Modal isOpen={showCompletion} onClose={() => setShowCompletion(false)} title="">
         {!submitted ? (
-          <div style={styles.completionInner}>
-            <div style={styles.completionTop}>
-              <span style={styles.completionEmoji}>🎉</span>
-              <h2 style={styles.completionTitle}>Course Complete!</h2>
-              <p style={styles.completionSub}>You've finished <strong style={{ color: "#f5f2ec" }}>{course.title}</strong>.<br />Share how it went!</p>
+          <div className="flex flex-col gap-6">
+            <div className="text-center">
+              <span className="text-[3rem] block mb-3" aria-hidden="true">🎉</span>
+              <h2 className="font-heading text-[1.5rem] text-text-primary mb-2">Course Complete!</h2>
+              <p className="text-[0.9rem] text-text-muted leading-relaxed m-0">
+                You've finished <strong className="text-text-primary">{course.title}</strong>.<br />Share how it went!
+              </p>
             </div>
-            <div style={styles.starsSection}>
-              <p style={styles.starsLabel}>Your Rating</p>
-              <div style={styles.starsRow}>
+            <div className="text-center">
+              <p className="text-[0.78rem] tracking-widest uppercase font-semibold text-text-dim mb-3">Your Rating</p>
+              <div className="flex justify-center gap-1 mb-2" role="group" aria-label="Star rating">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <button key={star} className="star-btn" onClick={() => setSelectedRating(star)} onMouseEnter={() => setHoveredStar(star)} onMouseLeave={() => setHoveredStar(0)}>
+                  <button key={star} className="star-btn" onClick={() => setSelectedRating(star)} onMouseEnter={() => setHoveredStar(star)} onMouseLeave={() => setHoveredStar(0)} aria-label={`Rate ${star} stars`} aria-pressed={selectedRating === star}>
                     <span style={{ color: star <= (hoveredStar || selectedRating) ? "#f59e0b" : "#2d2d35", transition: "color 0.12s" }}>★</span>
                   </button>
                 ))}
               </div>
-              {selectedRating > 0 && <p style={styles.ratingLabel}>{["", "Poor", "Fair", "Good", "Very Good", "Excellent"][selectedRating]}</p>}
+              {selectedRating > 0 && <p className="text-[0.82rem] font-semibold m-0 text-brand">{["", "Poor", "Fair", "Good", "Very Good", "Excellent"][selectedRating]}</p>}
             </div>
-            <div style={styles.messageSection}>
-              <p style={styles.messageLabel}>Leave a review <span style={styles.optional}>(optional)</span></p>
-              <textarea className="review-textarea" placeholder="What did you think of this course? What was most valuable?" value={reviewMessage} onChange={(e) => setReviewMessage(e.target.value)} rows={3} />
+            <div>
+              <label htmlFor="completion-review" className="block text-[0.82rem] font-semibold text-text-secondary mb-2">
+                Leave a review <span className="font-normal text-text-faint">(optional)</span>
+              </label>
+              <textarea id="completion-review" className="review-textarea" placeholder="What did you think of this course? What was most valuable?" value={reviewMessage} onChange={(e) => setReviewMessage(e.target.value)} rows={3} />
             </div>
-            <div style={styles.completionActions}>
-              <button className="submit-btn" onClick={handleSubmitReview} disabled={selectedRating === 0} style={{ ...styles.submitBtn, opacity: selectedRating === 0 ? 0.4 : 1, cursor: selectedRating === 0 ? "not-allowed" : "pointer" }}>Submit Review</button>
-              <button onClick={() => setShowCompletion(false)} style={styles.skipBtn}>Skip for now</button>
+            <div className="flex flex-col gap-2.5">
+              <button
+                type="button"
+                className="submit-btn w-full py-3.5 rounded-lg font-bold text-[0.92rem] border-none cursor-pointer bg-brand text-base disabled:opacity-40 disabled:cursor-not-allowed"
+                onClick={handleSubmitReview}
+                disabled={selectedRating === 0}
+                style={{ opacity: selectedRating === 0 ? 0.4 : 1, cursor: selectedRating === 0 ? "not-allowed" : "pointer" }}
+              >
+                Submit Review
+              </button>
+              <button type="button" onClick={() => setShowCompletion(false)} className="w-full py-3 rounded-lg text-[0.88rem] cursor-pointer border border-[rgba(255,255,255,0.07)] bg-transparent text-text-dim">
+                Skip for now
+              </button>
             </div>
           </div>
         ) : (
-          <div style={styles.completionInner}>
-            <div style={styles.completionTop}>
-              <span style={styles.completionEmoji}>⭐</span>
-              <h2 style={styles.completionTitle}>Thanks for your review!</h2>
-              <p style={styles.completionSub}>
-                You rated <strong style={{ color: "#f5f2ec" }}>{course.title}</strong> {selectedRating} star{selectedRating !== 1 ? "s" : ""}.
-                {reviewMessage && <span style={{ display: "block", marginTop: "0.5rem", fontStyle: "italic", color: "#6b7280" }}>"{reviewMessage}"</span>}
+          <div className="flex flex-col gap-6">
+            <div className="text-center">
+              <span className="text-[0.75rem] tracking-[0.22em] uppercase text-text-faint block mb-3" aria-hidden="true">Review</span>
+              <h2 className="font-heading text-[1.5rem] text-text-primary mb-2">Thanks for your review!</h2>
+              <p className="text-[0.9rem] text-text-muted leading-relaxed m-0">
+                You rated <strong className="text-text-primary">{course.title}</strong> {selectedRating} star{selectedRating !== 1 ? "s" : ""}.
+                {reviewMessage && <span className="block mt-2 italic text-text-dim">"{reviewMessage}"</span>}
               </p>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              <Link to="/courses" style={styles.browseBtn} onClick={() => setShowCompletion(false)}>Browse More Courses →</Link>
-              <button onClick={() => setShowCompletion(false)} style={styles.closeBtn}>Close</button>
+            <div className="flex flex-col gap-3">
+              <Link to="/courses" onClick={() => setShowCompletion(false)} className="block text-center py-3.5 rounded-lg no-underline font-bold text-[0.92rem] bg-brand text-base">
+                Browse More Courses <span aria-hidden="true">→</span>
+              </Link>
+              <button type="button" onClick={() => setShowCompletion(false)} className="w-full py-3 rounded-lg text-[0.88rem] cursor-pointer border border-[rgba(255,255,255,0.07)] bg-transparent text-text-dim">
+                Close
+              </button>
             </div>
           </div>
         )}
@@ -625,76 +750,3 @@ export default function ModuleDetails() {
     </div>
   );
 }
-
-const styles = {
-  page: { minHeight: "100vh", backgroundColor: "#0c0c0e", color: "#e8e6e0", fontFamily: "'DM Sans', sans-serif" },
-  topBar: { backgroundColor: "#111114", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "0.875rem 1.5rem" },
-  topBarInner: { maxWidth: "1280px", margin: "0 auto", display: "flex", alignItems: "center", gap: "0.75rem", fontSize: "0.85rem", flexWrap: "wrap" },
-  backBtn: { color: "#d97706", textDecoration: "none", fontWeight: 600 },
-  topBarDivider: { color: "#374151" },
-  topBarModule: { color: "#9ca3af", fontWeight: 400, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
-  topBarProgress: { display: "flex", alignItems: "center", gap: "0.6rem", flexShrink: 0 },
-  topBarPct: { fontSize: "0.75rem", fontWeight: 700, color: "#d97706", minWidth: "2.5rem", textAlign: "right" },
-  topBarBarWrap: { width: "100px", height: "4px", backgroundColor: "rgba(255,255,255,0.08)", borderRadius: "999px", overflow: "hidden" },
-  layout: { maxWidth: "1280px", margin: "0 auto", display: "grid", gridTemplateColumns: "300px 1fr", minHeight: "calc(100vh - 53px)" },
-  sidebar: { borderRight: "1px solid rgba(255,255,255,0.06)", backgroundColor: "#111114", overflowY: "auto" },
-  sidebarHeader: { padding: "1.25rem 1.25rem 1rem", borderBottom: "1px solid rgba(255,255,255,0.05)" },
-  progressHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.6rem" },
-  sidebarLabel: { fontSize: "0.65rem", letterSpacing: "0.12em", color: "#4b5563", fontWeight: 700, textTransform: "uppercase", margin: 0 },
-  progressPctBig: { fontSize: "0.85rem", fontWeight: 700, color: "#d97706" },
-  progressBarWrap: { width: "100%", height: "6px", backgroundColor: "rgba(255,255,255,0.07)", borderRadius: "999px", overflow: "hidden", marginBottom: "0.5rem" },
-  progressSub: { fontSize: "0.72rem", color: "#4b5563", margin: 0 },
-  moduleGroup: { borderBottom: "1px solid rgba(255,255,255,0.04)" },
-  moduleBtn: { width: "100%", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.85rem 1.25rem", border: "none", cursor: "pointer", textAlign: "left" },
-  modNum: { fontFamily: "'Playfair Display', serif", fontSize: "1rem", minWidth: "1.75rem", fontWeight: 700 },
-  modInfo: { flex: 1, display: "flex", flexDirection: "column", gap: "0.35rem", minWidth: 0 },
-  modTitle: { fontSize: "0.85rem", color: "#d1cfc8", fontWeight: 500, display: "block" },
-  modProgressRow: { display: "flex", alignItems: "center", gap: "0.5rem" },
-  modProgressBarWrap: { flex: 1, height: "3px", backgroundColor: "rgba(255,255,255,0.07)", borderRadius: "999px", overflow: "hidden" },
-  modProgressFill: { height: "100%", borderRadius: "999px", transition: "width 0.5s ease" },
-  modProgressText: { fontSize: "0.65rem", color: "#4b5563", flexShrink: 0 },
-  modChevron: { fontSize: "0.6rem", color: "#6b7280", flexShrink: 0 },
-  lessonDropdown: { borderTop: "1px solid rgba(255,255,255,0.03)" },
-  lessonBtn: { width: "100%", display: "flex", alignItems: "center", gap: "0.65rem", padding: "0.6rem 1.25rem 0.6rem 1.5rem", border: "none", borderBottom: "1px solid rgba(255,255,255,0.03)", cursor: "pointer", textAlign: "left" },
-  lessonDot: { width: "10px", height: "10px", borderRadius: "50%", flexShrink: 0, transition: "background-color 0.3s, box-shadow 0.3s" },
-  lessonBtnText: { flex: 1, display: "flex", flexDirection: "column", gap: "1px" },
-  lessonBtnTitle: { fontSize: "0.82rem", fontWeight: 500, transition: "color 0.2s" },
-  lessonBtnDuration: { fontSize: "0.7rem", color: "#6b7280" },
-  activeIndicator: { fontSize: "0.55rem", color: "#d97706", flexShrink: 0 },
-  doneCheck: { fontSize: "0.7rem", color: "#22c55e", flexShrink: 0 },
-  main: { padding: "2rem 2.5rem", overflowY: "auto", backgroundColor: "#0c0c0e" },
-  lessonMeta: { display: "flex", gap: "0.75rem", marginBottom: "0.75rem", alignItems: "center", flexWrap: "wrap" },
-  lessonMetaDuration: { fontSize: "0.8rem", color: "#6b7280" },
-  lessonMetaModule: { fontSize: "0.75rem", color: "#4b5563", backgroundColor: "rgba(255,255,255,0.04)", padding: "0.15rem 0.6rem", borderRadius: "999px", border: "1px solid rgba(255,255,255,0.06)" },
-  lessonDoneBadge: { fontSize: "0.72rem", color: "#22c55e", backgroundColor: "rgba(34,197,94,0.08)", padding: "0.15rem 0.6rem", borderRadius: "999px", border: "1px solid rgba(34,197,94,0.2)" },
-  lessonTitle: { fontFamily: "'Playfair Display', serif", fontSize: "clamp(1.2rem, 3vw, 1.6rem)", color: "#f5f2ec", margin: "0 0 1.5rem", lineHeight: 1.25 },
-  contentCard: { backgroundColor: "#16161a", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "10px", padding: "1.5rem", marginBottom: "1.5rem" },
-  contentLabel: { fontSize: "0.65rem", letterSpacing: "0.12em", color: "#d97706", textTransform: "uppercase", fontWeight: 700, marginBottom: "0.75rem" },
-  contentText: { color: "#9ca3af", lineHeight: 1.8, fontSize: "0.95rem", margin: 0 },
-  markCompleteBtn: { display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.65rem 1.25rem", backgroundColor: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)", borderRadius: "8px", color: "#22c55e", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer", marginBottom: "1.5rem" },
-  lessonNav: { display: "flex", justifyContent: "space-between", gap: "1rem", marginTop: "0.5rem" },
-  navBtn: { padding: "0.7rem 1.25rem", backgroundColor: "#1a1a1e", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", color: "#d1cfc8", fontFamily: "'DM Sans', sans-serif", fontWeight: 500, fontSize: "0.88rem", cursor: "pointer" },
-  navBtnNext: { marginLeft: "auto", backgroundColor: "rgba(217,119,6,0.08)", borderColor: "rgba(217,119,6,0.3)", color: "#d97706" },
-  selectPrompt: { height: "60vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1rem", color: "#4b5563", fontSize: "0.95rem" },
-  selectIcon: { fontSize: "2.5rem" },
-  notFound: { minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: "#0c0c0e", gap: "1rem" },
-  nfTitle: { fontFamily: "'Playfair Display', serif", color: "#f5f2ec", fontSize: "1.5rem" },
-  backLink: { color: "#d97706", textDecoration: "none", fontWeight: 600 },
-  completionInner: { display: "flex", flexDirection: "column", gap: "1.5rem" },
-  completionTop: { textAlign: "center" },
-  completionEmoji: { fontSize: "3rem", display: "block", marginBottom: "0.75rem" },
-  completionTitle: { fontFamily: "'Playfair Display', serif", fontSize: "1.5rem", color: "#f5f2ec", margin: "0 0 0.5rem" },
-  completionSub: { fontSize: "0.9rem", color: "#9ca3af", lineHeight: 1.6, margin: 0 },
-  starsSection: { textAlign: "center" },
-  starsLabel: { fontSize: "0.78rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "#6b7280", fontWeight: 600, marginBottom: "0.75rem" },
-  starsRow: { display: "flex", justifyContent: "center", gap: "0.15rem", marginBottom: "0.5rem" },
-  ratingLabel: { fontSize: "0.82rem", color: "#d97706", fontWeight: 600, margin: 0 },
-  messageSection: {},
-  messageLabel: { fontSize: "0.82rem", color: "#d1cfc8", fontWeight: 600, marginBottom: "0.5rem" },
-  optional: { color: "#4b5563", fontWeight: 400 },
-  completionActions: { display: "flex", flexDirection: "column", gap: "0.6rem" },
-  submitBtn: { width: "100%", padding: "0.85rem", backgroundColor: "#d97706", color: "#0c0c0e", border: "none", borderRadius: "8px", fontWeight: 700, fontSize: "0.92rem", fontFamily: "'DM Sans', sans-serif" },
-  skipBtn: { width: "100%", padding: "0.75rem", backgroundColor: "transparent", color: "#6b7280", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", fontFamily: "'DM Sans', sans-serif", fontSize: "0.88rem", cursor: "pointer" },
-  browseBtn: { display: "block", textAlign: "center", padding: "0.85rem", backgroundColor: "#d97706", color: "#0c0c0e", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "0.92rem" },
-  closeBtn: { width: "100%", padding: "0.75rem", backgroundColor: "transparent", color: "#6b7280", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", fontFamily: "'DM Sans', sans-serif", fontSize: "0.88rem", cursor: "pointer" },
-};

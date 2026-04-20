@@ -10,7 +10,9 @@ export const mockUsers = [
     interests: ["React", "Node.js", "Data Structures"],
     createdCourseIds: [],
     enrolledCourseIds: ["c1", "c3"],
+    purchasedCourseIds: ["c3"],
     savedCourseIds: ["c2"],
+    completedCourseIds: ["c1"],
   },
   {
     id: "u2",
@@ -23,7 +25,9 @@ export const mockUsers = [
     expertise: "Full-Stack Development",
     website: "https://sarahchen.dev",
     createdCourseIds: ["c1"],
-    enrolledCourseIds: [],
+    enrolledCourseIds: ["c2"],
+    purchasedCourseIds: ["c2"],
     savedCourseIds: [],
+    completedCourseIds: ["c2"],
   },
 ];

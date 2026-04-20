@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Environment variables — never commit these
+.env
+.env.local
+.env.*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -23,8 +28,7 @@ dist-ssr
 *.sln
 *.sw?
 
-# Environment variables
-.env
-.env.local
-
 .claude/
+e2e
+playwright-report
+playwright.config.js

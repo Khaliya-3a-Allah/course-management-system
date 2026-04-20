@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import useClickOutside from "../hooks/useClickOutside";
+import { INPUT_CLASS } from "./FormField";
 
 const MAX_VISIBLE = 8;
 
@@ -105,17 +106,20 @@ export default function AutocompleteSelect({
       : undefined;
 
   return (
-    <div ref={wrapperRef} style={styles.wrapper} aria-label={label}>
+    <div ref={wrapperRef} className="relative" aria-label={label}>
       {/* Selected chips */}
       {selected.length > 0 && (
-        <div style={styles.chipsContainer} aria-label="Selected interests">
+        <div className="flex flex-wrap gap-1.5 mb-2" aria-label="Selected interests">
           {selected.map((item) => (
-            <span key={item} style={styles.chip}>
+            <span
+              key={item}
+              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-brand text-[0.8rem] font-body border border-[rgba(217,119,6,0.35)] bg-[rgba(217,119,6,0.12)]"
+            >
               {item}
               <button
                 type="button"
                 onClick={() => removeItem(item)}
-                style={styles.chipRemove}
+                className="bg-transparent border-none text-brand cursor-pointer text-[0.85rem] p-0 leading-none font-body"
                 aria-label={`Remove ${item}`}
               >
                 x
@@ -127,7 +131,7 @@ export default function AutocompleteSelect({
 
       {/* Input or limit message */}
       {isAtLimit ? (
-        <p style={styles.limitMessage}>
+        <p className="text-[0.78rem] text-text-dim m-0 py-2">
           Maximum of {maxSelections} interests selected.
         </p>
       ) : (
@@ -139,7 +143,8 @@ export default function AutocompleteSelect({
           onFocus={handleFocus}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          style={styles.input}
+          className={INPUT_CLASS}
+          style={{ border: "1px solid rgba(255,255,255,0.12)" }}
           role="combobox"
           aria-expanded={isOpen}
           aria-controls="autocomplete-listbox"
@@ -154,7 +159,7 @@ export default function AutocompleteSelect({
         <ul
           role="listbox"
           id="autocomplete-listbox"
-          style={styles.dropdown}
+          className="absolute top-full left-0 right-0 z-50 rounded-xl mt-1 max-h-[220px] overflow-y-auto list-none p-1 bg-[#1a1a1f] border border-[rgba(255,255,255,0.12)] shadow-[0_14px_35px_rgba(0,0,0,0.36)]"
         >
           {filteredOptions.map((option, index) => (
             <li
@@ -162,16 +167,15 @@ export default function AutocompleteSelect({
               role="option"
               id={`autocomplete-option-${index}`}
               aria-selected={index === highlightedIndex}
-              style={
-                index === highlightedIndex
-                  ? { ...styles.dropdownItem, ...styles.dropdownItemHighlighted }
-                  : styles.dropdownItem
-              }
+              className={`flex justify-between items-center px-3 py-2 cursor-pointer text-[0.88rem] font-body rounded transition-colors ${
+                index === highlightedIndex ? "text-brand" : "text-text-secondary"
+              }`}
+              style={index === highlightedIndex ? { backgroundColor: "rgba(217,119,6,0.12)" } : undefined}
               onMouseEnter={() => setHighlightedIndex(index)}
               onClick={() => addItem(option)}
             >
               <span>{option}</span>
-              <span style={styles.addButton}>+</span>
+              <span className="text-brand font-bold text-lg leading-none">+</span>
             </li>
           ))}
         </ul>
@@ -179,106 +183,14 @@ export default function AutocompleteSelect({
 
       {/* No results */}
       {isOpen && !isAtLimit && query.length > 0 && filteredOptions.length === 0 && (
-        <div style={styles.dropdown}>
-          <p style={styles.noResults}>No matching interests found.</p>
+        <div
+          className="absolute top-full left-0 right-0 z-50 rounded-xl mt-1 p-1 bg-[#1a1a1f] border border-[rgba(255,255,255,0.12)] shadow-[0_14px_35px_rgba(0,0,0,0.36)]"
+        >
+          <p className="px-3 py-2 text-text-dim text-[0.85rem] m-0 font-body">
+            No matching interests found.
+          </p>
         </div>
       )}
     </div>
   );
 }
-
-const styles = {
-  wrapper: {
-    position: "relative",
-  },
-  chipsContainer: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "0.4rem",
-    marginBottom: "0.5rem",
-  },
-  chip: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "0.3rem",
-    backgroundColor: "rgba(217,119,6,0.1)",
-    border: "1px solid rgba(217,119,6,0.3)",
-    borderRadius: "6px",
-    padding: "0.3rem 0.6rem",
-    color: "#d97706",
-    fontSize: "0.8rem",
-    fontFamily: "'DM Sans', sans-serif",
-  },
-  chipRemove: {
-    background: "none",
-    border: "none",
-    color: "#d97706",
-    cursor: "pointer",
-    fontSize: "0.85rem",
-    padding: "0 0.15rem",
-    lineHeight: 1,
-    fontFamily: "'DM Sans', sans-serif",
-  },
-  input: {
-    width: "100%",
-    padding: "0.8rem 1rem",
-    backgroundColor: "#0c0c0e",
-    border: "1px solid rgba(255,255,255,0.09)",
-    borderRadius: "8px",
-    color: "#e8e6e0",
-    fontFamily: "'DM Sans', sans-serif",
-    fontSize: "0.93rem",
-    outline: "none",
-    boxSizing: "border-box",
-    transition: "border-color 0.2s, box-shadow 0.2s",
-  },
-  limitMessage: {
-    fontSize: "0.78rem",
-    color: "#6b7280",
-    margin: 0,
-    padding: "0.5rem 0",
-  },
-  dropdown: {
-    position: "absolute",
-    top: "100%",
-    left: 0,
-    right: 0,
-    zIndex: 50,
-    backgroundColor: "#1a1a1f",
-    border: "1px solid rgba(255,255,255,0.09)",
-    borderRadius: "8px",
-    marginTop: "4px",
-    maxHeight: "220px",
-    overflowY: "auto",
-    listStyle: "none",
-    padding: "0.25rem 0",
-  },
-  dropdownItem: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "0.55rem 0.85rem",
-    cursor: "pointer",
-    color: "#d1cfc8",
-    fontSize: "0.88rem",
-    fontFamily: "'DM Sans', sans-serif",
-    transition: "background-color 0.1s",
-  },
-  dropdownItemHighlighted: {
-    backgroundColor: "rgba(217,119,6,0.08)",
-    color: "#d97706",
-  },
-  addButton: {
-    color: "#d97706",
-    fontWeight: 700,
-    fontSize: "1.1rem",
-    lineHeight: 1,
-  },
-  noResults: {
-    padding: "0.55rem 0.85rem",
-    color: "#6b7280",
-    fontSize: "0.85rem",
-    margin: 0,
-    fontFamily: "'DM Sans', sans-serif",
-  },
-};
