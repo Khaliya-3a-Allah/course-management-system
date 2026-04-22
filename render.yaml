@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: courseware-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: API_PREFIX
+        value: /api/v1
+      - key: CLIENT_ORIGIN
+        value: https://khaliya-3a-allah.github.io
+      - key: ENABLE_REQUEST_LOGS
+        value: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: JWT_CHALLENGE_EXPIRES_IN
+        value: 5m
+      - key: TOTP_ISSUER
+        value: Coursewave
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true

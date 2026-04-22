@@ -1,17 +1,14 @@
-# Courseware Course Management System
+# Courseware — Course Management System
 
-Frontend application for browsing courses, enrolling as a student, creating courses as an instructor, tracking learning progress, and generating certificates.
+A full-stack online learning platform where students can browse and enroll in courses, instructors can create and manage content, and progress is tracked end-to-end.
 
 ## Team Members
 
 | Name | Student ID | GitHub | Email |
-
+|---|---|---|---|
 | Mohamad Karim Mehaydli | 202400046 | Klol120 | mohamadkarim.mehaydli@lau.edu |
-
 | Jad Al Hassan | 202400472 | jadalhassan | jad.alhassan@lau.edu |
-
 | Ahmad Hajj Khalil | 202208592 | ahmadkhalil | ahmad.hajjkhalil@lau.edu |
-
 | Sami Bou Khaled | 202303124 | simenzzz | sami.boukhaled01@lau.edu |
 
 ## Assigned Topic
@@ -20,122 +17,270 @@ Course Management System for online learning.
 
 ### Primary Data Entities
 
-The app primarily models these entities:
+1. **User** — student/instructor profile, authentication state, saved/enrolled/completed courses
+2. **Course** — title, category, level, instructor, rating, modules, lessons
+3. **Module** — grouped set of lessons within a course
+4. **Lesson** — individual learning unit with duration and preview/video URL
+5. **Learning Progress** — lesson completion map and per-course completion percentage
+6. **Certificate** — completion-based records shown in the certificates view
+7. **Support Ticket** — support request payload submitted from the support page
 
-1. User: student/instructor profile, authentication state, saved/enrolled/completed courses.
-2. Course: title, category, level, instructor, rating, modules, lessons.
-3. Module: grouped set of lessons within a course.
-4. Lesson: individual learning unit with duration and preview/video URL.
-5. Learning Progress: lesson completion map and per-course completion percentage.
-6. Certificate: completion-based records shown in the certificates view.
-7. Support Ticket (simulated): support request payload submitted from the support page.
+---
 
 ## Deployed Application
 
-- Live URL: https://khaliya-3a-allah.github.io/course-management-system/
+| Service | URL |
+|---|---|
+| Frontend (GitHub Pages) | https://khaliya-3a-allah.github.io/course-management-system/ |
+| Backend API (Render) | https://course-management-system-fluu.onrender.com/api/v1 |
+| API Health Check | https://course-management-system-fluu.onrender.com/api/v1/health |
 
-## Frontend Setup (Local)
+> **Note:** The backend runs on Render's free tier and may take ~30 seconds to wake up on the first request after a period of inactivity. A cold-start banner is shown in the UI during this time.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 19, Vite, Tailwind CSS, React Router v7 |
+| Backend | Node.js, Express 5, MongoDB, Mongoose |
+| Auth | JWT, bcrypt, TOTP (2FA via speakeasy) |
+| Security | Helmet, express-rate-limit, CORS |
+| Deployment | GitHub Pages (frontend), Render (backend), MongoDB Atlas (database) |
+
+---
+
+## Local Development Setup
 
 ### Prerequisites
 
-1. Node.js 18+ (Node.js 20 LTS recommended)
-2. npm 9+
+- Node.js 20 LTS
+- npm 9+
+- A MongoDB Atlas cluster (free tier is fine)
 
-### Steps
-
-1. Clone the repository:
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/Khaliya-3a-Allah/course-management-system.git
 cd course-management-system
 ```
 
-2. Install dependencies:
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-3. Start development server:
+### 3. Configure environment variables
+
+**Backend** — copy `.env.example` to `.env` and fill in your values:
 
 ```bash
-npm run dev
+cp .env.example .env
 ```
 
-4. Open the local URL shown in terminal (typically `http://localhost:5173`).
+| Variable | Description |
+|---|---|
+| `NODE_ENV` | `development` or `production` |
+| `PORT` | Server port (default `5000`) |
+| `MONGODB_URI` | MongoDB Atlas connection string |
+| `JWT_SECRET` | Long random string, keep secret |
+| `CLIENT_ORIGIN` | Frontend origin allowed by CORS |
+
+**Frontend** — copy `.env.local.example` to `.env.local`:
+
+```bash
+cp .env.local.example .env.local
+```
+
+Set `VITE_API_URL=http://localhost:5000/api/v1` for local dev.
+
+### 4. Start the servers
+
+```bash
+# Terminal 1 — backend API
+npm run dev:server
+
+# Terminal 2 — frontend
+npm run dev:client
+```
+
+Open `http://localhost:5173` in your browser.
 
 ### Additional Scripts
 
 ```bash
-npm run build      # Production build to dist/
-npm run preview    # Preview production build locally
-npm run lint       # Run ESLint checks
-npm run test:e2e   # Run Playwright end-to-end tests
-npm run deploy     # Build and deploy dist/ via gh-pages
+npm run build        # Production frontend build to dist/
+npm run preview      # Preview production build locally
+npm run lint         # Run ESLint checks
+npm run test:e2e     # Run Playwright end-to-end tests
+npm run deploy       # Build and push frontend to GitHub Pages
 ```
 
-## Feature Showcase (Screenshots / GIF)
+---
 
-1. Home or Courses listing
+## Deployment Guide
+
+### Backend — Render
+
+1. Push code to GitHub.
+2. In [Render](https://render.com), create a new **Web Service** and connect your GitHub repo. Render will detect `render.yaml` automatically.
+3. In the Render dashboard, set the secret environment variables that are marked `sync: false` in `render.yaml`:
+   - `MONGODB_URI` — your MongoDB Atlas connection string
+4. `JWT_SECRET` is auto-generated by Render (`generateValue: true`).
+5. Deploy. The API will be live at your Render service URL.
+
+### Frontend — GitHub Pages
+
+The production API URL is baked into the frontend at build time via `.env.production` (already committed). Run:
+
+```bash
+npm run deploy
+```
+
+This builds the app with `VITE_API_URL` pointing at the Render backend and pushes the `dist/` folder to the `gh-pages` branch.
+
+### Environment Variables (Production)
+
+| Variable | Where set | Value |
+|---|---|---|
+| `NODE_ENV` | Render (render.yaml) | `production` |
+| `MONGODB_URI` | Render dashboard | your Atlas URI |
+| `JWT_SECRET` | Render (auto-generated) | random 64-byte hex |
+| `CLIENT_ORIGIN` | Render (render.yaml) | `https://khaliya-3a-allah.github.io` |
+| `VITE_API_URL` | `.env.production` | `https://course-management-system-fluu.onrender.com/api/v1` |
+
+---
+
+## API Documentation
+
+Base URL: `https://course-management-system-fluu.onrender.com/api/v1`
+
+All protected endpoints require the header:
+```
+Authorization: Bearer <token>
+```
+
+### Auth
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/auth/register` | — | Register a new user |
+| `POST` | `/auth/login` | — | Login, returns JWT |
+| `GET` | `/auth/me` | Required | Get current user |
+| `POST` | `/auth/logout` | Required | Invalidate session |
+| `POST` | `/auth/2fa/enroll` | Required | Begin 2FA setup |
+| `POST` | `/auth/2fa/verify` | Required | Complete 2FA enrollment |
+| `POST` | `/auth/2fa/challenge` | — | Verify TOTP code at login |
+
+### Courses
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/courses` | — | List all courses |
+| `GET` | `/courses/:id` | — | Get course by ID |
+| `POST` | `/courses` | Required | Create a course (instructor) |
+| `PUT` | `/courses/:id` | Owner only | Update a course |
+| `DELETE` | `/courses/:id` | Owner only | Delete a course |
+
+### Modules
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/modules` | — | List all modules |
+| `GET` | `/modules/:id` | — | Get module by ID |
+| `POST` | `/modules` | Required | Create a module |
+| `PUT` | `/modules/:id` | Owner only | Update a module |
+| `DELETE` | `/modules/:id` | Owner only | Delete a module |
+
+### Enrollments
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/enrollments` | Required | List enrollments for current user |
+| `GET` | `/enrollments/:id` | Required | Get enrollment by ID |
+| `POST` | `/enrollments` | Required | Enroll in a course |
+| `PUT` | `/enrollments/:id` | Owner only | Update enrollment |
+| `DELETE` | `/enrollments/:id` | Owner only | Unenroll |
+
+### Other Resources
+
+Similar CRUD pattern for: `/lessons`, `/reviews`, `/purchases`, `/progress`, `/certificates`, `/support-tickets`
+
+### Health Check
+
+```
+GET /api/v1/health
+→ { "success": true, "message": "Server is running", "timestamp": "..." }
+```
+
+---
+
+## Feature Showcase
+
+### 1. Home / Courses listing
+
 <img width="1919" height="907" alt="Screenshot 2026-03-24 225806" src="https://github.com/user-attachments/assets/ec32f4b8-ad17-46c0-85f7-766af356c444" />
 <img width="1918" height="909" alt="Screenshot 2026-03-24 230300" src="https://github.com/user-attachments/assets/1acd32b2-026c-4b00-9a5e-0e4de02fff1e" />
-2. Course details and module navigation
+
+### 2. Course details and module navigation
+
 <img width="1919" height="907" alt="Screenshot 2026-03-24 230357" src="https://github.com/user-attachments/assets/97276eca-b4d9-40a8-85bd-e75e111ccbfb" />
 <img width="1917" height="916" alt="Screenshot 2026-03-24 230440" src="https://github.com/user-attachments/assets/cf71ea01-56a6-4e5a-bdf8-9aa528fde7f9" />
 <img width="1353" height="429" alt="Screenshot 2026-03-24 230503" src="https://github.com/user-attachments/assets/fb4f404b-9ead-42b0-a1f1-21fc88518492" />
 
-3. Dashboard progress tracking
+### 3. Dashboard progress tracking
+
 <img width="1904" height="424" alt="Screenshot 2026-03-24 230611" src="https://github.com/user-attachments/assets/84f50099-997a-4f53-b656-655af1286012" />
 <img width="1327" height="629" alt="Screenshot 2026-03-24 230647" src="https://github.com/user-attachments/assets/08ed32e0-a2ca-4a19-9965-dcc91996bde1" />
 <img width="712" height="658" alt="image" src="https://github.com/user-attachments/assets/3b0d3f12-6dc5-4229-9367-a96feb5e18d4" />
 
-4. Certificate page
+### 4. Certificate page
+
 <img width="1919" height="909" alt="image" src="https://github.com/user-attachments/assets/a0cfbce7-d1ea-444e-9652-43421478c994" />
 <img width="1299" height="913" alt="image" src="https://github.com/user-attachments/assets/2f563368-dc78-4d7a-a8a1-6cde1fb5276e" />
 
-5. Instructor course creation/edit flow
+### 5. Instructor course creation / edit flow
+
 <img width="1919" height="908" alt="image" src="https://github.com/user-attachments/assets/93affdd1-69d4-478e-9ee6-d783d01ba4f3" />
 <img width="739" height="597" alt="image" src="https://github.com/user-attachments/assets/12dd28ae-99b9-4a22-8865-74d57366337b" />
 
-6. Support page ticket submission
+### 6. Support page ticket submission
+
 <img width="1736" height="736" alt="image" src="https://github.com/user-attachments/assets/bd97b97a-4c02-48df-bfd5-7bf2a21cb79f" />
 
+---
+
+## Security Features
+
+- **JWT authentication** — stateless tokens, 7-day expiry
+- **Two-Factor Authentication (TOTP)** — optional 2FA enrollment via authenticator apps
+- **Rate limiting** — per-IP and per-email limits on auth endpoints
+- **Helmet** — secure HTTP headers
+- **CORS** — restricted to the deployed frontend origin in production
+- **Input validation** — server-side validation on all write endpoints
+- **Ownership checks** — users can only modify their own resources
+
+---
 
 ## Team Contributions
 
-| Team Member | Primary Contributions | Page/View 1 | Page/View 2 |
+### Phase 1 — Frontend
 
-| Mohamad Karim Mehaydli | Main overview | Home Page | Courses Page | Certificates Page | Support Page |
+| Team Member | Contributions |
+|---|---|
+| Mohamad Karim Mehaydli | Home Page, Courses Page, Certificates Page, Support Page |
+| Jad Al Hassan | Module Details Page, Course Details Page |
+| Ahmad Hajj Khalil | Dashboard Page, Course Form Page |
+| Sami Bou Khaled | Login Page, Register Page |
 
-| Jad Al Hassan | Built the base | Module Detials Page | Course Details Page |
+### Phase 2 — Backend & Integration
 
-| Ahmad Khalil | Enhanced Dashboard and Forms | Dashboard Page | Course Form Page |
-
-| Sami Bou Khaled | Provided Verification | Login Page | Register Page |
-
-## Mock Data and Interaction Simulation
-
-This project currently uses in-memory mock data to simulate real backend behavior.
-
-### Source Files
-
-1. `src/data/mockCourses.js`
-2. `src/data/mockUsers.js`
-
-### How It Works
-
-1. On app startup, `AppContext` loads `mockCourses` and `mockUsers` into React state.
-2. User actions (enroll, save, complete, review, create/update/delete course) update local state only.
-3. Authentication state is simulated by selecting a mock user and persisting a safe user object in `localStorage`.
-4. Progress and completion states are computed/stored client-side (lesson completion map and completed course IDs).
-5. Support submission is currently simulated on the frontend (toast feedback) without a backend ticket API.
-
-### Why This Approach
-
-1. Enables rapid UI development and testing without a server.
-2. Makes flows deterministic for demos and grading.
-3. Keeps the codebase focused on frontend architecture and UX.
-
-## Notes
-
-This is a frontend-focused project built with React and Vite. Data persistence and API calls are intentionally mocked for simulation and demonstration.
+| Team Member | Contributions |
+|---|---|
+| Mohamad Karim Mehaydli | Database schema design (MongoDB/Mongoose models) |
+| Jad Al Hassan | Backend API — controllers, routes, middleware |
+| Ahmad Hajj Khalil | Auth system — JWT, 2FA, rate limiting, security hardening |
+| Sami Bou Khaled | Frontend–backend integration, DataContext, API wiring |
+| Sami Bou Khaled | Deployment, QA, final testing, README, submission package |
