@@ -277,10 +277,9 @@ GET /api/v1/health
 
 ### Phase 2 — Backend & Integration
 
-| Team Member | Contributions |
-|---|---|
-| Mohamad Karim Mehaydli | Database schema design (MongoDB/Mongoose models) |
-| Jad Al Hassan | Backend API — controllers, routes, middleware |
-| Ahmad Hajj Khalil | Auth system — JWT, 2FA, rate limiting, security hardening |
-| Sami Bou Khaled | Frontend–backend integration, DataContext, API wiring |
-| Sami Bou Khaled | Deployment, QA, final testing, README, submission package |
+| Team Member | Role | Contributions |
+|---|---|---|
+| Mohamad Karim Mehaydli | Backend & API Lead | Express server setup, middleware stack, folder structure, environment config, REST API routes, controllers (CRUD), API response structure |
+| Jad Al Hassan | Database & Authentication Lead | MongoDB/Mongoose schema design, database connection, bcrypt password hashing, JWT generation & verification middleware, ownership authorization |
+| Sami Bou Khaled | Frontend Integration Lead | Replaced mock data with real API calls, wired forms/pages to backend endpoints, login/signup flows, loading/error/empty states, DataContext |
+| Ahmad Hajj Khalil | Deployment, QA & Documentation Lead | Backend deployment (Render), frontend deployment (GitHub Pages), CORS & env var config, final testing (CRUD, auth, ownership), README, submission package |
