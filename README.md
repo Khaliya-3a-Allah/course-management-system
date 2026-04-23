@@ -84,14 +84,17 @@ npm install
 cp .env.example .env
 ```
 
-| Variable | Description | Example |
+| Variable | Description | Local value |
 |---|---|---|
 | `NODE_ENV` | Runtime environment | `development` |
 | `PORT` | Server port | `5000` |
 | `MONGODB_URI` | MongoDB Atlas connection string | `mongodb+srv://user:pass@cluster.mongodb.net/courseware` |
-| `JWT_SECRET` | Long random secret (keep private) | `openssl rand -hex 48` |
+| `JWT_SECRET` | Long random secret (keep private) | any long random string |
 | `CLIENT_ORIGIN` | Frontend origin allowed by CORS | `http://localhost:5173` |
 | `JWT_EXPIRES_IN` | Token lifetime | `7d` |
+| `API_PREFIX` | API route prefix | `/api/v1` |
+| `TOTP_ISSUER` | Label shown in authenticator apps | `Coursewave` |
+| `ENABLE_REQUEST_LOGS` | Toggle Morgan request logging | `true` |
 
 **Frontend** — copy `.env.local.example` to `.env.local`:
 
