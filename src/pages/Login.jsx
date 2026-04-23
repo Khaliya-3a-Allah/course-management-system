@@ -76,8 +76,8 @@ export default function Login() {
         challengeToken: pendingChallenge.challengeToken,
         code,
       });
+      setPendingChallenge(null);
       addToast("Two-factor verification successful.", "success");
-      navigate("/dashboard");
     } finally {
       setIsVerifying2fa(false);
     }
