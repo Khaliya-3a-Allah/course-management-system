@@ -38,6 +38,7 @@ A full-stack online learning platform where students can browse and enroll in co
 | Frontend (GitHub Pages) | https://khaliya-3a-allah.github.io/course-management-system/ |
 | Backend API (Render) | https://course-management-system-1hwz.onrender.com/api/v1 |
 | API Health Check | https://course-management-system-1hwz.onrender.com/api/v1/health |
+| GitHub Repository | https://github.com/Khaliya-3a-Allah/course-management-system |
 
 > **Note:** The backend runs on Render's free tier and may take ~30 seconds to wake up after a period of inactivity. A cold-start banner is shown in the UI during this time.
 
