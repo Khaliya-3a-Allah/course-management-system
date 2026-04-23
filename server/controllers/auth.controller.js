@@ -49,13 +49,13 @@ export async function register(req, res) {
     bio: "",
   });
 
-  const token = signSessionToken(user.id);
+  const token = signSessionToken(String(user._id));
 
   res.status(201).json({
     success: true,
     message: "Registered successfully",
     token,
-    data: user, // password is excluded by store.create (select: false + re-fetch)
+    data: { ...user, id: String(user._id) }, // password is excluded by store.create (select: false + re-fetch)
   });
 }
 
@@ -94,7 +94,7 @@ export async function login(req, res) {
   // Step 1 of a 2FA login: issue a short-lived challenge token only.
   // The client exchanges this for a real session token at /auth/2fa/verify.
   if (user.twoFactorEnabled) {
-    const challengeToken = signChallengeToken(user.id);
+    const challengeToken = signChallengeToken(String(user._id));
     res.status(200).json({
       success: true,
       twoFactorRequired: true,
@@ -104,13 +104,13 @@ export async function login(req, res) {
     return;
   }
 
-  const token = signSessionToken(user.id);
+  const token = signSessionToken(String(user._id));
 
   res.status(200).json({
     success: true,
     message: "Login successful",
     token,
-    data: safeUser,
+    data: { ...safeUser, id: String(user._id) },
   });
 }
 

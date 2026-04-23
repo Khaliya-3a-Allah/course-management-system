@@ -35,10 +35,20 @@ function isValidId(id) {
   return mongoose.isValidObjectId(id);
 }
 
+function withId(doc) {
+  if (!doc) return doc;
+  if (!doc.id) doc.id = doc._id?.toString();
+  return doc;
+}
+
+function withIdList(docs) {
+  return docs.map(withId);
+}
+
 // Return all documents for a resource
 export async function list(resourceName) {
   const Model = getModel(resourceName);
-  return Model.find({}).lean({ virtuals: true });
+  return withIdList(await Model.find({}).lean({ virtuals: true }));
 }
 
 // Return documents for a resource filtered by userId
@@ -47,14 +57,14 @@ export async function listByUser(resourceName, userId) {
     throw new ApiError(400, "Invalid user ID");
   }
   const Model = getModel(resourceName);
-  return Model.find({ userId }).lean({ virtuals: true });
+  return withIdList(await Model.find({ userId }).lean({ virtuals: true }));
 }
 
 // Return a single document by id (returns null for invalid or missing ids)
 export async function findById(resourceName, id) {
   if (!isValidId(id)) return null;
   const Model = getModel(resourceName);
-  return Model.findById(id).lean({ virtuals: true });
+  return withId(await Model.findById(id).lean({ virtuals: true }));
 }
 
 // Create a new document and return it (without the password field for users)
@@ -62,7 +72,7 @@ export async function create(resourceName, payload) {
   const Model = getModel(resourceName);
   const doc = await Model.create(payload);
   // Re-fetch so select:false fields (like password) are excluded from the response
-  return Model.findById(doc._id).lean({ virtuals: true });
+  return withId(await Model.findById(doc._id).lean({ virtuals: true }));
 }
 
 // Update a document by id and return the updated version (null if not found)
@@ -73,15 +83,15 @@ export async function update(resourceName, id, payload) {
   const { _id, id: _id2, ...safePayload } = payload;
   void _id;
   void _id2;
-  return Model.findByIdAndUpdate(id, safePayload, {
+  return withId(await Model.findByIdAndUpdate(id, safePayload, {
     new: true,
     runValidators: true,
-  }).lean({ virtuals: true });
+  }).lean({ virtuals: true }));
 }
 
 // Delete a document by id and return the deleted document (null if not found)
 export async function remove(resourceName, id) {
   if (!isValidId(id)) return null;
   const Model = getModel(resourceName);
-  return Model.findByIdAndDelete(id).lean({ virtuals: true });
+  return withId(await Model.findByIdAndDelete(id).lean({ virtuals: true }));
 }
