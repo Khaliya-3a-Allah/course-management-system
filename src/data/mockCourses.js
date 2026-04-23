@@ -8,7 +8,6 @@ export const mockCourses = [
     description:
       "A comprehensive introduction to React — components, hooks, routing, and state management. You will build three full projects by the end of this course.",
     thumbnail: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=600&q=80",
-    price: 0,
     rating: 4.8,
     tags: ["React", "JavaScript", "Frontend"],
     modules: [
@@ -69,7 +68,6 @@ export const mockCourses = [
     description:
       "Go beyond basic styling. Master CSS Grid, custom properties, keyframe animations, scroll-driven effects, and responsive design systems.",
     thumbnail: "https://images.unsplash.com/photo-1507721999472-8ed4421c4af2?w=600&q=80",
-    price: 59,
     rating: 4.6,
     tags: ["CSS", "Animation", "Design"],
     modules: [
@@ -130,7 +128,6 @@ export const mockCourses = [
     description:
       "Build scalable REST APIs with Node.js and Express. Covers routing, middleware, authentication with JWT, and connecting to databases.",
     thumbnail: "https://images.unsplash.com/photo-1555099962-4199c345e5dd?w=600&q=80",
-    price: 79,
     rating: 4.7,
     tags: ["Node.js", "Express", "API", "Backend"],
     modules: [
@@ -191,7 +188,6 @@ export const mockCourses = [
     description:
       "Learn the principles behind great user interfaces — typography, color theory, spacing, hierarchy, and how to prototype in Figma.",
     thumbnail: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&q=80",
-    price: 49,
     rating: 4.5,
     tags: ["UI", "UX", "Figma", "Design"],
     modules: [
@@ -252,7 +248,6 @@ export const mockCourses = [
     description:
       "Start your data science journey with Python. Covers pandas, numpy, matplotlib, and real-world data cleaning and visualization projects.",
     thumbnail: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&q=80",
-    price: 69,
     rating: 4.9,
     tags: ["Python", "Pandas", "Data Science"],
     modules: [
@@ -313,7 +308,6 @@ export const mockCourses = [
     description:
       "Master Docker, GitHub Actions, Kubernetes basics, and deploy production-grade apps with automated CI/CD pipelines.",
     thumbnail: "https://images.unsplash.com/photo-1518432031352-d6fc5c10da5a?w=600&q=80",
-    price: 89,
     rating: 4.4,
     tags: ["Docker", "CI/CD", "DevOps", "Kubernetes"],
     modules: [

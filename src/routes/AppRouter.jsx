@@ -13,7 +13,6 @@ import Certificates from "../pages/Certificates";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Support from "../pages/Support";
-import Checkout from "../pages/Checkout";
 
 export default function AppRouter() {
   return (
@@ -30,7 +29,6 @@ export default function AppRouter() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/support" element={<Support />} />
-          <Route path="/checkout/:courseId" element={<Checkout />} />
 
           {/* Protected routes — require authentication */}
           <Route element={<ProtectedRoute />}>

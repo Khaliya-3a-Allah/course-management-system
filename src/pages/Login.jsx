@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { validateLoginForm } from "../utils/validators";
-import { describeLoginError, describeTwoFactorError } from "../utils/authErrors";
+import { generateVerificationCode } from "../utils/codeGenerator";
 import LoginForm from "../components/LoginForm";
 import TwoFactorForm from "../components/TwoFactorForm";
 
 export default function Login() {
-  const { login, completeTwoFactor, currentUser, addToast } = useAppContext();
+  const { users, setCurrentUser, currentUser, addToast } = useAppContext();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({ email: "", password: "" });
@@ -16,7 +16,9 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [visible, setVisible] = useState(false);
 
-  const [challenge, setChallenge] = useState(null);
+  // 2FA state
+  const [pendingUser, setPendingUser] = useState(null);
+  const [verificationCode, setVerificationCode] = useState("");
 
   useEffect(() => {
     if (currentUser) {
@@ -35,7 +37,7 @@ export default function Login() {
     setAuthError("");
   }
 
-  async function handleSubmit(event) {
+  function handleSubmit(event) {
     event.preventDefault();
     if (isSubmitting) return;
 
@@ -45,63 +47,61 @@ export default function Login() {
 
     setIsSubmitting(true);
 
-    try {
-      const result = await login({
-        email: form.email.trim().toLowerCase(),
-        password: form.password,
-      });
+    const matchedUser = users.find(
+      (user) =>
+        user.email.toLowerCase() === form.email.toLowerCase() &&
+        user.password === form.password
+    );
 
-      if (result.twoFactorRequired) {
-        setChallenge({
-          token: result.challengeToken,
-          email: result.email,
-        });
-        return;
-      }
-
-      addToast(`Welcome back, ${result.user.name}!`, "success");
-      navigate("/dashboard");
-    } catch (error) {
-      setAuthError(describeLoginError(error));
-    } finally {
+    if (!matchedUser) {
+      setAuthError("Incorrect email or password. Try alex@example.com / password123");
       setIsSubmitting(false);
+      return;
     }
+
+    // Credentials valid — enter 2FA step
+    const code = generateVerificationCode();
+    setPendingUser(matchedUser);
+    setVerificationCode(code);
+    setIsSubmitting(false);
+    addToast(`Your verification code is: ${code}`, "info");
   }
 
-  async function handleTwoFactorSubmit(code) {
-    try {
-      const result = await completeTwoFactor({
-        challengeToken: challenge.token,
-        code,
-      });
-      addToast(`Welcome back, ${result.user.name}!`, "success");
-      navigate("/dashboard");
-      return { success: true };
-    } catch (error) {
-      return { success: false, message: describeTwoFactorError(error) };
-    }
+  function handleVerified() {
+    setCurrentUser(pendingUser);
+    addToast(`Welcome back, ${pendingUser.name}!`, "success");
+    navigate("/dashboard");
+  }
+
+  function handleResendCode() {
+    const newCode = generateVerificationCode();
+    setVerificationCode(newCode);
+    addToast(`New verification code: ${newCode}`, "info");
   }
 
   function handleBackToLogin(errorMessage) {
-    setChallenge(null);
+    setPendingUser(null);
+    setVerificationCode("");
     if (errorMessage) {
       addToast(errorMessage, "error");
     }
   }
 
   return (
-    <div
+    <main
+      className="min-h-screen bg-base flex items-center justify-center p-8 font-body"
       style={{
-        ...styles.page,
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(14px)",
         transition: "opacity 0.5s ease, transform 0.5s ease",
       }}
     >
-      {challenge ? (
+      {pendingUser ? (
         <TwoFactorForm
-          userEmail={challenge.email}
-          onSubmitCode={handleTwoFactorSubmit}
+          userEmail={pendingUser.email}
+          verificationCode={verificationCode}
+          onVerified={handleVerified}
+          onResendCode={handleResendCode}
           onBack={handleBackToLogin}
         />
       ) : (
@@ -114,18 +114,6 @@ export default function Login() {
           isSubmitting={isSubmitting}
         />
       )}
-    </div>
+    </main>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    backgroundColor: "#0c0c0e",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "2rem",
-    fontFamily: "'DM Sans', sans-serif",
-  },
-};

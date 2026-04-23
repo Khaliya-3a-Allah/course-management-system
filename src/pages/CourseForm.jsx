@@ -87,7 +87,7 @@ export default function CourseForm() {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e?.preventDefault();
 
     const { errors: formErrs, isValid: formValid } = validateCourseForm(form);
@@ -124,53 +124,38 @@ export default function CourseForm() {
       })),
     }));
 
-    setSubmitted(true);
-    try {
-      if (isEdit) {
-        await updateCourse({
-          id: existing.id,
-          ...form,
-          tags: tagsArr,
-        });
-      } else {
-        await addCourse({
-          ...form,
-          tags: tagsArr,
-          rating: 0,
-        });
-      }
-      setTimeout(() => navigate("/dashboard"), 1200);
-    } catch (error) {
-      setSubmitted(false);
-      if (error.status === 403) {
-        addToast("You are not authorized to modify this course.", "error");
-        navigate("/dashboard");
-        return;
-      }
-      if (error.status === 401) {
-        addToast("Your session has expired. Please sign in again.", "error");
-        navigate("/login");
-        return;
-      }
-      addToast(error.message || "Could not save the course. Please try again.", "error");
+    if (isEdit) {
+      updateCourse({
+        ...existing,
+        ...sanitizedForm,
+        tags: tagsArr,
+        modules: finalModules,
+      });
+    } else {
+      addCourse({
+        id: newCourseId,
+        ...sanitizedForm,
+        tags: tagsArr,
+        rating: 0,
+        modules: finalModules,
+        instructorName: currentUser?.name || "Unknown",
+      });
     }
+
+    setSubmitted(true);
+    setTimeout(() => navigate("/dashboard"), 1200);
   };
 
-  const handleDeleteCourse = async () => {
+  const handleDeleteCourse = () => {
     if (!existing) return;
-    try {
-      await deleteCourse(existing.id);
+    const success = deleteCourse(existing.id);
+    if (success) {
       addToast("Course deleted successfully.", "success");
       navigate("/dashboard");
-    } catch (error) {
-      setShowDeleteModal(false);
-      if (error.status === 403) {
-        addToast("You are not authorized to delete this course.", "error");
-        navigate("/dashboard");
-        return;
-      }
-      addToast(error.message || "Could not delete this course.", "error");
+      return;
     }
+    addToast("Could not delete this course.", "error");
+    setShowDeleteModal(false);
   };
 
   return (

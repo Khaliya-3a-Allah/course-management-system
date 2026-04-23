@@ -61,8 +61,8 @@ export default function Dashboard() {
     [courses, currentUser?.savedCourseIds]
   );
   const createdCourses = useMemo(
-    () => courses.filter((c) => currentUser?.id && String(c.instructorId) === String(currentUser.id)),
-    [courses, currentUser?.id]
+    () => courses.filter((c) => currentUser?.createdCourseIds?.includes(c.id)),
+    [courses, currentUser?.createdCourseIds]
   );
 
   const tabs = useMemo(() => [
@@ -228,6 +228,20 @@ export default function Dashboard() {
             )}
           </div>
 
+          {/* Stats */}
+          <dl className="flex gap-10 overflow-x-auto no-scrollbar pb-1">
+            {[
+              { label: "Enrolled", value: enrolledCourses.length },
+              { label: "Completed", value: completedCoursesList.length },
+              { label: "Saved", value: savedCourses.length },
+              ...(isInstructor ? [{ label: "Created", value: createdCourses.length }] : []),
+            ].map((s) => (
+              <div key={s.label} className="flex flex-col gap-1">
+                <dt className="text-[0.75rem] text-[#6b7280] tracking-wide uppercase m-0">{s.label}</dt>
+                <dd className="font-['Playfair_Display',serif] text-[1.75rem] text-[#f5f2ec] m-0">{s.value}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </header>
 
@@ -237,7 +251,7 @@ export default function Dashboard() {
         <div
           role="tablist"
           aria-label="Dashboard sections"
-          className="flex gap-2 mb-6 overflow-x-auto no-scrollbar rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-1.5"
+          className="flex gap-1 mb-8 border-b border-[rgba(255,255,255,0.07)] overflow-x-auto no-scrollbar"
         >
           {tabs.map((tab) => (
             <button
@@ -247,19 +261,18 @@ export default function Dashboard() {
               aria-selected={activeTab === tab.id}
               aria-controls={`tabpanel-${tab.id}`}
               onClick={() => setSearchParams({ tab: tab.id })}
-              className="flex items-center gap-2 px-4 py-2.5 border cursor-pointer text-[0.88rem] font-semibold whitespace-nowrap rounded-lg bg-transparent"
+              className="flex items-center gap-2 px-4 py-2.5 border-none cursor-pointer text-[0.9rem] font-medium whitespace-nowrap -mb-px border-b-2 transition-colors bg-transparent"
               style={{
-                color: activeTab === tab.id ? "#f5f2ec" : "var(--color-text-dim)",
-                borderColor: activeTab === tab.id ? "rgba(217,119,6,0.35)" : "transparent",
-                backgroundColor: activeTab === tab.id ? "rgba(217,119,6,0.12)" : "transparent",
+                color: activeTab === tab.id ? "var(--color-text-primary)" : "var(--color-text-dim)",
+                borderBottomColor: activeTab === tab.id ? "#d97706" : "transparent",
               }}
             >
               {tab.label}
               <span
                 className="px-2 py-0.5 rounded-full text-[0.7rem] font-bold"
                 style={{
-                  backgroundColor: activeTab === tab.id ? "rgba(245,158,11,0.2)" : "var(--color-surface-muted)",
-                  color: activeTab === tab.id ? "#f6c56b" : "var(--color-text-dim)",
+                  backgroundColor: activeTab === tab.id ? "rgba(217,119,6,0.15)" : "var(--color-surface-muted)",
+                  color: activeTab === tab.id ? "#d97706" : "var(--color-text-dim)",
                 }}
               >
                 {tab.count}
@@ -269,9 +282,9 @@ export default function Dashboard() {
         </div>
 
         {/* Tab panel */}
-        <div role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`} tabIndex={0} className="rounded-2xl border border-[rgba(255,255,255,0.08)] p-5">
+        <div role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`} tabIndex={0}>
           {activeData.length === 0 ? (
-            <section className="flex flex-col items-center py-16 px-6 text-center gap-3">
+            <section className="flex flex-col items-center py-20 px-8 text-center gap-3">
               <span className="text-[0.74rem] uppercase tracking-[0.2em] text-[#6b7280]" aria-hidden="true">
                 {activeTab}
               </span>
