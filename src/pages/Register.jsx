@@ -36,7 +36,6 @@ export default function Register() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [visible, setVisible] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
-  const formRootRef = useRef(null);
   const passwordStrength = getPasswordStrength(form.password);
   const strengthColors = ["#7f1d1d", "#b91c1c", "#d97706", "#16a34a", "#22c55e"];
 

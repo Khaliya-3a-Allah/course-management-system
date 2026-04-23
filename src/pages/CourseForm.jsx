@@ -87,7 +87,7 @@ export default function CourseForm() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e?.preventDefault();
 
     const { errors: formErrs, isValid: formValid } = validateCourseForm(form);
