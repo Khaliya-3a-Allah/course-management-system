@@ -379,43 +379,6 @@ export default function ModuleDetails() {
     );
   }
 
-  const price = Number(course.price || 0);
-  const isPaidCourse = price > 0;
-  const owned = isPaidCourse
-    ? (currentUser?.purchasedCourseIds?.includes(courseId) ?? false)
-    : true;
-  const enrolled = currentUser?.enrolledCourseIds?.includes(courseId) ?? false;
-
-  if (!currentUser) {
-    return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center bg-base gap-4 text-center px-6">
-        <h2 className="font-heading text-[1.5rem] text-text-primary">Sign In Required</h2>
-        <p className="text-text-dim m-0">You need to sign in to access course lessons.</p>
-        <Link to="/login" className="no-underline font-semibold text-brand">Go to Login →</Link>
-      </div>
-    );
-  }
-
-  if (!owned) {
-    return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center bg-base gap-4 text-center px-6">
-        <h2 className="font-heading text-[1.5rem] text-text-primary">Purchase Required</h2>
-        <p className="text-text-dim m-0">Buy this course to unlock all modules and lessons.</p>
-        <Link to={`/checkout/${courseId}`} className="no-underline font-semibold text-brand">Go to Checkout →</Link>
-      </div>
-    );
-  }
-
-  if (!enrolled) {
-    return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center bg-base gap-4 text-center px-6">
-        <h2 className="font-heading text-[1.5rem] text-text-primary">Enrollment Required</h2>
-        <p className="text-text-dim m-0">Enroll in this course before opening lessons.</p>
-        <Link to={`/courses/${courseId}`} className="no-underline font-semibold text-brand">Back to Course →</Link>
-      </div>
-    );
-  }
-
   const totalLessons = allModules.reduce((acc, m) => acc + (m.lessons?.length || 0), 0);
   const completedCount = Object.keys(completedLessons).filter((k) => completedLessons[k]).length;
   const progressPct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;

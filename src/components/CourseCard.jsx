@@ -8,8 +8,6 @@ const levelColors = {
 };
 
 export default function CourseCard({ course }) {
-  const price = Number(course.price || 0);
-
   return (
     <article className="group relative flex flex-col rounded-xl overflow-hidden border border-[rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-1 bg-surface hover:border-[rgba(245,158,11,0.28)] hover:shadow-[0_14px_30px_rgba(0,0,0,0.38)]">
       <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(circle_at_20%_0%,rgba(245,158,11,0.14),rgba(245,158,11,0)_45%)]" />
@@ -37,12 +35,6 @@ export default function CourseCard({ course }) {
             aria-label={`Level: ${course.level}`}
           >
             {course.level}
-          </span>
-          <span
-            className="absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-full text-[0.65rem] font-bold tracking-wider uppercase text-[#0c0c0e] shadow-[0_2px_10px_rgba(0,0,0,0.25)]"
-            style={{ backgroundColor: price > 0 ? "#f59e0b" : "#22c55e" }}
-          >
-            {price > 0 ? `$${price}` : "Free"}
           </span>
         </div>
 

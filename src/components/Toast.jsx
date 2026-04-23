@@ -9,14 +9,13 @@ export default function ToastContainer() {
   const { toasts, removeToast } = useAppContext();
 
   return (
-    <div className="fixed top-4 right-4 left-4 sm:left-auto flex flex-col gap-2 z-[9999] pointer-events-none" aria-live="polite">
+    <div style={styles.container} aria-live="polite">
       {toasts.map((toast) => (
         <ToastItem
           key={toast.id}
           id={toast.id}
           message={toast.message}
           variant={toast.variant}
-          durationMs={toast.durationMs}
           onDismiss={removeToast}
         />
       ))}
@@ -27,16 +26,16 @@ export default function ToastContainer() {
 const AUTO_DISMISS_MS = 3000;
 const EXIT_ANIMATION_MS = 300;
 
-function ToastItem({ id, message, variant, durationMs, onDismiss }) {
+function ToastItem({ id, message, variant, onDismiss }) {
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
     const dismissTimer = setTimeout(() => {
       setIsExiting(true);
-    }, durationMs || AUTO_DISMISS_MS);
+    }, AUTO_DISMISS_MS);
 
     return () => clearTimeout(dismissTimer);
-  }, [durationMs]);
+  }, []);
 
   useEffect(() => {
     if (!isExiting) return;
@@ -57,19 +56,20 @@ function ToastItem({ id, message, variant, durationMs, onDismiss }) {
   return (
     <div
       role="status"
-      className={`pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-lg min-w-0 sm:min-w-[280px] sm:max-w-[420px] border shadow-[0_12px_28px_rgba(0,0,0,0.38)] backdrop-blur-md ${variantStyle}`}
       style={{
+        ...styles.toast,
+        ...variantStyle,
         animation: isExiting
           ? `toastSlideOut ${EXIT_ANIMATION_MS}ms ease forwards`
           : "toastSlideIn 0.3s ease forwards",
       }}
     >
-      <span className="text-base font-bold shrink-0">{variantIcons[variant] || variantIcons.info}</span>
-      <span className="flex-1 text-[0.9rem] leading-snug">{message}</span>
+      <span style={styles.icon}>{variantIcons[variant] || variantIcons.info}</span>
+      <span style={styles.message}>{message}</span>
       <button
         type="button"
         onClick={handleDismissClick}
-        className="bg-transparent border-none text-inherit opacity-70 hover:opacity-100 cursor-pointer text-[1.15rem] leading-none px-1 shrink-0"
+        style={styles.closeButton}
         aria-label="Dismiss notification"
       >
         ×
@@ -98,7 +98,64 @@ const variantIcons = {
 };
 
 const variantStyles = {
-  success: "bg-[rgba(16,185,129,0.2)] border-[rgba(16,185,129,0.55)] text-[#d1fae5]",
-  error: "bg-[rgba(239,68,68,0.2)] border-[rgba(239,68,68,0.55)] text-[#fee2e2]",
-  info: "bg-[rgba(59,130,246,0.2)] border-[rgba(59,130,246,0.55)] text-[#dbeafe]",
+  success: {
+    backgroundColor: "rgba(16, 185, 129, 0.12)",
+    border: "1px solid rgba(16, 185, 129, 0.3)",
+    color: "#6ee7b7",
+  },
+  error: {
+    backgroundColor: "rgba(239, 68, 68, 0.12)",
+    border: "1px solid rgba(239, 68, 68, 0.3)",
+    color: "#f87171",
+  },
+  info: {
+    backgroundColor: "rgba(59, 130, 246, 0.12)",
+    border: "1px solid rgba(59, 130, 246, 0.3)",
+    color: "#93c5fd",
+  },
+};
+
+const styles = {
+  container: {
+    position: "fixed",
+    top: "1.25rem",
+    right: "1.25rem",
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.6rem",
+    zIndex: 9999,
+    pointerEvents: "none",
+  },
+  toast: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.6rem",
+    padding: "0.75rem 1rem",
+    borderRadius: "8px",
+    fontFamily: "'DM Sans', sans-serif",
+    fontSize: "0.88rem",
+    minWidth: "260px",
+    maxWidth: "380px",
+    pointerEvents: "auto",
+    backdropFilter: "blur(8px)",
+  },
+  icon: {
+    fontSize: "1rem",
+    fontWeight: 700,
+    flexShrink: 0,
+  },
+  message: {
+    flex: 1,
+  },
+  closeButton: {
+    background: "none",
+    border: "none",
+    color: "inherit",
+    opacity: 0.6,
+    cursor: "pointer",
+    fontSize: "1.15rem",
+    lineHeight: 1,
+    padding: "0 0.15rem",
+    flexShrink: 0,
+  },
 };

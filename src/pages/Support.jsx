@@ -1,6 +1,5 @@
 import { useId, useMemo, useState } from "react";
 import { useAppContext } from "../context/AppContext";
-import EmailAutocompleteInput from "../components/EmailAutocompleteInput";
 
 const supportTopics = [
   "Account Access",
@@ -53,19 +52,16 @@ export default function Support() {
         title: "Email Support",
         detail: "support@courseware.com",
         helper: "Best for account and billing requests",
-        href: "mailto:support@courseware.com",
       },
       {
         title: "Live Chat",
         detail: "Available 09:00 - 18:00",
         helper: "Fastest way for urgent issues",
-        href: "#",
       },
       {
         title: "Knowledge Base",
         detail: "Guides and troubleshooting",
         helper: "Quick self-service solutions",
-        href: "#",
       },
     ],
     []
@@ -101,7 +97,7 @@ export default function Support() {
 
     setTimeout(() => {
       setSubmitting(false);
-      addToast("Message sent successfully. Support will contact you soon.", "success");
+      addToast("Support ticket submitted. We will contact you soon.", "success");
       setForm((prev) => ({ ...prev, message: "" }));
     }, 550);
   }
@@ -139,16 +135,7 @@ export default function Support() {
               <article className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-surface px-5 py-5">
                 <p className="text-[0.72rem] tracking-[0.18em] uppercase text-text-faint mb-2">Channel</p>
                 <h3 className="font-heading text-[1.25rem] text-text-primary mb-1">{channel.title}</h3>
-                {channel.href.startsWith("mailto:") ? (
-                  <a
-                    href={channel.href}
-                    className="text-brand font-semibold text-[0.92rem] mb-2 inline-block underline decoration-[rgba(217,119,6,0.45)] underline-offset-4"
-                  >
-                    {channel.detail}
-                  </a>
-                ) : (
-                  <p className="text-brand font-semibold text-[0.92rem] mb-2">{channel.detail}</p>
-                )}
+                <p className="text-brand font-semibold text-[0.92rem] mb-2">{channel.detail}</p>
                 <p className="text-text-dim text-[0.85rem]">{channel.helper}</p>
               </article>
             </li>
@@ -195,17 +182,18 @@ export default function Support() {
 
               <label htmlFor={emailInputId} className="flex flex-col gap-1.5">
                 <span className="text-[0.8rem] text-text-muted font-semibold">Email</span>
-                <EmailAutocompleteInput
+                <input
                   id={emailInputId}
                   name="email"
+                  type="email"
                   value={form.email}
                   onChange={(e) => updateField("email", e.target.value)}
                   autoComplete="email"
                   inputMode="email"
                   required
-                  ariaRequired="true"
-                  ariaInvalid={Boolean(errors.email)}
-                  ariaDescribedby={errors.email ? emailErrorId : undefined}
+                  aria-required="true"
+                  aria-invalid={Boolean(errors.email)}
+                  aria-describedby={errors.email ? emailErrorId : undefined}
                   className="h-11 px-3 rounded-lg border border-[rgba(255,255,255,0.12)] bg-surface-muted text-text-secondary"
                   placeholder="you@example.com"
                 />

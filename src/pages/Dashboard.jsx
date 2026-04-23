@@ -3,7 +3,6 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import CourseCard from "../components/CourseCard";
 import Modal from "../components/Modal";
-import TwoFactorEnroll from "../components/TwoFactorEnroll";
 import {
   validateName,
   validatePhone,
@@ -32,12 +31,6 @@ export default function Dashboard() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileErrors, setProfileErrors] = useState({});
-  const [animatedCounts, setAnimatedCounts] = useState({
-    enrolled: 0,
-    completed: 0,
-    saved: 0,
-    created: 0,
-  });
   const [profileForm, setProfileForm] = useState({
     name: "",
     phone: "",
@@ -53,7 +46,7 @@ export default function Dashboard() {
     return () => clearTimeout(t);
   }, [currentUser, navigate]);
 
-  const isInstructor = currentUser?.role === "instructor" || currentUser?.role === "admin";
+  const isInstructor = currentUser?.role === "instructor";
 
   const enrolledCourses = useMemo(
     () => courses.filter((c) => currentUser?.enrolledCourseIds?.includes(c.id) && !completedCourses.has(c.id)),
@@ -79,50 +72,6 @@ export default function Dashboard() {
     ...(isInstructor ? [{ id: "created", label: "Created", count: createdCourses.length }] : []),
   ], [enrolledCourses.length, completedCoursesList.length, savedCourses.length, createdCourses.length, isInstructor]);
 
-  const stats = useMemo(
-    () => [
-      { key: "enrolled", label: "Enrolled", value: enrolledCourses.length },
-      { key: "completed", label: "Completed", value: completedCoursesList.length },
-      { key: "saved", label: "Saved", value: savedCourses.length },
-      ...(isInstructor ? [{ key: "created", label: "Created", value: createdCourses.length }] : []),
-    ],
-    [enrolledCourses.length, completedCoursesList.length, savedCourses.length, createdCourses.length, isInstructor]
-  );
-
-  useEffect(() => {
-    const startValues = { enrolled: 0, completed: 0, saved: 0, created: 0 };
-    const targetValues = {
-      enrolled: enrolledCourses.length,
-      completed: completedCoursesList.length,
-      saved: savedCourses.length,
-      created: createdCourses.length,
-    };
-    const duration = 650;
-    const startTime = performance.now();
-    let frame = null;
-
-    const tick = (now) => {
-      const progress = Math.min((now - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-
-      setAnimatedCounts({
-        enrolled: Math.round(startValues.enrolled + (targetValues.enrolled - startValues.enrolled) * eased),
-        completed: Math.round(startValues.completed + (targetValues.completed - startValues.completed) * eased),
-        saved: Math.round(startValues.saved + (targetValues.saved - startValues.saved) * eased),
-        created: Math.round(startValues.created + (targetValues.created - startValues.created) * eased),
-      });
-
-      if (progress < 1) {
-        frame = requestAnimationFrame(tick);
-      }
-    };
-
-    frame = requestAnimationFrame(tick);
-    return () => {
-      if (frame) cancelAnimationFrame(frame);
-    };
-  }, [enrolledCourses.length, completedCoursesList.length, savedCourses.length, createdCourses.length]);
-
   const requestedTab = searchParams.get("tab");
   const activeTab = (requestedTab && tabs.some((t) => t.id === requestedTab)) ? requestedTab : "enrolled";
 
@@ -141,16 +90,6 @@ export default function Dashboard() {
   };
 
   const activeData = getTabData();
-
-  const handleUnenrollConfirm = async () => {
-    if (!unenrollTarget) return;
-    try {
-      await unenrollCourse(unenrollTarget.id);
-    } catch (error) {
-      addToast(error.message || "Could not unenroll.", "error");
-    }
-    setUnenrollTarget(null);
-  };
 
   const emptyMessages = {
     enrolled: "No courses in progress.",
@@ -236,26 +175,14 @@ export default function Dashboard() {
 
   return (
     <div
-      className="relative min-h-screen overflow-hidden bg-[#0c0c0e] text-[#e8e6e0] font-['DM_Sans',sans-serif]"
+      className="min-h-screen bg-[#0c0c0e] text-[#e8e6e0] font-['DM_Sans',sans-serif]"
       style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(14px)", transition: "opacity 0.5s ease, transform 0.5s ease" }}
     >
-      <style>{`
-        .dash-surface { background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015)); }
-        .dash-stat { transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease; }
-        .dash-stat:hover { transform: translateY(-3px); border-color: rgba(217,119,6,0.35); box-shadow: 0 14px 30px rgba(0,0,0,0.25); }
-        .dash-pill { transition: all 220ms ease; }
-      `}</style>
-      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-        <div className="absolute -top-24 left-[12%] h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(217,119,6,0.2)_0%,rgba(217,119,6,0)_72%)] blur-3xl" />
-        <div className="absolute bottom-[-90px] right-[8%] h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(245,158,11,0.16)_0%,rgba(245,158,11,0)_72%)] blur-3xl" />
-        <div className="absolute inset-0 opacity-[0.14]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "56px 56px" }} />
-      </div>
-
       {/* Profile banner */}
-      <header className="relative z-10 bg-[#111114]/85 border-b border-[rgba(255,255,255,0.06)] px-4 md:px-8 py-6 md:py-8 backdrop-blur-sm">
+      <header className="bg-[#111114] border-b border-[rgba(255,255,255,0.06)] px-8 py-8">
         <div className="max-w-[1100px] mx-auto">
           {/* Profile row */}
-          <div className="dash-surface rounded-2xl border border-[rgba(255,255,255,0.08)] p-4 md:p-5 flex items-center gap-4 md:gap-5 mb-6 md:mb-7 flex-wrap">
+          <div className="flex items-center gap-5 mb-7 flex-wrap">
             {currentUser.profileImage ? (
               <img
                 src={currentUser.profileImage}
@@ -271,8 +198,7 @@ export default function Dashboard() {
               </div>
             )}
             <div className="flex-1">
-              <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#d97706] mb-1">Your Dashboard</p>
-              <h1 className="font-['Playfair_Display',serif] text-[1.8rem] md:text-[2rem] text-[#f5f2ec] mb-1 leading-tight">{currentUser.name}</h1>
+              <h1 className="font-['Playfair_Display',serif] text-[1.6rem] text-[#f5f2ec] mb-1">{currentUser.name}</h1>
               <p className="text-[0.88rem] text-[#6b7280] mb-2">{currentUser.email}</p>
               {!!currentUser.phone && <p className="text-[0.82rem] text-[#9ca3af] mb-1">{currentUser.phone}</p>}
               {!!currentUser.bio && <p className="text-[0.82rem] text-[#9ca3af] max-w-[620px]">{currentUser.bio}</p>}
@@ -283,46 +209,30 @@ export default function Dashboard() {
                 {currentUser.role}
               </span>
             </div>
-            <div className="flex flex-wrap gap-2.5">
-              <button
-                onClick={openProfileEditor}
-                className="dash-pill px-4 py-2.5 rounded-lg font-bold text-[0.83rem] border border-[rgba(255,255,255,0.14)] text-[#e8e6e0] hover:border-[rgba(217,119,6,0.4)]"
-              >
-                Edit Profile
-              </button>
-              <Link
-                to="/certificates"
-                className="dash-pill px-4 py-2.5 rounded-lg no-underline font-bold text-[0.83rem] border border-[rgba(255,255,255,0.14)] text-[#e8e6e0] hover:border-[rgba(217,119,6,0.4)]"
-              >
-                Certificates
+            <button
+              onClick={openProfileEditor}
+              className="px-5 py-2.5 rounded-lg font-bold text-[0.88rem] border border-[rgba(255,255,255,0.14)] text-[#e8e6e0]"
+            >
+              Edit Profile
+            </button>
+            <Link
+              to="/certificates"
+              className="px-5 py-2.5 rounded-lg no-underline font-bold text-[0.88rem] border border-[rgba(255,255,255,0.14)] text-[#e8e6e0]"
+            >
+              Certificates
+            </Link>
+            {isInstructor && (
+              <Link to="/course-form" className="px-5 py-2.5 rounded-lg no-underline font-bold text-[0.88rem] bg-[#d97706] text-[#0c0c0e]">
+                + Add Course
               </Link>
-              {isInstructor && (
-                <Link to="/course-form" className="dash-pill px-4 py-2.5 rounded-lg no-underline font-bold text-[0.83rem] bg-[#d97706] text-[#0c0c0e] hover:brightness-110">
-                  + Add Course
-                </Link>
-              )}
-            </div>
+            )}
           </div>
 
-          {/* Stats */}
-          <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 pb-1">
-            {stats.map((s, idx) => (
-              <div key={s.label} className="dash-stat relative overflow-hidden flex flex-col gap-1 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-4 py-3">
-                <span
-                  className="absolute left-0 top-0 h-full w-1"
-                  style={{ background: idx % 2 === 0 ? "linear-gradient(180deg, #d97706, transparent)" : "linear-gradient(180deg, #f59e0b, transparent)" }}
-                  aria-hidden="true"
-                />
-                <dt className="text-[0.75rem] text-[#6b7280] tracking-wide uppercase m-0">{s.label}</dt>
-                <dd className="font-['Playfair_Display',serif] text-[1.6rem] md:text-[1.75rem] tabular-nums text-[#f5f2ec] m-0">{animatedCounts[s.key]}</dd>
-              </div>
-            ))}
-          </dl>
         </div>
       </header>
 
       {/* Tabs + content */}
-      <main className="relative z-10 max-w-[1100px] mx-auto px-4 md:px-8 py-6 md:py-8">
+      <main className="max-w-[1100px] mx-auto px-8 py-8">
         {/* Tab list */}
         <div
           role="tablist"
@@ -337,7 +247,7 @@ export default function Dashboard() {
               aria-selected={activeTab === tab.id}
               aria-controls={`tabpanel-${tab.id}`}
               onClick={() => setSearchParams({ tab: tab.id })}
-              className="dash-pill flex items-center gap-2 px-4 py-2.5 border cursor-pointer text-[0.88rem] font-semibold whitespace-nowrap rounded-lg bg-transparent"
+              className="flex items-center gap-2 px-4 py-2.5 border cursor-pointer text-[0.88rem] font-semibold whitespace-nowrap rounded-lg bg-transparent"
               style={{
                 color: activeTab === tab.id ? "#f5f2ec" : "var(--color-text-dim)",
                 borderColor: activeTab === tab.id ? "rgba(217,119,6,0.35)" : "transparent",
@@ -358,13 +268,8 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Security section */}
-        <div className="mb-6">
-          <TwoFactorEnroll />
-        </div>
-
         {/* Tab panel */}
-        <div role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`} tabIndex={0} className="dash-surface rounded-2xl border border-[rgba(255,255,255,0.08)] p-4 md:p-5">
+        <div role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`} tabIndex={0} className="rounded-2xl border border-[rgba(255,255,255,0.08)] p-5">
           {activeData.length === 0 ? (
             <section className="flex flex-col items-center py-16 px-6 text-center gap-3">
               <span className="text-[0.74rem] uppercase tracking-[0.2em] text-[#6b7280]" aria-hidden="true">

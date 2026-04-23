@@ -113,7 +113,8 @@ export default function AutocompleteSelect({
           {selected.map((item) => (
             <span
               key={item}
-              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-brand text-[0.8rem] font-body border border-[rgba(217,119,6,0.35)] bg-[rgba(217,119,6,0.12)]"
+              className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-brand text-[0.8rem] font-body"
+              style={{ backgroundColor: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.3)" }}
             >
               {item}
               <button
@@ -144,7 +145,7 @@ export default function AutocompleteSelect({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className={INPUT_CLASS}
-          style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+          style={{ border: "1px solid rgba(255,255,255,0.09)" }}
           role="combobox"
           aria-expanded={isOpen}
           aria-controls="autocomplete-listbox"
@@ -159,7 +160,8 @@ export default function AutocompleteSelect({
         <ul
           role="listbox"
           id="autocomplete-listbox"
-          className="absolute top-full left-0 right-0 z-50 rounded-xl mt-1 max-h-[220px] overflow-y-auto list-none p-1 bg-[#1a1a1f] border border-[rgba(255,255,255,0.12)] shadow-[0_14px_35px_rgba(0,0,0,0.36)]"
+          className="absolute top-full left-0 right-0 z-50 rounded-lg mt-1 max-h-[220px] overflow-y-auto list-none p-1"
+          style={{ backgroundColor: "#1a1a1f", border: "1px solid rgba(255,255,255,0.09)" }}
         >
           {filteredOptions.map((option, index) => (
             <li
@@ -170,7 +172,7 @@ export default function AutocompleteSelect({
               className={`flex justify-between items-center px-3 py-2 cursor-pointer text-[0.88rem] font-body rounded transition-colors ${
                 index === highlightedIndex ? "text-brand" : "text-text-secondary"
               }`}
-              style={index === highlightedIndex ? { backgroundColor: "rgba(217,119,6,0.12)" } : undefined}
+              style={index === highlightedIndex ? { backgroundColor: "rgba(217,119,6,0.08)" } : undefined}
               onMouseEnter={() => setHighlightedIndex(index)}
               onClick={() => addItem(option)}
             >
@@ -184,7 +186,8 @@ export default function AutocompleteSelect({
       {/* No results */}
       {isOpen && !isAtLimit && query.length > 0 && filteredOptions.length === 0 && (
         <div
-          className="absolute top-full left-0 right-0 z-50 rounded-xl mt-1 p-1 bg-[#1a1a1f] border border-[rgba(255,255,255,0.12)] shadow-[0_14px_35px_rgba(0,0,0,0.36)]"
+          className="absolute top-full left-0 right-0 z-50 rounded-lg mt-1 p-1"
+          style={{ backgroundColor: "#1a1a1f", border: "1px solid rgba(255,255,255,0.09)" }}
         >
           <p className="px-3 py-2 text-text-dim text-[0.85rem] m-0 font-body">
             No matching interests found.
