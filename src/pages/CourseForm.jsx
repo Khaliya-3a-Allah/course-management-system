@@ -33,7 +33,10 @@ export default function CourseForm() {
     return () => clearTimeout(t);
   }, []);
 
-  const isOwnerInstructor = currentUser?.role === "instructor" && (currentUser?.createdCourseIds || []).includes(courseId);
+  const isOwnerInstructor = currentUser?.role === "instructor" && (
+    String(existing?.instructorId?._id || existing?.instructorId || "") === String(currentUser?.id || "") ||
+    (currentUser?.createdCourseIds || []).includes(courseId)
+  );
 
   useEffect(() => {
     if (isEdit && existing) {

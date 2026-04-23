@@ -1,5 +1,6 @@
 import { list, findById, create, update, remove } from "../data/store.js";
 import { ApiError } from "../utils/ApiError.js";
+import User from "../models/User.js";
 
 export function buildCrudControllers(resourceName) {
   return {
@@ -21,11 +22,21 @@ export function buildCrudControllers(resourceName) {
       // Automatically record which user created this document (if authenticated)
       if (req.user) {
         payload.createdBy = req.user.id;
+        if (resourceName === "courses") {
+          payload.instructorId = req.user.id;
+        }
       }
       const item = await create(resourceName, payload);
       if (!item) {
         throw new ApiError(400, `Unable to create ${resourceName} item with provided data`);
       }
+
+      if (resourceName === "courses" && req.user && item?.id) {
+        await User.findByIdAndUpdate(req.user.id, {
+          $addToSet: { createdCourseIds: item.id },
+        });
+      }
+
       res.status(201).json({ success: true, data: item });
     },
 
