@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import CourseCard from "../components/CourseCard";
 import Modal from "../components/Modal";
+import TwoFactorEnroll from "../components/TwoFactorEnroll";
 import {
   validateName,
   validatePhone,
@@ -312,6 +313,16 @@ export default function Dashboard() {
 
       {/* Tabs + content */}
       <main className="relative z-10 max-w-[1100px] mx-auto px-4 md:px-8 py-6 md:py-8">
+        <section className="mb-6" aria-labelledby="dashboard-security-heading">
+          <div className="mb-3">
+            <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#f6c56b] mb-1">Optional Security</p>
+            <h2 id="dashboard-security-heading" className="font-['Playfair_Display',serif] text-[1.3rem] text-[#f5f2ec]">
+              Account Protection
+            </h2>
+          </div>
+          <TwoFactorEnroll />
+        </section>
+
         {/* Tab list */}
         <div
           role="tablist"
