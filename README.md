@@ -36,8 +36,8 @@ A full-stack online learning platform where students can browse and enroll in co
 | Service | URL |
 |---|---|
 | Frontend (GitHub Pages) | https://khaliya-3a-allah.github.io/course-management-system/ |
-| Backend API (Render) | https://course-management-system-fluu.onrender.com/api/v1 |
-| API Health Check | https://course-management-system-fluu.onrender.com/api/v1/health |
+| Backend API (Render) | https://course-management-system-1hwz.onrender.com/api/v1 |
+| API Health Check | https://course-management-system-1hwz.onrender.com/api/v1/health |
 
 > **Note:** The backend runs on Render's free tier and may take ~30 seconds to wake up after a period of inactivity. A cold-start banner is shown in the UI during this time.
 
@@ -150,7 +150,7 @@ This builds the app pointing at the Render backend and pushes `dist/` to the `gh
 
 ## API Documentation
 
-**Base URL:** `https://course-management-system-fluu.onrender.com/api/v1`
+**Base URL:** `https://course-management-system-1hwz.onrender.com/api/v1`
 
 All protected endpoints require the header:
 ```
