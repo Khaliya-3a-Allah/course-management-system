@@ -173,18 +173,6 @@ export default function CourseForm() {
     }
   };
 
-  const handleDeleteCourse = () => {
-    if (!existing) return;
-    const success = deleteCourse(existing.id);
-    if (success) {
-      addToast("Course deleted successfully.", "success");
-      navigate("/dashboard");
-      return;
-    }
-    addToast("Could not delete this course.", "error");
-    setShowDeleteModal(false);
-  };
-
   return (
     <main
       className="min-h-screen bg-base text-[#e8e6e0] font-body pb-16"
