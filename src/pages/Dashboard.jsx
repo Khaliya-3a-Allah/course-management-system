@@ -68,8 +68,8 @@ export default function Dashboard() {
     [courses, currentUser?.savedCourseIds]
   );
   const createdCourses = useMemo(
-    () => courses.filter((c) => currentUser?.createdCourseIds?.includes(c.id)),
-    [courses, currentUser?.createdCourseIds]
+    () => courses.filter((c) => currentUser?.id && String(c.instructorId) === String(currentUser.id)),
+    [courses, currentUser?.id]
   );
 
   const tabs = useMemo(() => [
