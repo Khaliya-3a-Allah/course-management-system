@@ -11,7 +11,7 @@ A full-stack online learning platform where students can browse and enroll in co
 | Mohamad Karim Mehaydli | 202400046 | Klol120 | mohamadkarim.mehaydli@lau.edu |
 | Jad Al Hassan | 202400472 | jadalhassan | jad.alhassan@lau.edu |
 | Ahmad Hajj Khalil | 202208592 | ahmadkhalil | ahmad.hajjkhalil@lau.edu |
-| Sami Bou Khaled | 202303124 | simenzzz/sami1296 | sami.boukhaled01@lau.edu |
+| Sami Bou Khaled | 202303124 | simenzzz/sami1268 | sami.boukhaled01@lau.edu |
 
 ---
 
