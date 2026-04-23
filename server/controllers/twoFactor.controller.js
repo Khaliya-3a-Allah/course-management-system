@@ -101,9 +101,10 @@ export async function verify2FA(req, res) {
     throw new ApiError(401, "Invalid verification code.");
   }
 
-  const token = signSessionToken(user.id);
+  const userId = String(user._id);
+  const token = signSessionToken(userId);
   // Re-fetch without the secret so the response matches the regular login shape.
-  const safeUser = await findById("users", user.id);
+  const safeUser = await findById("users", userId);
 
   res.status(200).json({
     success: true,
