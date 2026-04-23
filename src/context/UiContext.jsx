@@ -38,9 +38,9 @@ export function UiProvider({ children }) {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   }, []);
 
-  function addToast(message, variant = "success") {
+  function addToast(message, variant = "success", durationMs = 3000) {
     const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, variant }]);
+    setToasts((prev) => [...prev, { id, message, variant, durationMs }]);
   }
 
   function removeToast(id) {

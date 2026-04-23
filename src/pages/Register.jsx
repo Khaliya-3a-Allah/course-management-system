@@ -1,16 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
-import { validateRegisterForm, sanitizeInput } from "../utils/validators";
+import { validateRegisterForm, sanitizeInput, getPasswordStrength } from "../utils/validators";
 import { INTERESTS } from "../data/constants";
 import { EyeIcon, EyeOffIcon } from "../components/Icons";
 import FormField, { INPUT_CLASS, buildInputBorder } from "../components/FormField";
 import AutocompleteSelect from "../components/AutocompleteSelect";
 import Modal from "../components/Modal";
 import TermsContent from "../components/TermsContent";
+import EmailAutocompleteInput from "../components/EmailAutocompleteInput";
 
 export default function Register() {
-  const { users, setUsers, setCurrentUser, currentUser, addToast } = useAppContext();
+  const { register, currentUser, addToast } = useAppContext();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -33,6 +34,9 @@ export default function Register() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [visible, setVisible] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const formRootRef = useRef(null);
+  const passwordStrength = getPasswordStrength(form.password);
+  const strengthColors = ["#7f1d1d", "#b91c1c", "#d97706", "#16a34a", "#22c55e"];
 
   useEffect(() => {
     if (currentUser) {
@@ -63,52 +67,67 @@ export default function Register() {
     setAuthError("");
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     if (isSubmitting) return;
 
     const { errors: validationErrors, isValid } = validateRegisterForm(form);
     setErrors(validationErrors);
-    if (!isValid) return;
+    if (!isValid) {
+      formRootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 
-    const emailAlreadyExists = users.some(
-      (user) => user.email.toLowerCase() === form.email.toLowerCase()
-    );
-    if (emailAlreadyExists) {
-      setAuthError("An account with this email already exists.");
+      const fieldOrder = [
+        "name",
+        "email",
+        "password",
+        "confirmPassword",
+        "role",
+        "phone",
+        "bio",
+        "expertise",
+        "website",
+        "acceptTerms",
+      ];
+      const firstInvalid = fieldOrder.find((key) => validationErrors[key]);
+      const elementMap = {
+        name: "register-name",
+        email: "register-email",
+        password: "register-password",
+        confirmPassword: "register-confirm-password",
+        phone: "register-phone",
+        bio: "register-bio",
+        expertise: "register-expertise",
+        website: "register-website",
+        acceptTerms: "register-terms",
+      };
+
+      if (firstInvalid === "role") {
+        const roleButtons = document.querySelectorAll("button[aria-pressed]");
+        roleButtons[0]?.focus();
+      } else if (firstInvalid && elementMap[firstInvalid]) {
+        const target = document.getElementById(elementMap[firstInvalid]);
+        target?.focus();
+      }
+
       return;
     }
 
     setIsSubmitting(true);
+    setAuthError("");
 
     try {
-      const baseUser = {
-        id: `u-${Date.now()}`,
+      await register({
+        ...form,
+        interests: form.interests.filter((i) => INTERESTS.includes(i)),
         name: sanitizeInput(form.name),
-        email: form.email.trim().toLowerCase(),
-        password: form.password,
-        role: form.role,
-        phone: sanitizeInput(form.phone),
         bio: sanitizeInput(form.bio),
-        createdCourseIds: [],
-        enrolledCourseIds: [],
-        savedCourseIds: [],
-        completedCourseIds: [],
-      };
-
-      const newUser =
-        form.role === "student"
-          ? { ...baseUser, interests: form.interests.filter((i) => INTERESTS.includes(i)) }
-          : {
-              ...baseUser,
-              expertise: sanitizeInput(form.expertise),
-              website: form.website.trim(),
-            };
-
-      setUsers((prev) => [...prev, newUser]);
-      setCurrentUser(newUser);
+        expertise: sanitizeInput(form.expertise),
+        website: form.website.trim(),
+      });
       addToast("Account created successfully!", "success");
       navigate("/dashboard");
+    } catch (error) {
+      setAuthError(error.message || "Could not create account. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -124,6 +143,7 @@ export default function Register() {
       }}
     >
       <article
+        ref={formRootRef}
         className="w-full max-w-[440px] bg-surface rounded-2xl overflow-hidden"
         style={{ border: "1px solid rgba(255,255,255,0.07)" }}
         aria-label="Registration form"
@@ -164,22 +184,26 @@ export default function Register() {
             </FormField>
 
             <FormField label="Email" htmlFor="register-email" error={errors.email}>
-              <input
+              <EmailAutocompleteInput
                 id="register-email"
-                type="email"
                 value={form.email}
                 onChange={(e) => updateField("email", e.target.value)}
                 placeholder="you@example.com"
                 className={INPUT_CLASS}
                 style={buildInputBorder(errors.email)}
                 autoComplete="email"
-                aria-required="true"
-                aria-invalid={!!errors.email}
-                aria-describedby={errors.email ? "register-email-error" : undefined}
+                ariaRequired="true"
+                ariaInvalid={!!errors.email}
+                ariaDescribedby={errors.email ? "register-email-error" : undefined}
               />
             </FormField>
 
-            <FormField label="Password" htmlFor="register-password" error={errors.password} hint="Minimum 6 characters">
+            <FormField
+              label="Password"
+              htmlFor="register-password"
+              error={errors.password}
+              hint="Use 8+ chars with uppercase, lowercase, number, and symbol"
+            >
               <div className="relative">
                 <input
                   id="register-password"
@@ -203,6 +227,30 @@ export default function Register() {
                   {showPassword ? <EyeIcon /> : <EyeOffIcon />}
                 </button>
               </div>
+              {!!form.password && (
+                <div className="mt-2" aria-live="polite">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[0.74rem] text-text-dim">Password strength</span>
+                    <span className="text-[0.74rem] font-semibold" style={{ color: strengthColors[passwordStrength.score] }}>
+                      {passwordStrength.label}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-5 gap-1">
+                    {[0, 1, 2, 3, 4].map((segment) => (
+                      <span
+                        key={segment}
+                        className="h-1.5 rounded-full"
+                        style={{
+                          backgroundColor: segment <= passwordStrength.score - 1
+                            ? strengthColors[passwordStrength.score]
+                            : "rgba(255,255,255,0.12)",
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-[0.72rem] text-text-dim mt-1.5">{passwordStrength.hint}</p>
+                </div>
+              )}
             </FormField>
 
             <FormField label="Confirm Password" htmlFor="register-confirm-password" error={errors.confirmPassword}>

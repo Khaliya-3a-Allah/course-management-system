@@ -2,6 +2,7 @@ import { HashRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "../context/AppContext";
 import Navbar from "../components/Navbar";
 import ToastContainer from "../components/Toast";
+import ColdStartBanner from "../components/ColdStartBanner";
 import ProtectedRoute from "../components/ProtectedRoute";
 import Home from "../pages/Home";
 import Courses from "../pages/Courses";
@@ -13,11 +14,13 @@ import Certificates from "../pages/Certificates";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Support from "../pages/Support";
+import Checkout from "../pages/Checkout";
 
 export default function AppRouter() {
   return (
     <AppProvider>
       <HashRouter>
+        <ColdStartBanner />
         <Navbar />
         <ToastContainer />
         <Routes>
@@ -29,6 +32,7 @@ export default function AppRouter() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/support" element={<Support />} />
+          <Route path="/checkout/:courseId" element={<Checkout />} />
 
           {/* Protected routes — require authentication */}
           <Route element={<ProtectedRoute />}>

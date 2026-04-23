@@ -2,12 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { validateLoginForm } from "../utils/validators";
-import { generateVerificationCode } from "../utils/codeGenerator";
 import LoginForm from "../components/LoginForm";
 import TwoFactorForm from "../components/TwoFactorForm";
 
 export default function Login() {
-  const { users, setCurrentUser, currentUser, addToast } = useAppContext();
+  const { currentUser, login, completeTwoFactor, addToast } = useAppContext();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({ email: "", password: "" });
@@ -16,9 +15,8 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [visible, setVisible] = useState(false);
 
-  // 2FA state
-  const [pendingUser, setPendingUser] = useState(null);
-  const [verificationCode, setVerificationCode] = useState("");
+  const [pendingChallenge, setPendingChallenge] = useState(null);
+  const [isVerifying2fa, setIsVerifying2fa] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -37,7 +35,7 @@ export default function Login() {
     setAuthError("");
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     if (isSubmitting) return;
 
@@ -46,42 +44,47 @@ export default function Login() {
     if (!isValid) return;
 
     setIsSubmitting(true);
+    setAuthError("");
 
-    const matchedUser = users.find(
-      (user) =>
-        user.email.toLowerCase() === form.email.toLowerCase() &&
-        user.password === form.password
-    );
+    try {
+      const result = await login({ email: form.email, password: form.password });
 
-    if (!matchedUser) {
-      setAuthError("Incorrect email or password. Try alex@example.com / password123");
+      if (result?.twoFactorRequired) {
+        setPendingChallenge({
+          challengeToken: result.challengeToken,
+          email: result.email || form.email,
+        });
+        addToast("Enter the 6-digit code from your authenticator app.", "info", 6000);
+        return;
+      }
+
+      addToast("Welcome back!", "success");
+      navigate("/dashboard");
+    } catch (error) {
+      setAuthError(error.message || "Incorrect email or password.");
+    } finally {
       setIsSubmitting(false);
-      return;
     }
-
-    // Credentials valid — enter 2FA step
-    const code = generateVerificationCode();
-    setPendingUser(matchedUser);
-    setVerificationCode(code);
-    setIsSubmitting(false);
-    addToast(`Your verification code is: ${code}`, "info");
   }
 
-  function handleVerified() {
-    setCurrentUser(pendingUser);
-    addToast(`Welcome back, ${pendingUser.name}!`, "success");
-    navigate("/dashboard");
-  }
+  async function handleVerify(code) {
+    if (!pendingChallenge?.challengeToken || isVerifying2fa) return;
 
-  function handleResendCode() {
-    const newCode = generateVerificationCode();
-    setVerificationCode(newCode);
-    addToast(`New verification code: ${newCode}`, "info");
+    setIsVerifying2fa(true);
+    try {
+      await completeTwoFactor({
+        challengeToken: pendingChallenge.challengeToken,
+        code,
+      });
+      addToast("Two-factor verification successful.", "success");
+      navigate("/dashboard");
+    } finally {
+      setIsVerifying2fa(false);
+    }
   }
 
   function handleBackToLogin(errorMessage) {
-    setPendingUser(null);
-    setVerificationCode("");
+    setPendingChallenge(null);
     if (errorMessage) {
       addToast(errorMessage, "error");
     }
@@ -96,13 +99,12 @@ export default function Login() {
         transition: "opacity 0.5s ease, transform 0.5s ease",
       }}
     >
-      {pendingUser ? (
+      {pendingChallenge ? (
         <TwoFactorForm
-          userEmail={pendingUser.email}
-          verificationCode={verificationCode}
-          onVerified={handleVerified}
-          onResendCode={handleResendCode}
+          userEmail={pendingChallenge.email}
+          onVerify={handleVerify}
           onBack={handleBackToLogin}
+          isSubmitting={isVerifying2fa}
         />
       ) : (
         <LoginForm
