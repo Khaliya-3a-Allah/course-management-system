@@ -1,5 +1,6 @@
-import { list, listByUser } from "../data/store.js";
+import { list, listByUser, create } from "../data/store.js";
 import { buildCrudControllers } from "./crudFactory.js";
+import { ApiError } from "../utils/ApiError.js";
 
 const base = buildCrudControllers("reviews");
 
@@ -10,7 +11,17 @@ export async function getAllReviews(req, res) {
   res.status(200).json({ success: true, count: data.length, data });
 }
 
+export async function createReview(req, res) {
+  const payload = {
+    ...req.body,
+    userId: req.user.id,
+    createdBy: req.user.id,
+  };
+  const item = await create("reviews", payload);
+  if (!item) throw new ApiError(400, "Unable to create review with provided data");
+  res.status(201).json({ success: true, data: item });
+}
+
 export const getReviewById = base.getById;
-export const createReview = base.create;
 export const updateReview = base.update;
 export const deleteReview = base.delete;
