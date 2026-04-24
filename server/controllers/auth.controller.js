@@ -1,3 +1,4 @@
+import bcrypt from "bcrypt";
 import User from "../models/User.js";
 import { create, findById } from "../data/store.js";
 import { ApiError } from "../utils/ApiError.js";
