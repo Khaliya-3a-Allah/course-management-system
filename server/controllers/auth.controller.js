@@ -1,4 +1,3 @@
-import bcrypt from "bcrypt";
 import User from "../models/User.js";
 import { create, findById } from "../data/store.js";
 import { ApiError } from "../utils/ApiError.js";
@@ -37,13 +36,10 @@ export async function register(req, res) {
   const SELF_ASSIGNABLE_ROLES = ["student", "instructor"];
   const safeRole = SELF_ASSIGNABLE_ROLES.includes(role) ? role : "student";
 
-  // Hash the password with bcrypt (cost factor 12 is a good balance for production)
-  const hashedPassword = await bcrypt.hash(password, 12);
-
   const user = await create("users", {
     name,
     email: String(email).toLowerCase(),
-    password: hashedPassword,
+    password,
     role: safeRole,
     phone: "",
     bio: "",
