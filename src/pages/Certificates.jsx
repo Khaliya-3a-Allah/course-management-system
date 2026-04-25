@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { jsPDF } from "jspdf";
 import { useAppContext } from "../context/AppContext";
+import { apiPost } from "../utils/api";
+import { readToken } from "../utils/authStorage";
 
 function formatDate(value) {
   return new Intl.DateTimeFormat("en-US", {
@@ -174,11 +176,45 @@ export default function Certificates() {
   const [showQRModal, setShowQRModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareCertData, setShareCertData] = useState({ certId: "", courseName: "" });
+  const [issuedCertByCourse, setIssuedCertByCourse] = useState({});
 
   const completedCourseList = useMemo(
     () => courses.filter((course) => completedCourses.has(course.id)),
     [courses, completedCourses]
   );
+
+  async function ensureCertificateId(course) {
+    const courseKey = String(course.id);
+    if (issuedCertByCourse[courseKey]) {
+      return issuedCertByCourse[courseKey];
+    }
+
+    const fallbackId = buildCertificateId(currentUser.id, course.id);
+    const token = readToken();
+    if (!token || !currentUser?.id) {
+      return fallbackId;
+    }
+
+    try {
+      const response = await apiPost(
+        "/certificates",
+        {
+          userId: currentUser.id,
+          courseId: course.id,
+        },
+        { token }
+      );
+      const signedId = response?.data?.signedCertificateId;
+      if (signedId) {
+        setIssuedCertByCourse((prev) => ({ ...prev, [courseKey]: signedId }));
+        return signedId;
+      }
+    } catch {
+      // Fall back to local deterministic ID if backend issuance fails.
+    }
+
+    return fallbackId;
+  }
 
   async function downloadCertificate(course) {
     if (!currentUser) return;
@@ -187,7 +223,7 @@ export default function Certificates() {
     const width = doc.internal.pageSize.getWidth();
     const height = doc.internal.pageSize.getHeight();
     const issueDate = formatDate(new Date());
-    const certId = buildCertificateId(currentUser.id, course.id);
+    const certId = await ensureCertificateId(course);
     
     // Generate verification URL with hash routing
     const verificationUrl = `${window.location.origin}/#/verify/${certId}`;
@@ -249,9 +285,9 @@ export default function Certificates() {
 
     // Dedicated fixed QR panel (top-right) so placement is deterministic
     const qrPanelX = width - 214;
-    const qrPanelY = 86;
+    const qrPanelY = 244;
     const qrPanelW = 146;
-    const qrPanelH = 178;
+    const qrPanelH = 160;
     doc.setFillColor(255, 255, 255);
     doc.roundedRect(qrPanelX, qrPanelY, qrPanelW, qrPanelH, 8, 8, "F");
     doc.setDrawColor(229, 231, 235);
@@ -267,18 +303,18 @@ export default function Certificates() {
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(verificationUrl)}`;
     try {
       const qrDataUrl = await loadImageDataUrl(qrUrl);
-      doc.addImage(qrDataUrl, "PNG", qrPanelX + 18, qrPanelY + 24, 110, 110);
+      doc.addImage(qrDataUrl, "PNG", qrPanelX + 25, qrPanelY + 24, 96, 96);
     } catch {
       doc.setTextColor(120, 120, 120);
       doc.setFontSize(9);
-      doc.text("QR unavailable", qrPanelX + qrPanelW / 2, qrPanelY + 88, {
+      doc.text("QR unavailable", qrPanelX + qrPanelW / 2, qrPanelY + 78, {
         align: "center",
       });
     }
     doc.setFont("helvetica", "normal");
     doc.setTextColor(75, 85, 99);
     doc.setFontSize(8);
-    doc.text("Works on mobile camera", qrPanelX + qrPanelW / 2, qrPanelY + 148, {
+    doc.text("Works on mobile camera", qrPanelX + qrPanelW / 2, qrPanelY + 134, {
       align: "center",
     });
 
@@ -352,7 +388,9 @@ export default function Certificates() {
         ) : (
           <ul aria-label="Certificates" className="grid gap-6 list-none p-0 m-0" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))" }}>
             {completedCourseList.map((course) => {
-              const certId = buildCertificateId(currentUser.id, course.id);
+              const certId =
+                issuedCertByCourse[String(course.id)] ||
+                buildCertificateId(currentUser.id, course.id);
               return (
                 <li key={course.id}>
                   <article className="h-full overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.1)] bg-[linear-gradient(170deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] shadow-[0_20px_40px_rgba(0,0,0,0.28)] flex flex-col">
@@ -416,8 +454,9 @@ export default function Certificates() {
                         <div className="grid grid-cols-2 gap-2.5">
                           <button
                             type="button"
-                            onClick={() => {
-                              setSelectedCertId(certId);
+                            onClick={async () => {
+                              const resolvedCertId = await ensureCertificateId(course);
+                              setSelectedCertId(resolvedCertId);
                               setShowQRModal(true);
                             }}
                             aria-label={`View QR code for ${course.title}`}
@@ -427,8 +466,9 @@ export default function Certificates() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => {
-                              setShareCertData({ certId, courseName: course.title });
+                            onClick={async () => {
+                              const resolvedCertId = await ensureCertificateId(course);
+                              setShareCertData({ certId: resolvedCertId, courseName: course.title });
                               setShowShareModal(true);
                             }}
                             aria-label={`Share ${course.title} certificate`}
