@@ -41,6 +41,10 @@ function pickCoursePayload(source) {
   return payload;
 }
 
+function isMongoId(id) {
+  return typeof id === "string" && /^[0-9a-f]{24}$/i.test(id);
+}
+
 export function DataProvider({ children }) {
   const { currentUser, setCurrentUser, authStatus } = useAuthContext();
   const { setIsBackendWaking } = useUiContext();
@@ -101,8 +105,45 @@ export function DataProvider({ children }) {
     }, COLD_START_THRESHOLD_MS);
 
     try {
-      const response = await apiGet("/courses");
-      const list = extractList(response).map(normalizeCourse);
+      const [coursesRes, modulesRes, lessonsRes] = await Promise.all([
+        apiGet("/courses"),
+        apiGet("/modules"),
+        apiGet("/lessons"),
+      ]);
+
+      const allModules = extractList(modulesRes);
+      const allLessons = extractList(lessonsRes);
+
+      const lessonsByModuleId = {};
+      allLessons.forEach((les) => {
+        const mid = String(les.moduleId?._id || les.moduleId || "");
+        if (!mid) return;
+        if (!lessonsByModuleId[mid]) lessonsByModuleId[mid] = [];
+        lessonsByModuleId[mid].push(les);
+      });
+
+      const modulesByCourseId = {};
+      allModules.forEach((mod) => {
+        const cid = String(mod.courseId?._id || mod.courseId || "");
+        if (!cid) return;
+        if (!modulesByCourseId[cid]) modulesByCourseId[cid] = [];
+        const modWithLessons = {
+          ...mod,
+          lessons: (lessonsByModuleId[String(mod.id)] || []).sort(
+            (a, b) => (a.order ?? 0) - (b.order ?? 0)
+          ),
+        };
+        modulesByCourseId[cid].push(modWithLessons);
+      });
+      Object.values(modulesByCourseId).forEach((mods) =>
+        mods.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      );
+
+      const list = extractList(coursesRes).map((raw) => {
+        const course = normalizeCourse(raw);
+        return { ...course, modules: modulesByCourseId[String(course.id)] || [] };
+      });
+
       setCourses(list);
       setCoursesStatus(RESOURCE_STATUS.SUCCESS);
       return list;
@@ -179,7 +220,36 @@ export function DataProvider({ children }) {
     };
     const response = await apiPost("/courses", payload, { token });
     const created = normalizeCourse(response?.data || response);
-    setCourses((prev) => [...prev, created]);
+
+    const savedModules = [];
+    for (let i = 0; i < (course.modules || []).length; i++) {
+      const mod = course.modules[i];
+      const modRes = await apiPost("/modules", {
+        title: mod.title,
+        order: mod.order ?? i,
+        courseId: created.id,
+      }, { token });
+      const savedMod = modRes?.data || modRes;
+
+      const savedLessons = [];
+      for (let j = 0; j < (mod.lessons || []).length; j++) {
+        const les = mod.lessons[j];
+        const lesRes = await apiPost("/lessons", {
+          title: les.title,
+          content: les.contentPreview || les.content || "",
+          videoUrl: les.videoUrl || "",
+          duration: les.duration || "",
+          order: les.order ?? j,
+          moduleId: savedMod.id,
+          courseId: created.id,
+        }, { token });
+        savedLessons.push(lesRes?.data || lesRes);
+      }
+      savedModules.push({ ...savedMod, lessons: savedLessons });
+    }
+
+    const courseWithModules = { ...created, modules: savedModules };
+    setCourses((prev) => [...prev, courseWithModules]);
     if (currentUser) {
       setCurrentUser((prev) =>
         prev
@@ -190,7 +260,7 @@ export function DataProvider({ children }) {
           : prev
       );
     }
-    return created;
+    return courseWithModules;
   }
 
   async function updateCourse(course) {
@@ -200,13 +270,91 @@ export function DataProvider({ children }) {
     const payload = pickCoursePayload(course);
     const response = await apiPut(`/courses/${courseId}`, payload, { token });
     const updated = normalizeCourse(response?.data || response);
-    setCourses((prev) => prev.map((c) => (c.id === courseId ? updated : c)));
-    return updated;
+
+    const existingModules = courses.find((c) => c.id === courseId)?.modules || [];
+    const newModules = course.modules || [];
+
+    // Delete modules that were removed
+    const keptModuleIds = new Set(newModules.filter((m) => isMongoId(m.id)).map((m) => m.id));
+    for (const existingMod of existingModules) {
+      if (!keptModuleIds.has(existingMod.id)) {
+        for (const les of (existingMod.lessons || [])) {
+          try { await apiDelete(`/lessons/${les.id}`, { token }); } catch { /* non-fatal */ }
+        }
+        try { await apiDelete(`/modules/${existingMod.id}`, { token }); } catch { /* non-fatal */ }
+      }
+    }
+
+    const savedModules = [];
+    for (let i = 0; i < newModules.length; i++) {
+      const mod = newModules[i];
+      let savedMod;
+      if (isMongoId(mod.id)) {
+        const res = await apiPut(`/modules/${mod.id}`, { title: mod.title, order: mod.order ?? i }, { token });
+        savedMod = res?.data || res;
+      } else {
+        const res = await apiPost("/modules", { title: mod.title, order: mod.order ?? i, courseId }, { token });
+        savedMod = res?.data || res;
+      }
+
+      const existingMod = existingModules.find((m) => m.id === mod.id);
+      const existingLessons = existingMod?.lessons || [];
+      const newLessons = mod.lessons || [];
+
+      const keptLessonIds = new Set(newLessons.filter((l) => isMongoId(l.id)).map((l) => l.id));
+      for (const existingLes of existingLessons) {
+        if (!keptLessonIds.has(existingLes.id)) {
+          try { await apiDelete(`/lessons/${existingLes.id}`, { token }); } catch { /* non-fatal */ }
+        }
+      }
+
+      const savedLessons = [];
+      for (let j = 0; j < newLessons.length; j++) {
+        const les = newLessons[j];
+        let savedLes;
+        if (isMongoId(les.id)) {
+          const res = await apiPut(`/lessons/${les.id}`, {
+            title: les.title,
+            content: les.contentPreview || les.content || "",
+            videoUrl: les.videoUrl || "",
+            duration: les.duration || "",
+            order: les.order ?? j,
+          }, { token });
+          savedLes = res?.data || res;
+        } else {
+          const res = await apiPost("/lessons", {
+            title: les.title,
+            content: les.contentPreview || les.content || "",
+            videoUrl: les.videoUrl || "",
+            duration: les.duration || "",
+            order: les.order ?? j,
+            moduleId: savedMod.id,
+            courseId,
+          }, { token });
+          savedLes = res?.data || res;
+        }
+        savedLessons.push(savedLes);
+      }
+      savedModules.push({ ...savedMod, lessons: savedLessons });
+    }
+
+    const courseWithModules = { ...updated, modules: savedModules };
+    setCourses((prev) => prev.map((c) => (c.id === courseId ? courseWithModules : c)));
+    return courseWithModules;
   }
 
   async function deleteCourse(courseId) {
     if (!currentUser) throw new Error("You must be signed in to delete a course.");
     const token = readToken();
+
+    const courseToDelete = courses.find((c) => c.id === courseId);
+    for (const mod of (courseToDelete?.modules || [])) {
+      for (const les of (mod.lessons || [])) {
+        try { await apiDelete(`/lessons/${les.id}`, { token }); } catch { /* non-fatal */ }
+      }
+      try { await apiDelete(`/modules/${mod.id}`, { token }); } catch { /* non-fatal */ }
+    }
+
     await apiDelete(`/courses/${courseId}`, { token });
 
     setCourses((prev) => prev.filter((c) => c.id !== courseId));
