@@ -55,7 +55,7 @@ export default function CourseDetails() {
   const progress = getCourseProgress(course.id);
   const canAccessContent = enrolled && owned;
 
-  const handleEnroll = () => {
+  const handleEnroll = async () => {
     if (!currentUser) { setModalOpen(true); return; }
 
     if (isPaidCourse && !owned) {
@@ -63,19 +63,31 @@ export default function CourseDetails() {
       return;
     }
 
-    enrollCourse(course.id);
-    addToast("You are now enrolled in this course.", "success");
+    try {
+      await enrollCourse(course.id);
+      addToast("You are now enrolled in this course.", "success");
+    } catch {
+      addToast("Failed to enroll. Please try again.", "error");
+    }
   };
 
-  const handleUnenroll = () => {
-    unenrollCourse(course.id);
+  const handleUnenroll = async () => {
+    try {
+      await unenrollCourse(course.id);
+    } catch {
+      addToast("Failed to unenroll. Please try again.", "error");
+    }
     setUnenrollModal(false);
   };
 
-  const handleSaveToggle = () => {
+  const handleSaveToggle = async () => {
     if (!currentUser) { setModalOpen(true); return; }
-    if (saved) unsaveCourse(course.id);
-    else saveCourse(course.id);
+    try {
+      if (saved) await unsaveCourse(course.id);
+      else await saveCourse(course.id);
+    } catch {
+      addToast("Failed to update saved courses. Please try again.", "error");
+    }
   };
 
   const handleSubmitRating = () => {

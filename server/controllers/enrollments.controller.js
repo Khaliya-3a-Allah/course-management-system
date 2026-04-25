@@ -1,6 +1,7 @@
-import { listByUser, findById } from "../data/store.js";
+import { listByUser, findById, create } from "../data/store.js";
 import { buildCrudControllers } from "./crudFactory.js";
 import { ApiError } from "../utils/ApiError.js";
+import User from "../models/User.js";
 
 const base = buildCrudControllers("enrollments");
 
@@ -20,6 +21,17 @@ export async function getEnrollmentById(req, res) {
   res.status(200).json({ success: true, data: item });
 }
 
-export const createEnrollment = base.create;
+export async function createEnrollment(req, res) {
+  const payload = { ...req.body, createdBy: req.user.id };
+  const item = await create("enrollments", payload);
+  if (!item) throw new ApiError(400, "Unable to create enrollment");
+
+  await User.findByIdAndUpdate(req.user.id, {
+    $addToSet: { enrolledCourseIds: item.courseId },
+  });
+
+  res.status(201).json({ success: true, data: item });
+}
+
 export const updateEnrollment = base.update;
 export const deleteEnrollment = base.delete;
