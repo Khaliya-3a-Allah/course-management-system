@@ -9,12 +9,10 @@ import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
 
-// Render/Heroku/Cyclic sit behind exactly one reverse proxy.
-// Required for req.ip to reflect the real client IP (used by rate limiters).
 app.set("trust proxy", 1);
 
 app.use(helmet());
-app.use(cors({ origin: env.CLIENT_ORIGIN }));
+app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true }));
 
 if (env.ENABLE_REQUEST_LOGS) {
   app.use(morgan("dev"));
@@ -27,11 +25,18 @@ app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
     message: "Courseware API server",
-    docsHint: `Use ${env.API_PREFIX}/health to test the API`,
+    docsHint: "Use /api/v1/health to test the API",
   });
 });
 
-app.use(env.API_PREFIX, apiRouter);
+const apiPrefixes = new Set([
+  env.API_PREFIX || "/api/v1",
+  "/api/v1",
+]);
+
+apiPrefixes.forEach((prefix) => {
+  app.use(prefix, apiRouter);
+});
 
 app.use(notFound);
 app.use(errorHandler);
