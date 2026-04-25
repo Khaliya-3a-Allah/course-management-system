@@ -284,10 +284,10 @@ export default function Certificates() {
     doc.text(`Instructor: ${course.instructorName}`, width / 2, 358, { align: "center" });
 
     // Dedicated fixed QR panel (top-right) so placement is deterministic
-    const qrPanelX = width - 214;
-    const qrPanelY = 244;
-    const qrPanelW = 146;
-    const qrPanelH = 160;
+    const qrPanelW = 124;
+    const qrPanelH = 114;
+    const qrPanelX = width - qrPanelW - 54;
+    const qrPanelY = height - qrPanelH - 38;
     doc.setFillColor(255, 255, 255);
     doc.roundedRect(qrPanelX, qrPanelY, qrPanelW, qrPanelH, 8, 8, "F");
     doc.setDrawColor(229, 231, 235);
@@ -303,18 +303,18 @@ export default function Certificates() {
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(verificationUrl)}`;
     try {
       const qrDataUrl = await loadImageDataUrl(qrUrl);
-      doc.addImage(qrDataUrl, "PNG", qrPanelX + 25, qrPanelY + 24, 96, 96);
+      doc.addImage(qrDataUrl, "PNG", qrPanelX + 23, qrPanelY + 20, 78, 78);
     } catch {
       doc.setTextColor(120, 120, 120);
       doc.setFontSize(9);
-      doc.text("QR unavailable", qrPanelX + qrPanelW / 2, qrPanelY + 78, {
+      doc.text("QR unavailable", qrPanelX + qrPanelW / 2, qrPanelY + 62, {
         align: "center",
       });
     }
     doc.setFont("helvetica", "normal");
     doc.setTextColor(75, 85, 99);
     doc.setFontSize(8);
-    doc.text("Works on mobile camera", qrPanelX + qrPanelW / 2, qrPanelY + 134, {
+    doc.text("Works on mobile camera", qrPanelX + qrPanelW / 2, qrPanelY + 106, {
       align: "center",
     });
 
@@ -341,18 +341,19 @@ export default function Certificates() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(107, 114, 128);
-    const certIdLines = doc.splitTextToSize(`Certificate ID: ${certId}`, 560);
-    doc.text(certIdLines, width / 2, height - 84, { align: "center" });
+    const certInfoX = 110;
+    const certIdLines = doc.splitTextToSize(`Certificate ID: ${certId}`, 410);
+    doc.text(certIdLines, certInfoX, height - 84, { align: "left" });
 
     // Verification link (short label + clickable full link)
     doc.setFontSize(9);
     doc.setTextColor(75, 85, 99);
-    doc.text("Verify this certificate online:", width / 2, height - 66, { align: "center" });
+    doc.text("Verify this certificate online:", certInfoX, height - 66, { align: "left" });
     doc.setTextColor(217, 119, 6);
     doc.setFont("helvetica", "bold");
     const linkText = "Open Verification Page";
     const linkWidth = doc.getTextWidth(linkText);
-    const linkX = width / 2 - linkWidth / 2;
+    const linkX = certInfoX;
     const linkY = height - 52;
     doc.textWithLink(linkText, linkX, linkY, { url: verificationUrl });
     doc.setDrawColor(217, 119, 6);
