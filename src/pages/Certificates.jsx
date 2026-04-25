@@ -247,11 +247,46 @@ export default function Certificates() {
     doc.setFontSize(14);
     doc.text(`Instructor: ${course.instructorName}`, width / 2, 358, { align: "center" });
 
+    // Dedicated fixed QR panel (top-right) so placement is deterministic
+    const qrPanelX = width - 214;
+    const qrPanelY = 86;
+    const qrPanelW = 146;
+    const qrPanelH = 178;
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(qrPanelX, qrPanelY, qrPanelW, qrPanelH, 8, 8, "F");
+    doc.setDrawColor(229, 231, 235);
+    doc.roundedRect(qrPanelX, qrPanelY, qrPanelW, qrPanelH, 8, 8, "S");
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(55, 65, 81);
+    doc.setFontSize(10);
+    doc.text("Scan To Verify", qrPanelX + qrPanelW / 2, qrPanelY + 16, {
+      align: "center",
+    });
+
+    // QR image inside panel
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(verificationUrl)}`;
+    try {
+      const qrDataUrl = await loadImageDataUrl(qrUrl);
+      doc.addImage(qrDataUrl, "PNG", qrPanelX + 18, qrPanelY + 24, 110, 110);
+    } catch {
+      doc.setTextColor(120, 120, 120);
+      doc.setFontSize(9);
+      doc.text("QR unavailable", qrPanelX + qrPanelW / 2, qrPanelY + 88, {
+        align: "center",
+      });
+    }
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(75, 85, 99);
+    doc.setFontSize(8);
+    doc.text("Works on mobile camera", qrPanelX + qrPanelW / 2, qrPanelY + 148, {
+      align: "center",
+    });
+
     // Bottom signature/media guides
     doc.setDrawColor(209, 213, 219);
     doc.setLineWidth(1);
     doc.line(92, height - 154, 292, height - 154);
-    doc.line(width - 292, height - 154, width - 92, height - 154);
+    doc.line(336, height - 154, 536, height - 154);
 
     // Course cover image in left block (fallback if unavailable)
     const mediaX = 96;
@@ -278,19 +313,20 @@ export default function Certificates() {
     doc.setTextColor(55, 65, 81);
     doc.setFontSize(11);
     doc.text("Date Issued", 222, height - 132, { align: "center" });
-    doc.text("Authorized by Courseware", width - 192, height - 132, { align: "center" });
+    doc.text("Authorized by Courseware", 436, height - 132, { align: "center" });
 
     // Values
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.text(issueDate, 222, height - 114, { align: "center" });
-    doc.text("Learning Platform", width - 192, height - 114, { align: "center" });
+    doc.text("Learning Platform", 436, height - 114, { align: "center" });
 
     // Certificate ID
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(107, 114, 128);
-    doc.text(`Certificate ID: ${certId}`, width / 2, height - 82, { align: "center" });
+    const certIdLines = doc.splitTextToSize(`Certificate ID: ${certId}`, 560);
+    doc.text(certIdLines, width / 2, height - 84, { align: "center" });
 
     // Verification link (short label + clickable full link)
     doc.setFontSize(9);
@@ -305,17 +341,6 @@ export default function Certificates() {
     doc.textWithLink(linkText, linkX, linkY, { url: verificationUrl });
     doc.setDrawColor(217, 119, 6);
     doc.line(linkX, linkY + 2, linkX + linkWidth, linkY + 2);
-
-    // QR Code positioned cleanly in right block
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(verificationUrl)}`;
-    try {
-      const qrDataUrl = await loadImageDataUrl(qrUrl);
-      doc.addImage(qrDataUrl, "PNG", width - 190, height - 146, 94, 94);
-    } catch {
-      doc.setTextColor(120, 120, 120);
-      doc.setFontSize(9);
-      doc.text("QR unavailable", width - 144, height - 98, { align: "center" });
-    }
 
     const safeCourse = course.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
     const safeUser = currentUser.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
