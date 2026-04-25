@@ -1,4 +1,4 @@
-# Courseware — Course Management System
+# Courseware - Course Management System
 
 A full-stack online learning platform where students can browse and enroll in courses, instructors can create and manage content, and progress is tracked end-to-end.
 
@@ -21,13 +21,14 @@ A full-stack online learning platform where students can browse and enroll in co
 
 ### Primary Data Entities
 
-1. **User** — student/instructor profile, authentication state, saved/enrolled/completed courses
-2. **Course** — title, category, level, instructor, rating, modules, lessons
-3. **Module** — grouped set of lessons within a course
-4. **Lesson** — individual learning unit with duration and preview/video URL
-5. **Learning Progress** — lesson completion map and per-course completion percentage
-6. **Certificate** — completion-based records shown in the certificates view
-7. **Support Ticket** — support request payload submitted from the support page
+1. **User** - student/instructor profile, authentication state, saved/enrolled/completed courses
+2. **Course** - title, category, level, instructor, rating, modules, lessons
+3. **Module** - grouped set of lessons within a course
+4. **Lesson** - individual learning unit with duration and preview/video URL
+5. **Learning Progress** - lesson completion map and per-course completion percentage
+6. **Purchase** - checkout record with payment method, discount, and final amount
+7. **Certificate** - completion-based records shown in the certificates view
+8. **Support Ticket** - support request payload submitted from the support page
 
 ---
 
@@ -40,7 +41,7 @@ A full-stack online learning platform where students can browse and enroll in co
 | API Health Check | https://course-management-system-1hwz.onrender.com/api/v1/health |
 | GitHub Repository | https://github.com/Khaliya-3a-Allah/course-management-system |
 
-> **Note:** The backend runs on Render's free tier and may take ~30 seconds to wake up after a period of inactivity. A cold-start banner is shown in the UI during this time.
+> **Note:** The backend runs on Render's free tier and may take about 30 seconds to wake up after a period of inactivity. A cold-start banner is shown in the UI during this time.
 
 ---
 
@@ -50,7 +51,7 @@ A full-stack online learning platform where students can browse and enroll in co
 |---|---|
 | Frontend | React 19, Vite, Tailwind CSS, React Router v7 |
 | Backend | Node.js, Express 5, MongoDB, Mongoose |
-| Auth | JWT, bcrypt, TOTP (2FA via speakeasy) |
+| Auth | JWT, bcrypt, TOTP (2FA via speakeasy), email verification (Nodemailer + Gmail) |
 | Security | Helmet, express-rate-limit, CORS |
 | Deployment | GitHub Pages (frontend), Render (backend), MongoDB Atlas (database) |
 
@@ -79,7 +80,7 @@ npm install
 
 ### 3. Configure environment variables
 
-**Backend** — copy `.env.example` to `.env` and fill in your values:
+**Backend** - copy `.env.example` to `.env` and fill in your values:
 
 ```bash
 cp .env.example .env
@@ -93,11 +94,14 @@ cp .env.example .env
 | `JWT_SECRET` | Long random secret (keep private) | any long random string |
 | `CLIENT_ORIGIN` | Frontend origin allowed by CORS | `http://localhost:5173` |
 | `JWT_EXPIRES_IN` | Token lifetime | `7d` |
+| `JWT_CHALLENGE_EXPIRES_IN` | 2FA challenge token lifetime | `5m` |
 | `API_PREFIX` | API route prefix | `/api/v1` |
-| `TOTP_ISSUER` | Label shown in authenticator apps | `Coursewave` |
+| `TOTP_ISSUER` | Label shown in authenticator apps | `Courseware` |
+| `GMAIL_USER` | Gmail address used to send verification emails | `your-app@gmail.com` |
+| `GMAIL_PASS` | Gmail app password used by Nodemailer | `your-16-char-app-password` |
 | `ENABLE_REQUEST_LOGS` | Toggle Morgan request logging | `true` |
 
-**Frontend** — copy `.env.local.example` to `.env.local`:
+**Frontend** - copy `.env.local.example` to `.env.local`:
 
 ```bash
 cp .env.local.example .env.local
@@ -105,13 +109,15 @@ cp .env.local.example .env.local
 
 Set `VITE_API_URL=http://localhost:5000/api/v1` for local development.
 
+> **Note:** Email verification is part of the auth flow. To test registration and login locally, configure `GMAIL_USER` and `GMAIL_PASS` so the backend can send verification codes.
+
 ### 4. Start both servers
 
 ```bash
-# Terminal 1 — Express backend
+# Terminal 1 - Express backend
 npm run dev:server
 
-# Terminal 2 — Vite frontend
+# Terminal 2 - Vite frontend
 npm run dev:client
 ```
 
@@ -123,7 +129,7 @@ Open `http://localhost:5173` in your browser.
 npm run build        # Production frontend build to dist/
 npm run preview      # Preview production build locally
 npm run lint         # Run ESLint checks
-npm run test:e2e     # Run Playwright end-to-end tests
+npm run test:e2e     # Run Playwright end-to-end tests (when e2e specs are present)
 npm run deploy       # Build and push frontend to GitHub Pages
 ```
 
@@ -131,17 +137,19 @@ npm run deploy       # Build and push frontend to GitHub Pages
 
 ## Deployment Guide
 
-### Backend — Render
+### Backend - Render
 
 1. Push your code to GitHub (ensure `render.yaml` is committed).
 2. On [render.com](https://render.com), create a **New Web Service** and connect your GitHub repo. Render auto-detects `render.yaml`.
 3. In the Render dashboard **Environment** tab, set all required secrets:
-   - `MONGODB_URI` — your MongoDB Atlas connection string
-   - `JWT_SECRET` — a long random string (e.g. output of `openssl rand -hex 32`)
+   - `MONGODB_URI` - your MongoDB Atlas connection string
+   - `JWT_SECRET` - a long random string (for example, the output of `openssl rand -hex 32`)
+   - `GMAIL_USER` - Gmail address used for account verification emails
+   - `GMAIL_PASS` - Gmail app password for that inbox
 4. All other variables (`NODE_ENV`, `CLIENT_ORIGIN`, etc.) are set via `render.yaml` automatically.
-5. Deploy. First deploy takes ~3–5 minutes. Test with the `/api/v1/health` endpoint.
+5. Deploy. First deploy takes about 3-5 minutes. Test with the `/api/v1/health` endpoint.
 
-### Frontend — GitHub Pages
+### Frontend - GitHub Pages
 
 The production API URL is baked in via `.env.production`. Run:
 
@@ -166,6 +174,7 @@ All responses follow the shape:
 ```json
 { "success": true, "data": { ... } }
 ```
+
 Errors return:
 ```json
 { "success": false, "message": "Description of the error" }
@@ -203,22 +212,67 @@ No auth required. Rate-limited per IP.
   "role": "student"
 }
 ```
-`role` is optional — accepts `"student"` or `"instructor"`, defaults to `"student"`.
+
+`role` is optional - accepts `"student"` or `"instructor"`, defaults to `"student"`.
 
 **Response `201`**
 ```json
 {
   "success": true,
-  "message": "Registered successfully",
+  "emailVerificationRequired": true,
+  "message": "Account created. Please check your email for a verification code.",
+  "email": "jane@example.com"
+}
+```
+
+Registering creates the account in an unverified state. The user must submit the code at `POST /auth/verify-email` before receiving a full session token.
+
+---
+
+#### `POST /auth/verify-email`
+No auth required. Verifies the emailed 6-digit code and returns a full session token.
+
+**Request body**
+```json
+{
+  "email": "jane@example.com",
+  "code": "123456"
+}
+```
+
+**Response `200`**
+```json
+{
+  "success": true,
+  "message": "Email verified successfully",
   "token": "<jwt>",
   "data": {
     "id": "664a...",
     "name": "Jane Doe",
     "email": "jane@example.com",
     "role": "student",
-    "twoFactorEnabled": false,
-    "createdAt": "2026-04-23T10:00:00.000Z"
+    "verified": true
   }
+}
+```
+
+---
+
+#### `POST /auth/resend-verification`
+No auth required. Sends a fresh verification code to an unverified account. Rate-limited.
+
+**Request body**
+```json
+{
+  "email": "jane@example.com"
+}
+```
+
+**Response `200`**
+```json
+{
+  "success": true,
+  "message": "Verification code sent"
 }
 ```
 
@@ -235,13 +289,23 @@ No auth required. Rate-limited per email.
 }
 ```
 
-**Response `200` (2FA disabled)**
+**Response `200` (email verified, 2FA disabled)**
 ```json
 {
   "success": true,
   "message": "Login successful",
   "token": "<jwt>",
   "data": { "id": "664a...", "name": "Jane Doe", "role": "student", "..." }
+}
+```
+
+**Response `200` (email not verified yet)**
+```json
+{
+  "success": true,
+  "emailVerificationRequired": true,
+  "message": "Please verify your email before logging in. A new code has been sent.",
+  "email": "jane@example.com"
 }
 ```
 
@@ -254,7 +318,8 @@ No auth required. Rate-limited per email.
   "challengeToken": "<short-lived jwt>"
 }
 ```
-Exchange `challengeToken` at `POST /auth/2fa/challenge`.
+
+Exchange `challengeToken` at `POST /auth/2fa/verify`.
 
 ---
 
@@ -288,7 +353,10 @@ Exchange `challengeToken` at `POST /auth/2fa/challenge`.
 ```json
 {
   "success": true,
-  "data": { "otpauthUrl": "otpauth://totp/Coursewave:jane@example.com?secret=BASE32&issuer=Coursewave" }
+  "data": {
+    "otpauthUrl": "otpauth://totp/Courseware:jane@example.com?secret=BASE32&issuer=Courseware",
+    "secret": "BASE32"
+  }
 }
 ```
 
@@ -325,12 +393,13 @@ Exchange `challengeToken` at `POST /auth/2fa/challenge`.
 ---
 
 #### `POST /auth/2fa/verify`
-No auth required. Second step of 2FA login — exchanges a `challengeToken` + TOTP code for a full session token.
+No auth required. Second step of 2FA login - exchanges a `challengeToken` plus TOTP code for a full session token.
 
 **Request body**
 ```json
 { "code": "123456" }
 ```
+
 Send `challengeToken` as the `Authorization: Bearer <challengeToken>` header.
 
 **Response `200`**
@@ -348,13 +417,13 @@ Send `challengeToken` as the `Authorization: Bearer <challengeToken>` header.
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| `GET` | `/courses` | — | List all courses |
-| `GET` | `/courses/:id` | — | Get a single course |
+| `GET` | `/courses` | - | List all courses |
+| `GET` | `/courses/:id` | - | Get a single course |
 | `POST` | `/courses` | Required | Create a course |
 | `PUT` | `/courses/:id` | Owner only | Update a course |
 | `DELETE` | `/courses/:id` | Owner only | Delete a course |
 
-#### `POST /courses` — Request body
+#### `POST /courses` - Request body
 ```json
 {
   "title": "Intro to React",
@@ -385,13 +454,13 @@ Send `challengeToken` as the `Authorization: Bearer <challengeToken>` header.
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| `GET` | `/modules` | — | List all modules |
-| `GET` | `/modules/:id` | — | Get a single module |
+| `GET` | `/modules` | - | List all modules |
+| `GET` | `/modules/:id` | - | Get a single module |
 | `POST` | `/modules` | Required | Create a module |
 | `PUT` | `/modules/:id` | Owner only | Update a module |
 | `DELETE` | `/modules/:id` | Owner only | Delete a module |
 
-#### `POST /modules` — Request body
+#### `POST /modules` - Request body
 ```json
 {
   "title": "Getting Started",
@@ -407,13 +476,13 @@ Send `challengeToken` as the `Authorization: Bearer <challengeToken>` header.
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| `GET` | `/lessons` | — | List all lessons |
-| `GET` | `/lessons/:id` | — | Get a single lesson |
+| `GET` | `/lessons` | - | List all lessons |
+| `GET` | `/lessons/:id` | - | Get a single lesson |
 | `POST` | `/lessons` | Required | Create a lesson |
 | `PUT` | `/lessons/:id` | Owner only | Update a lesson |
 | `DELETE` | `/lessons/:id` | Owner only | Delete a lesson |
 
-#### `POST /lessons` — Request body
+#### `POST /lessons` - Request body
 ```json
 {
   "title": "What is React?",
@@ -437,7 +506,7 @@ Send `challengeToken` as the `Authorization: Bearer <challengeToken>` header.
 | `POST` | `/enrollments` | Required | Enroll in a course |
 | `DELETE` | `/enrollments/:id` | Owner only | Unenroll |
 
-#### `POST /enrollments` — Request body
+#### `POST /enrollments` - Request body
 ```json
 {
   "courseId": "665b..."
@@ -463,7 +532,7 @@ Send `challengeToken` as the `Authorization: Bearer <challengeToken>` header.
 | `POST` | `/progress` | Required | Create/update lesson progress |
 | `PUT` | `/progress/:id` | Owner only | Update progress |
 
-#### `POST /progress` — Request body
+#### `POST /progress` - Request body
 ```json
 {
   "courseId": "665b...",
@@ -474,17 +543,59 @@ Send `challengeToken` as the `Authorization: Bearer <challengeToken>` header.
 
 ---
 
+### Purchases
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/purchases` | Required | List current user's purchases |
+| `GET` | `/purchases/:id` | Required | Get a single purchase |
+| `POST` | `/purchases` | Required | Create a paid course purchase |
+| `PUT` | `/purchases/:id` | Owner only | Update a purchase |
+| `DELETE` | `/purchases/:id` | Owner only | Delete a purchase |
+
+#### `POST /purchases` - Request body
+```json
+{
+  "courseId": "665b...",
+  "paymentMethod": "card",
+  "transactionId": "CW-1714040404040",
+  "cardLast4": "4242",
+  "discount": 9.99,
+  "promoCode": "SPRING15",
+  "referralCode": "FRIEND10"
+}
+```
+
+**Response `201`**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "66aa...",
+    "userId": "664a...",
+    "courseId": "665b...",
+    "amount": 49.99,
+    "discount": 9.99,
+    "finalAmount": 40,
+    "status": "paid",
+    "paymentMethod": "card"
+  }
+}
+```
+
+---
+
 ### Reviews
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| `GET` | `/reviews` | — | List all reviews |
-| `GET` | `/reviews/:id` | — | Get a single review |
+| `GET` | `/reviews` | - | List all reviews |
+| `GET` | `/reviews/:id` | - | Get a single review |
 | `POST` | `/reviews` | Required | Submit a review |
 | `PUT` | `/reviews/:id` | Owner only | Edit a review |
 | `DELETE` | `/reviews/:id` | Owner only | Delete a review |
 
-#### `POST /reviews` — Request body
+#### `POST /reviews` - Request body
 ```json
 {
   "courseId": "665b...",
@@ -503,7 +614,7 @@ Send `challengeToken` as the `Authorization: Bearer <challengeToken>` header.
 | `GET` | `/certificates/:id` | Required | Get a certificate |
 | `POST` | `/certificates` | Required | Issue a certificate on course completion |
 
-#### `POST /certificates` — Request body
+#### `POST /certificates` - Request body
 ```json
 {
   "courseId": "665b...",
@@ -521,7 +632,7 @@ Send `challengeToken` as the `Authorization: Bearer <challengeToken>` header.
 | `GET` | `/support-tickets` | Required | List user's tickets |
 | `POST` | `/support-tickets` | Required | Submit a support ticket |
 
-#### `POST /support-tickets` — Request body
+#### `POST /support-tickets` - Request body
 ```json
 {
   "subject": "Cannot access module",
@@ -584,37 +695,38 @@ Send `challengeToken` as the `Authorization: Bearer <challengeToken>` header.
 ## Technical Challenges
 
 ### 1. Two-Factor Authentication flow across stateless JWT
-Implementing 2FA with stateless JWTs required a two-token approach: after a correct password check, the server issues a short-lived *challenge token* (5 min expiry) instead of a full session token. The client then submits that challenge token alongside the TOTP code to receive a real session token. This avoided server-side session state while still preventing a compromised password alone from granting access.
+Implementing 2FA with stateless JWTs required a two-token approach: after a correct password check, the server issues a short-lived *challenge token* (5 minute expiry) instead of a full session token. The client then submits that challenge token alongside the TOTP code to receive a real session token. This avoided server-side session state while still preventing a compromised password alone from granting access.
 
 ### 2. Render cold starts affecting UX
-The free Render tier spins down the server after 15 minutes of inactivity, causing the first request to take ~30 seconds. To avoid a broken-looking UI, a `ColdStartBanner` component detects the initial connection delay and shows a friendly loading message to the user rather than a timeout error.
+The free Render tier spins down the server after 15 minutes of inactivity, causing the first request to take about 30 seconds. To avoid a broken-looking UI, a `ColdStartBanner` component detects the initial connection delay and shows a friendly loading message to the user rather than a timeout error.
 
 ### 3. CORS between GitHub Pages and Render
-GitHub Pages serves the frontend from `https://khaliya-3a-allah.github.io` while the backend runs on a different domain. The Express CORS configuration reads the allowed origin from the `CLIENT_ORIGIN` environment variable, which is set to the exact GitHub Pages origin on Render. An incorrect origin (e.g. including the sub-path `/course-management-system`) would silently block all API calls; the fix was to set the origin to just the scheme+host.
+GitHub Pages serves the frontend from `https://khaliya-3a-allah.github.io` while the backend runs on a different domain. The Express CORS configuration reads the allowed origin from the `CLIENT_ORIGIN` environment variable, which is set to the exact GitHub Pages origin on Render. An incorrect origin, such as including the sub-path `/course-management-system`, would silently block all API calls; the fix was to set the origin to just the scheme and host.
 
 ### 4. Vite base path and GitHub Pages routing
-React Router uses client-side routing, but GitHub Pages serves a static file and does not handle unknown paths. Setting `base: '/course-management-system/'` in `vite.config.js` aligned the asset paths, and a custom `404.html` redirect technique was used to send all page-not-found requests back to `index.html` so React Router can take over.
+GitHub Pages serves the app under `/course-management-system/`, so Vite needed `base: '/course-management-system/'` in production. The frontend also uses `HashRouter`, which avoids server-side rewrite issues on GitHub Pages while still supporting direct navigation to app routes.
 
 ### 5. Ownership authorization without a separate permissions table
-Rather than a dedicated permissions system, each resource model stores a `createdBy` / `instructorId` field. A reusable `authorizeOwner` middleware reads the relevant field name per resource and compares it to `req.user.id`, returning `403` on mismatch. This kept the codebase simple while still enforcing that users can only mutate their own records.
+Rather than a dedicated permissions system, each resource model stores a `createdBy` or `instructorId` field. A reusable `authorizeOwner` middleware reads the relevant field name per resource and compares it to `req.user.id`, returning `403` on mismatch. This kept the codebase simple while still enforcing that users can only mutate their own records.
 
 ---
 
 ## Security Features
 
-- **JWT authentication** — stateless tokens, 7-day expiry, excluded from all API responses
-- **Two-Factor Authentication (TOTP)** — optional 2FA via authenticator apps (Google Authenticator, Authy)
-- **Rate limiting** — per-IP on registration, per-email on login to prevent brute force
-- **Helmet** — sets secure HTTP headers (CSP, HSTS, X-Frame-Options, etc.)
-- **CORS** — restricted to the deployed frontend origin in production
-- **bcrypt** — passwords hashed with cost factor 12, never stored or returned in plaintext
-- **Ownership checks** — server-side enforcement: users can only modify their own resources
+- **JWT authentication** - stateless tokens, 7-day expiry, excluded from all API responses
+- **Email verification** - 6-digit code workflow for new accounts and unverified logins
+- **Two-Factor Authentication (TOTP)** - optional 2FA via authenticator apps (Google Authenticator, Authy)
+- **Rate limiting** - per-IP on registration, per-email on login to prevent brute force
+- **Helmet** - sets secure HTTP headers (CSP, HSTS, X-Frame-Options, etc.)
+- **CORS** - restricted to the deployed frontend origin in production
+- **bcrypt** - passwords hashed with cost factor 12, never stored or returned in plaintext
+- **Ownership checks** - server-side enforcement: users can only modify their own resources
 
 ---
 
 ## Team Contributions
 
-### Phase 1 — Frontend
+### Phase 1 - Frontend
 
 | Team Member | Contributions |
 |---|---|
@@ -623,11 +735,11 @@ Rather than a dedicated permissions system, each resource model stores a `create
 | Ahmad Hajj Khalil | Dashboard Page, Course Form Page |
 | Sami Bou Khaled | Login Page, Register Page |
 
-### Phase 2 — Backend & Integration
+### Phase 2 - Backend & Integration
 
 | Team Member | Role | Contributions |
 |---|---|---|
 | Mohamad Karim Mehaydli | Backend & API Lead | Express server setup, middleware stack, folder structure, environment config, REST API routes, controllers (CRUD), API response structure |
 | Jad Al Hassan | Database & Authentication Lead | MongoDB/Mongoose schema design, database connection, bcrypt password hashing, JWT generation & verification middleware, ownership authorization |
 | Sami Bou Khaled | Frontend Integration Lead | Replaced mock data with real API calls, wired forms/pages to backend endpoints, login/signup flows, loading/error/empty states, DataContext |
-| Ahmad Hajj Khalil | Deployment, QA & Documentation Lead | Backend deployment (Render), frontend deployment (GitHub Pages), CORS & env var config, final testing (CRUD, auth, ownership), README, submission package |
+| Ahmad Hajj Khalil | Deployment, QA & Documentation Lead | Backend deployment (Render), frontend deployment (GitHub Pages), CORS and env var config, final testing (CRUD, auth, ownership), README, submission package |
