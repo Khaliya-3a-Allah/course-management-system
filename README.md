@@ -541,6 +541,8 @@ Send `challengeToken` as the `Authorization: Bearer <challengeToken>` header.
 
 ### 2. Course details and module navigation
 
+<img width="1910" height="912" alt="image" src="https://github.com/user-attachments/assets/ad5847fd-608a-4695-b269-46f2be8befd6" />
+<img width="1915" height="908" alt="image" src="https://github.com/user-attachments/assets/9fbf1df8-5d03-4c83-8db5-466b3777a4dc" />
 <img width="1919" height="912" alt="image" src="https://github.com/user-attachments/assets/c2f40e52-89b7-4744-8e22-612c77cc5ff2" />
 <img width="1353" height="429" alt="Screenshot 2026-03-24 230503" src="https://github.com/user-attachments/assets/fb4f404b-9ead-42b0-a1f1-21fc88518492" />
 
