@@ -60,6 +60,7 @@ export default function Navbar() {
             {[
               { to: "/", label: "Home" },
               { to: "/courses", label: "Courses" },
+              ...(currentUser ? [{ to: "/community", label: "Community" }] : []),
               ...(currentUser ? [{ to: "/dashboard", label: "Dashboard" }] : []),
             ].map(({ to, label }) => (
               <li key={to}>
@@ -154,6 +155,14 @@ export default function Navbar() {
                       Dashboard
                     </Link>
                     <Link
+                      to="/community"
+                      onClick={() => setProfileMenuOpen(false)}
+                      role="menuitem"
+                      className="block rounded-lg px-2.5 py-2 no-underline text-[0.85rem] text-text-secondary hover:bg-[rgba(255,255,255,0.04)]"
+                    >
+                      Community
+                    </Link>
+                    <Link
                       to="/certificates"
                       onClick={() => setProfileMenuOpen(false)}
                       role="menuitem"
@@ -215,6 +224,7 @@ export default function Navbar() {
               {[
                 { to: "/", label: "Home" },
                 { to: "/courses", label: "Courses" },
+                ...(currentUser ? [{ to: "/community", label: "Community" }] : []),
                 { to: "/support", label: "Support" },
                 ...(currentUser ? [{ to: "/dashboard", label: "Dashboard" }] : []),
               ].map(({ to, label }) => (

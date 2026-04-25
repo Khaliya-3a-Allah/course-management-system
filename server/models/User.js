@@ -32,6 +32,13 @@ const userSchema = new mongoose.Schema(
     verified: { type: Boolean, default: false },
     verificationCode: { type: String, default: "", select: false },
     verificationCodeExpires: { type: Date, default: null },
+    reputationScore: { type: Number, default: 0 },
+    communityStats: {
+      threadsCount: { type: Number, default: 0 },
+      commentsCount: { type: Number, default: 0 },
+      acceptedAnswers: { type: Number, default: 0 },
+      upvotesReceived: { type: Number, default: 0 },
+    },
   },
   {
     timestamps: true,

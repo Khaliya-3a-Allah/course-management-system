@@ -11,6 +11,7 @@ import ModuleDetails from "../pages/ModuleDetails";
 import CourseForm from "../pages/CourseForm";
 import Dashboard from "../pages/Dashboard";
 import Certificates from "../pages/Certificates";
+import Community from "../pages/Community";
 import VerifyCertificate from "../pages/VerifyCertificate";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
@@ -42,6 +43,7 @@ export default function AppRouter() {
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/certificates" element={<Certificates />} />
+            <Route path="/community" element={<Community />} />
             <Route path="/course-form" element={<CourseForm />} />
             <Route path="/course-form/:courseId" element={<CourseForm />} />
           </Route>

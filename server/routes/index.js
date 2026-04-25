@@ -10,6 +10,7 @@ import { purchasesRouter } from "./purchases.routes.js";
 import { progressRouter } from "./progress.routes.js";
 import { certificatesRouter } from "./certificates.routes.js";
 import { supportTicketsRouter } from "./supportTickets.routes.js";
+import { communityRouter } from "./community.routes.js";
 
 const router = Router();
 
@@ -32,5 +33,6 @@ router.use("/purchases", purchasesRouter);
 router.use("/progress", progressRouter);
 router.use("/certificates", certificatesRouter);
 router.use("/support-tickets", supportTicketsRouter);
+router.use("/community", communityRouter);
 
 export const apiRouter = router;
