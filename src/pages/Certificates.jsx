@@ -282,43 +282,23 @@ export default function Certificates() {
       align: "center",
     });
 
-    // Bottom signature/media guides
+    // Bottom signature guides
     doc.setDrawColor(209, 213, 219);
     doc.setLineWidth(1);
-    doc.line(92, height - 154, 292, height - 154);
+    doc.line(114, height - 154, 314, height - 154);
     doc.line(336, height - 154, 536, height - 154);
-
-    // Course cover image in left block (fallback if unavailable)
-    const mediaX = 96;
-    const mediaY = height - 148;
-    const mediaW = 96;
-    const mediaH = 72;
-    doc.setFillColor(248, 250, 252);
-    doc.roundedRect(mediaX, mediaY, mediaW, mediaH, 6, 6, "F");
-    try {
-      if (course.thumbnail) {
-        const thumbDataUrl = await loadImageDataUrl(course.thumbnail);
-        doc.addImage(thumbDataUrl, "JPEG", mediaX, mediaY, mediaW, mediaH);
-      }
-    } catch {
-      doc.setTextColor(100, 116, 139);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.text("COURSE", mediaX + mediaW / 2, mediaY + 30, { align: "center" });
-      doc.text("COVER", mediaX + mediaW / 2, mediaY + 44, { align: "center" });
-    }
 
     // Labels
     doc.setFont("helvetica", "bold");
     doc.setTextColor(55, 65, 81);
     doc.setFontSize(11);
-    doc.text("Date Issued", 222, height - 132, { align: "center" });
+    doc.text("Date Issued", 214, height - 132, { align: "center" });
     doc.text("Authorized by Courseware", 436, height - 132, { align: "center" });
 
     // Values
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    doc.text(issueDate, 222, height - 114, { align: "center" });
+    doc.text(issueDate, 214, height - 114, { align: "center" });
     doc.text("Learning Platform", 436, height - 114, { align: "center" });
 
     // Certificate ID
@@ -370,67 +350,93 @@ export default function Certificates() {
             </Link>
           </section>
         ) : (
-          <ul aria-label="Certificates" className="grid gap-5 list-none p-0 m-0" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))" }}>
+          <ul aria-label="Certificates" className="grid gap-6 list-none p-0 m-0" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))" }}>
             {completedCourseList.map((course) => {
               const certId = buildCertificateId(currentUser.id, course.id);
               return (
                 <li key={course.id}>
-                  <article className="h-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-surface p-5 flex flex-col">
-                    <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#f59e0b] mb-2" aria-hidden="true">Certificate Ready</p>
-                    <h2 className="font-heading text-[1.2rem] text-text-primary mb-2 leading-snug">{course.title}</h2>
-                    <p className="text-[0.85rem] text-text-dim mb-1">Recipient: {currentUser?.name}</p>
-                    <p className="text-[0.82rem] text-text-faint mb-4">Instructor: {course.instructorName}</p>
-
-                    {/* Certificate ID Display */}
-                    <div className="mb-4 p-3 bg-[rgba(255,255,255,0.04)] rounded-lg border border-[rgba(255,255,255,0.08)]">
-                      <p className="text-[0.72rem] text-text-faint mb-1">Certificate ID</p>
-                      <p className="text-[0.8rem] text-text-secondary font-mono break-all">{certId}</p>
+                  <article className="h-full overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.1)] bg-[linear-gradient(170deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] shadow-[0_20px_40px_rgba(0,0,0,0.28)] flex flex-col">
+                    <div className="relative h-[170px] bg-[rgba(255,255,255,0.04)]">
+                      {course.thumbnail ? (
+                        <img
+                          src={course.thumbnail}
+                          alt={`${course.title} course cover`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#f59e0b] text-sm tracking-[0.16em] uppercase">
+                          Certificate Course
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[rgba(7,11,20,0.92)] via-[rgba(7,11,20,0.35)] to-transparent" />
+                      <p className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-[rgba(245,158,11,0.16)] border border-[rgba(245,158,11,0.45)] text-[0.68rem] tracking-[0.16em] uppercase text-[#f59e0b]">
+                        Certificate Ready
+                      </p>
+                      <h2 className="absolute left-4 right-4 bottom-3 font-heading text-[1.18rem] text-white leading-snug">
+                        {course.title}
+                      </h2>
                     </div>
 
-                    <div className="mt-auto space-y-2">
-                      {/* Primary Actions */}
-                      <div className="flex gap-2">
-                        <Link
-                          to={`/courses/${course.id}`}
-                          aria-label={`View ${course.title} course`}
-                          className="flex-1 text-center px-3 py-2.5 rounded-lg text-[0.82rem] no-underline border border-[rgba(255,255,255,0.12)] text-text-secondary hover:bg-[rgba(255,255,255,0.05)] transition-colors"
-                        >
-                          View Course
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => downloadCertificate(course)}
-                          aria-label={`Download PDF for ${course.title}`}
-                          className="flex-1 px-3 py-2.5 rounded-lg text-[0.82rem] font-semibold border-none cursor-pointer bg-brand text-base hover:bg-opacity-90 transition-colors"
-                        >
-                          📥 Download PDF
-                        </button>
+                    <div className="p-5 flex flex-col gap-4 flex-1">
+                      <div className="grid grid-cols-2 gap-3 text-[0.8rem]">
+                        <div className="rounded-lg border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] p-2.5">
+                          <p className="text-text-faint mb-1">Recipient</p>
+                          <p className="text-text-secondary font-medium truncate">{currentUser?.name}</p>
+                        </div>
+                        <div className="rounded-lg border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] p-2.5">
+                          <p className="text-text-faint mb-1">Instructor</p>
+                          <p className="text-text-secondary font-medium truncate">{course.instructorName}</p>
+                        </div>
                       </div>
 
-                      {/* Secondary Actions */}
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedCertId(certId);
-                            setShowQRModal(true);
-                          }}
-                          aria-label={`View QR code for ${course.title}`}
-                          className="flex-1 px-3 py-2 rounded-lg text-[0.8rem] border border-[rgba(255,255,255,0.12)] text-text-secondary hover:bg-[rgba(255,255,255,0.05)] transition-colors"
-                        >
-                          📱 QR Code
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShareCertData({ certId, courseName: course.title });
-                            setShowShareModal(true);
-                          }}
-                          aria-label={`Share ${course.title} certificate`}
-                          className="flex-1 px-3 py-2 rounded-lg text-[0.8rem] border border-[rgba(255,255,255,0.12)] text-text-secondary hover:bg-[rgba(255,255,255,0.05)] transition-colors"
-                        >
-                          🔗 Share
-                        </button>
+                      <div className="rounded-lg border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] p-3">
+                        <p className="text-[0.72rem] text-text-faint mb-1">Certificate ID</p>
+                        <p className="text-[0.8rem] text-text-secondary font-mono break-all">{certId}</p>
+                      </div>
+
+                      <div className="mt-auto space-y-2.5">
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <Link
+                            to={`/courses/${course.id}`}
+                            aria-label={`View ${course.title} course`}
+                            className="text-center px-3 py-2.5 rounded-lg text-[0.82rem] no-underline border border-[rgba(255,255,255,0.14)] text-text-secondary hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+                          >
+                            View Course
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => downloadCertificate(course)}
+                            aria-label={`Download PDF for ${course.title}`}
+                            className="px-3 py-2.5 rounded-lg text-[0.82rem] font-semibold border-none cursor-pointer bg-brand text-base hover:bg-opacity-90 transition-colors"
+                          >
+                            Download PDF
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedCertId(certId);
+                              setShowQRModal(true);
+                            }}
+                            aria-label={`View QR code for ${course.title}`}
+                            className="px-3 py-2 rounded-lg text-[0.8rem] border border-[rgba(255,255,255,0.14)] text-text-secondary hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+                          >
+                            QR Code
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShareCertData({ certId, courseName: course.title });
+                              setShowShareModal(true);
+                            }}
+                            aria-label={`Share ${course.title} certificate`}
+                            className="px-3 py-2 rounded-lg text-[0.8rem] border border-[rgba(255,255,255,0.14)] text-text-secondary hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+                          >
+                            Share
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </article>
