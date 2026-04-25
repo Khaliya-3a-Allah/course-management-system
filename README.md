@@ -541,14 +541,13 @@ Send `challengeToken` as the `Authorization: Bearer <challengeToken>` header.
 
 ### 2. Course details and module navigation
 
-<img width="1915" height="858" alt="image" src="https://github.com/user-attachments/assets/e61a3fa5-2e27-4077-bda0-cde806af8631" />
-<img width="1919" height="660" alt="image" src="https://github.com/user-attachments/assets/f638457a-3d51-4cc2-a819-4da61acbf968" />
+<img width="1919" height="912" alt="image" src="https://github.com/user-attachments/assets/c2f40e52-89b7-4744-8e22-612c77cc5ff2" />
 <img width="1353" height="429" alt="Screenshot 2026-03-24 230503" src="https://github.com/user-attachments/assets/fb4f404b-9ead-42b0-a1f1-21fc88518492" />
 
 ### 3. Dashboard progress tracking
 
-<img width="1904" height="424" alt="Screenshot 2026-03-24 230611" src="https://github.com/user-attachments/assets/84f50099-997a-4f53-b656-655af1286012" />
-<img width="1919" height="912" alt="image" src="https://github.com/user-attachments/assets/19d0d5f3-544d-4ca0-b602-8b555a027ede" />
+<img width="1915" height="858" alt="image" src="https://github.com/user-attachments/assets/e61a3fa5-2e27-4077-bda0-cde806af8631" />
+<img width="1919" height="660" alt="image" src="https://github.com/user-attachments/assets/f638457a-3d51-4cc2-a819-4da61acbf968" />
 <img width="1347" height="723" alt="image" src="https://github.com/user-attachments/assets/cee75e9d-fb6d-413b-97a4-832a3a945c5f" />
 <img width="543" height="901" alt="image" src="https://github.com/user-attachments/assets/8d79369d-0c97-4f09-9158-3336ccda34e7" />
 
