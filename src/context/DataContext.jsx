@@ -175,12 +175,22 @@ export function DataProvider({ children }) {
         apiGet(`/reviews?userId=${userId}`, { token }),
       ]);
 
-      setEnrollments(extractList(enrollRes));
-      setPurchases(extractList(purchaseRes));
+      const myEnrollments = extractList(enrollRes);
+      const myPurchases = extractList(purchaseRes);
+      setEnrollments(myEnrollments);
+      setPurchases(myPurchases);
       setProgress(extractList(progressRes));
 
       const myReviews = extractList(reviewRes);
       setReviews(myReviews);
+
+      // Derive course ID lists from the actual records (source of truth)
+      const enrolledIds = myEnrollments
+        .map((row) => String(row.courseId?._id || row.courseId || ""))
+        .filter(Boolean);
+      const purchasedIds = myPurchases
+        .map((row) => String(row.courseId?._id || row.courseId || ""))
+        .filter(Boolean);
 
       const reviewsByCourseId = {};
       myReviews.forEach((review) => {
@@ -192,9 +202,16 @@ export function DataProvider({ children }) {
           id: review.id || review._id,
         };
       });
-      setCurrentUser((prev) =>
-        prev ? { ...prev, reviews: reviewsByCourseId } : prev
-      );
+      setCurrentUser((prev) => {
+        if (!prev) return prev;
+        const merged = normalizeUserCollections({
+          ...prev,
+          enrolledCourseIds: [...new Set([...(prev.enrolledCourseIds || []), ...enrolledIds])],
+          purchasedCourseIds: [...new Set([...(prev.purchasedCourseIds || []), ...purchasedIds])],
+          reviews: reviewsByCourseId,
+        });
+        return merged;
+      });
 
       setMyDataStatus(RESOURCE_STATUS.SUCCESS);
     } catch (error) {
@@ -429,7 +446,19 @@ export function DataProvider({ children }) {
       const rowCourseId = row.courseId?._id || row.courseId;
       return String(rowCourseId) === String(courseId);
     });
-    if (existing) return existing;
+    if (existing) {
+      // Enrollment record exists — make sure currentUser reflects it
+      setCurrentUser((prev) => {
+        if (!prev) return prev;
+        const currentIds = prev.enrolledCourseIds || [];
+        if (currentIds.some((id) => String(id) === String(courseId))) return prev;
+        return normalizeUserCollections({
+          ...prev,
+          enrolledCourseIds: [...currentIds, courseId],
+        });
+      });
+      return existing;
+    }
 
     const response = await apiPost(
       "/enrollments",
