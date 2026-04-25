@@ -46,7 +46,7 @@ export default function Navbar() {
             aria-label="Courseware home"
             className="flex items-center gap-2.5 no-underline shrink-0 leading-none"
           >
-            <span className="inline-block w-2.5 h-2.5 bg-brand rotate-45 rounded-[1px]" aria-hidden="true" />
+            <span className="text-brand leading-none" style={{ fontSize: "1.25rem" }} aria-hidden="true">◈</span>
             <span className="font-heading text-[1.1rem] text-text-primary font-bold leading-none">
               Courseware
             </span>
