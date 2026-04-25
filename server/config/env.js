@@ -24,5 +24,5 @@ export const env = {
   JWT_SECRET: process.env.JWT_SECRET || crypto.randomBytes(48).toString("hex"),
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "7d",
   JWT_CHALLENGE_EXPIRES_IN: process.env.JWT_CHALLENGE_EXPIRES_IN || "5m",
-  TOTP_ISSUER: process.env.TOTP_ISSUER || "Coursewave",
+  TOTP_ISSUER: process.env.TOTP_ISSUER || "Courseware",
 };
