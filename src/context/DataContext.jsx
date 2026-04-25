@@ -177,18 +177,23 @@ export function DataProvider({ children }) {
 
       const myEnrollments = extractList(enrollRes);
       const myPurchases = extractList(purchaseRes);
+      const myProgress = extractList(progressRes);
       setEnrollments(myEnrollments);
       setPurchases(myPurchases);
-      setProgress(extractList(progressRes));
+      setProgress(myProgress);
 
       const myReviews = extractList(reviewRes);
       setReviews(myReviews);
 
-      // Derive course ID lists from the actual records (source of truth)
+      // Derive course ID lists from actual records (source of truth)
       const enrolledIds = myEnrollments
         .map((row) => String(row.courseId?._id || row.courseId || ""))
         .filter(Boolean);
       const purchasedIds = myPurchases
+        .map((row) => String(row.courseId?._id || row.courseId || ""))
+        .filter(Boolean);
+      const completedIds = myProgress
+        .filter((row) => row.completed)
         .map((row) => String(row.courseId?._id || row.courseId || ""))
         .filter(Boolean);
 
@@ -204,13 +209,13 @@ export function DataProvider({ children }) {
       });
       setCurrentUser((prev) => {
         if (!prev) return prev;
-        const merged = normalizeUserCollections({
+        return normalizeUserCollections({
           ...prev,
           enrolledCourseIds: [...new Set([...(prev.enrolledCourseIds || []), ...enrolledIds])],
           purchasedCourseIds: [...new Set([...(prev.purchasedCourseIds || []), ...purchasedIds])],
+          completedCourseIds: [...new Set([...(prev.completedCourseIds || []), ...completedIds])],
           reviews: reviewsByCourseId,
         });
-        return merged;
       });
 
       setMyDataStatus(RESOURCE_STATUS.SUCCESS);
@@ -415,13 +420,18 @@ export function DataProvider({ children }) {
     const token = readToken();
     if (!token) throw new Error("Missing auth token. Please sign in again.");
 
-    const response = await apiPost(
-      "/reviews",
-      { userId: currentUser.id, courseId, rating, comment },
-      { token }
-    );
-    const review = response?.data || response;
-    setReviews((prev) => [...prev, review]);
+    // Update existing review if one already exists, otherwise create
+    const existingReview = currentUser?.reviews?.[courseId];
+    let review;
+    if (existingReview?.id) {
+      const response = await apiPut(`/reviews/${existingReview.id}`, { rating, comment }, { token });
+      review = response?.data || response;
+      setReviews((prev) => prev.map((r) => (r.id === existingReview.id ? review : r)));
+    } else {
+      const response = await apiPost("/reviews", { courseId, rating, comment }, { token });
+      review = response?.data || response;
+      setReviews((prev) => [...prev, review]);
+    }
 
     setCurrentUser((prev) => {
       if (!prev) return prev;
@@ -580,15 +590,15 @@ export function DataProvider({ children }) {
     const token = readToken();
     if (!token) throw new Error("Missing auth token. Please sign in again.");
 
-    const response = await apiPut(
+    await apiPut(
       `/users/${currentUser.id}`,
       { savedCourseIds: nextSavedIds },
       { token }
     );
-    const serverUser = response?.data || response;
+    // Only update savedCourseIds — spreading the server response would overwrite
+    // client-tracked enrolledCourseIds/purchasedCourseIds with the server's stale empty arrays.
     const merged = normalizeUserCollections({
       ...currentUser,
-      ...(serverUser || {}),
       savedCourseIds: nextSavedIds,
     });
     setCurrentUser(merged);

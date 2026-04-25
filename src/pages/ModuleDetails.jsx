@@ -385,6 +385,8 @@ export default function ModuleDetails() {
     ? (currentUser?.purchasedCourseIds?.includes(courseId) ?? false)
     : true;
   const enrolled = currentUser?.enrolledCourseIds?.includes(courseId) ?? false;
+  const isCompleted = completedCourses.has(courseId);
+  const hasAccess = enrolled || isCompleted;
 
   if (!currentUser) {
     return (
@@ -406,7 +408,7 @@ export default function ModuleDetails() {
     );
   }
 
-  if (!enrolled) {
+  if (!hasAccess) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center bg-base gap-4 text-center px-6">
         <h2 className="font-heading text-[1.5rem] text-text-primary">Enrollment Required</h2>

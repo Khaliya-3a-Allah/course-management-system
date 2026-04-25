@@ -53,7 +53,7 @@ export default function CourseDetails() {
   const ratingSubmitted = !!currentUser?.reviews?.[course.id];
   const isCompleted = completedCourses.has(course.id);
   const progress = getCourseProgress(course.id);
-  const canAccessContent = enrolled && owned;
+  const canAccessContent = (enrolled || isCompleted) && owned;
 
   const handleEnroll = async () => {
     if (!currentUser) { setModalOpen(true); return; }
@@ -90,9 +90,13 @@ export default function CourseDetails() {
     }
   };
 
-  const handleSubmitRating = () => {
+  const handleSubmitRating = async () => {
     if (selectedRating === 0) return;
-    submitReview(course.id, selectedRating, reviewMessage);
+    try {
+      await submitReview(course.id, selectedRating, reviewMessage);
+    } catch {
+      addToast("Failed to submit review. Please try again.", "error");
+    }
   };
 
   const levelColors = { Beginner: "#22c55e", Intermediate: "#f59e0b", Advanced: "#ef4444" };
