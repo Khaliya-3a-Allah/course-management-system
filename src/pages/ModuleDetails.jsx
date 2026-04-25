@@ -329,7 +329,7 @@ const vStyles = {
 export default function ModuleDetails() {
   const { courseId, moduleId } = useParams();
   const navigate = useNavigate();
-  const { courses, submitReview, currentUser, lessonProgress, markLessonComplete, markCourseComplete, completedCourses } = useAppContext();
+  const { courses, submitReview, currentUser, lessonProgress, markLessonComplete, markCourseComplete, completedCourses, addToast } = useAppContext();
 
   const course = courses.find((c) => c.id === courseId);
   const allModules = course?.modules || [];
@@ -454,9 +454,13 @@ export default function ModuleDetails() {
     if (nextModule) { setExpandedModules({ [nextModule.id]: true }); setActiveLesson(null); navigate(`/courses/${courseId}/modules/${nextModule.id}`); }
   };
 
-  const handleSubmitReview = () => {
+  const handleSubmitReview = async () => {
     if (selectedRating === 0) return;
-    submitReview(courseId, selectedRating, reviewMessage);
+    try {
+      await submitReview(courseId, selectedRating, reviewMessage);
+    } catch {
+      addToast("Failed to submit review. Please try again.", "error");
+    }
   };
 
   return (
