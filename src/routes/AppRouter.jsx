@@ -11,6 +11,7 @@ import ModuleDetails from "../pages/ModuleDetails";
 import CourseForm from "../pages/CourseForm";
 import Dashboard from "../pages/Dashboard";
 import Certificates from "../pages/Certificates";
+import VerifyCertificate from "../pages/VerifyCertificate";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import VerifyEmail from "../pages/VerifyEmail";
@@ -35,6 +36,7 @@ export default function AppRouter() {
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/support" element={<Support />} />
           <Route path="/checkout/:courseId" element={<Checkout />} />
+          <Route path="/verify/:certId" element={<VerifyCertificate />} />
 
           {/* Protected routes — require authentication */}
           <Route element={<ProtectedRoute />}>

@@ -27,4 +27,5 @@ export const env = {
   TOTP_ISSUER: process.env.TOTP_ISSUER || "Courseware",
   GMAIL_USER: process.env.GMAIL_USER || "",
   GMAIL_PASS: process.env.GMAIL_PASS || "",
+  CERTIFICATE_SIGNING_SECRET: process.env.CERTIFICATE_SIGNING_SECRET || crypto.randomBytes(32).toString("hex"),
 };

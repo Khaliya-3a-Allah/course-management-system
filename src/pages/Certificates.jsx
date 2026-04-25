@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { jsPDF } from "jspdf";
 import { useAppContext } from "../context/AppContext";
+import { useUiContext } from "../context/UiContext";
 
 function formatDate(value) {
   return new Intl.DateTimeFormat("en-US", {
@@ -16,8 +17,143 @@ function buildCertificateId(userId, courseId) {
   return `CERT-${userId.toUpperCase()}-${courseId.toUpperCase()}-${compactDate}`;
 }
 
+// QR Code Modal Component
+function QRCodeModal({ isOpen, certId, onClose }) {
+  if (!isOpen) return null;
+
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+    `${window.location.origin}/verify/${certId}`
+  )}`;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-surface rounded-xl p-6 max-w-sm w-full"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-lg font-semibold text-text-primary mb-4">
+          Certificate QR Code
+        </h3>
+        <div className="flex justify-center mb-4 bg-white p-4 rounded-lg">
+          <img src={qrUrl} alt="Certificate QR Code" className="w-64 h-64" />
+        </div>
+        <p className="text-sm text-text-dim mb-4 text-center">
+          Scan to verify certificate authenticity
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 rounded-lg bg-surface border border-[rgba(255,255,255,0.12)] text-text-secondary hover:bg-opacity-80 transition-colors"
+          >
+            Close
+          </button>
+          <a
+            href={qrUrl}
+            download="certificate-qr-code.png"
+            className="flex-1 px-4 py-2 rounded-lg bg-brand text-base font-semibold text-center no-underline hover:bg-opacity-90 transition-colors"
+          >
+            Download QR
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Share Modal Component
+function ShareModal({ isOpen, certId, courseName, onClose }) {
+  const [copied, setCopied] = useState(false);
+  const verificationUrl = `${window.location.origin}/verify/${certId}`;
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(verificationUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const linkedInShareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(verificationUrl)}`;
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-surface rounded-xl p-6 max-w-sm w-full"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-lg font-semibold text-text-primary mb-4">
+          Share Certificate
+        </h3>
+
+        <div className="space-y-3 mb-6">
+          {/* Copy Link Button */}
+          <button
+            onClick={handleCopyLink}
+            className="w-full px-4 py-3 rounded-lg border border-[rgba(255,255,255,0.12)] text-text-secondary hover:bg-surface-hover transition-colors text-sm flex items-center justify-between"
+          >
+            <span>📋 {copied ? "Copied!" : "Copy Verification Link"}</span>
+            {copied && <span className="text-[#f59e0b]">✓</span>}
+          </button>
+
+          {/* LinkedIn Share Button */}
+          <a
+            href={linkedInShareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full px-4 py-3 rounded-lg bg-[#0A66C2] text-white hover:bg-[#084699] transition-colors text-sm font-semibold text-center no-underline block"
+          >
+            🔗 Share on LinkedIn
+          </a>
+
+          {/* Twitter Share Button */}
+          <a
+            href={`https://twitter.com/intent/tweet?text=I%20just%20completed%20the%20"${encodeURIComponent(courseName)}"%20course%20on%20Courseware!%20%F0%9F%8E%93%20Verify%20my%20certificate:%20${encodeURIComponent(verificationUrl)}&hashtags=Learning,CourseCompletion,Courseware`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full px-4 py-3 rounded-lg bg-[#1DA1F2] text-white hover:bg-[#1a8cd8] transition-colors text-sm font-semibold text-center no-underline block"
+          >
+            𝕏 Share on X
+          </a>
+
+          {/* Email Share Button */}
+          <a
+            href={`mailto:?subject=Check%20Out%20My%20Course%20Certificate!&body=I%20just%20completed%20the%20${encodeURIComponent(courseName)}%20course%20on%20Courseware!%20You%20can%20verify%20my%20certificate%20here:%20${encodeURIComponent(verificationUrl)}`}
+            className="w-full px-4 py-3 rounded-lg border border-[rgba(255,255,255,0.12)] text-text-secondary hover:bg-surface-hover transition-colors text-sm flex items-center justify-center gap-2"
+          >
+            ✉️ Share via Email
+          </a>
+        </div>
+
+        <div className="pt-4 border-t border-[rgba(255,255,255,0.1)]">
+          <p className="text-xs text-text-faint mb-3">Direct verification link:</p>
+          <div className="bg-[rgba(255,255,255,0.05)] p-2 rounded text-xs text-text-dim break-all font-mono">
+            {verificationUrl}
+          </div>
+        </div>
+
+        <button
+          onClick={onClose}
+          className="w-full mt-4 px-4 py-2 rounded-lg bg-surface border border-[rgba(255,255,255,0.12)] text-text-secondary hover:bg-opacity-80 transition-colors"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Certificates() {
   const { currentUser, courses, completedCourses } = useAppContext();
+  const [selectedCertId, setSelectedCertId] = useState(null);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareCertData, setShareCertData] = useState({ certId: "", courseName: "" });
 
   const completedCourseList = useMemo(
     () => courses.filter((course) => completedCourses.has(course.id)),
@@ -33,6 +169,7 @@ export default function Certificates() {
     const issueDate = formatDate(new Date());
     const certId = buildCertificateId(currentUser.id, course.id);
 
+    // Borders
     doc.setDrawColor(217, 119, 6);
     doc.setLineWidth(2.5);
     doc.rect(24, 24, width - 48, height - 48);
@@ -41,60 +178,79 @@ export default function Certificates() {
     doc.setLineWidth(0.8);
     doc.rect(36, 36, width - 72, height - 72);
 
+    // Header
     doc.setFont("times", "bold");
     doc.setTextColor(90, 90, 90);
     doc.setFontSize(18);
     doc.text("Courseware", width / 2, 86, { align: "center" });
 
+    // Title
     doc.setFontSize(44);
     doc.setTextColor(217, 119, 6);
     doc.text("Certificate of Completion", width / 2, 150, { align: "center" });
 
+    // Recipient intro
     doc.setFont("helvetica", "normal");
     doc.setTextColor(75, 85, 99);
     doc.setFontSize(16);
     doc.text("This certificate is proudly presented to", width / 2, 200, { align: "center" });
 
+    // Recipient name
     doc.setFont("times", "bold");
     doc.setTextColor(17, 24, 39);
     doc.setFontSize(34);
     doc.text(currentUser.name, width / 2, 250, { align: "center" });
 
+    // Course intro
     doc.setFont("helvetica", "normal");
     doc.setTextColor(75, 85, 99);
     doc.setFontSize(16);
     doc.text("for successfully completing the course", width / 2, 286, { align: "center" });
 
+    // Course name
     doc.setFont("times", "bold");
     doc.setTextColor(217, 119, 6);
     doc.setFontSize(28);
     doc.text(course.title, width / 2, 326, { align: "center" });
 
+    // Instructor
     doc.setFont("helvetica", "normal");
     doc.setTextColor(75, 85, 99);
     doc.setFontSize(14);
     doc.text(`Instructor: ${course.instructorName}`, width / 2, 356, { align: "center" });
 
+    // Signature lines
     doc.setDrawColor(209, 213, 219);
     doc.setLineWidth(1);
     doc.line(100, height - 132, 290, height - 132);
     doc.line(width - 290, height - 132, width - 100, height - 132);
 
+    // Signature labels
     doc.setFont("helvetica", "bold");
     doc.setTextColor(55, 65, 81);
     doc.setFontSize(12);
     doc.text("Date Issued", 195, height - 115, { align: "center" });
     doc.text("Authorized by Courseware", width - 195, height - 115, { align: "center" });
 
+    // Signature values
     doc.setFont("helvetica", "normal");
     doc.setFontSize(12);
     doc.text(issueDate, 195, height - 98, { align: "center" });
     doc.text("Learning Team", width - 195, height - 98, { align: "center" });
 
+    // Certificate ID and verification info
     doc.setFontSize(10);
     doc.setTextColor(107, 114, 128);
     doc.text(`Certificate ID: ${certId}`, width / 2, height - 70, { align: "center" });
-    doc.text("Issued via Courseware Learning Platform", width / 2, height - 54, { align: "center" });
+    doc.text("Verify this certificate at: ", width / 2, height - 54, { align: "center" });
+    doc.setTextColor(217, 119, 6);
+    doc.text(`${window.location.origin}/verify/${certId}`, width / 2, height - 40, { align: "center" });
+
+    // QR Code
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+      `${window.location.origin}/verify/${certId}`
+    )}`;
+    doc.addImage(qrUrl, "PNG", width - 180, height - 170, 120, 120);
 
     const safeCourse = course.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
     const safeUser = currentUser.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
@@ -108,7 +264,7 @@ export default function Certificates() {
           <p className="text-[0.72rem] uppercase tracking-[0.2em] text-[#f59e0b] mb-2" aria-hidden="true">Achievements</p>
           <h1 id="certificates-heading" className="font-heading text-[2rem] md:text-[2.3rem] text-text-primary mb-2">Your Certificates</h1>
           <p className="text-text-dim text-[0.95rem] max-w-[720px]">
-            Download official completion certificates for courses you have finished on Courseware.
+            Download official completion certificates for courses you have finished on Courseware. Share and verify your achievements with confidence.
           </p>
         </header>
 
@@ -124,38 +280,89 @@ export default function Certificates() {
             </Link>
           </section>
         ) : (
-          <ul aria-label="Certificates" className="grid gap-5 list-none p-0 m-0" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}>
-            {completedCourseList.map((course) => (
-              <li key={course.id}>
-                <article className="h-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-surface p-5 flex flex-col">
-                  <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#f59e0b] mb-2" aria-hidden="true">Certificate Ready</p>
-                  <h2 className="font-heading text-[1.2rem] text-text-primary mb-2 leading-snug">{course.title}</h2>
-                  <p className="text-[0.85rem] text-text-dim mb-1">Recipient: {currentUser?.name}</p>
-                  <p className="text-[0.82rem] text-text-faint mb-4">Instructor: {course.instructorName}</p>
+          <ul aria-label="Certificates" className="grid gap-5 list-none p-0 m-0" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))" }}>
+            {completedCourseList.map((course) => {
+              const certId = buildCertificateId(currentUser.id, course.id);
+              return (
+                <li key={course.id}>
+                  <article className="h-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-surface p-5 flex flex-col">
+                    <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#f59e0b] mb-2" aria-hidden="true">Certificate Ready</p>
+                    <h2 className="font-heading text-[1.2rem] text-text-primary mb-2 leading-snug">{course.title}</h2>
+                    <p className="text-[0.85rem] text-text-dim mb-1">Recipient: {currentUser?.name}</p>
+                    <p className="text-[0.82rem] text-text-faint mb-4">Instructor: {course.instructorName}</p>
 
-                  <div className="mt-auto flex gap-2.5">
-                    <Link
-                      to={`/courses/${course.id}`}
-                      aria-label={`View ${course.title} course`}
-                      className="flex-1 text-center px-3 py-2.5 rounded-lg text-[0.82rem] no-underline border border-[rgba(255,255,255,0.12)] text-text-secondary"
-                    >
-                      View Course
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => downloadCertificate(course)}
-                      aria-label={`Download PDF for ${course.title}`}
-                      className="flex-1 px-3 py-2.5 rounded-lg text-[0.82rem] font-semibold border-none cursor-pointer bg-brand text-base"
-                    >
-                      Download PDF
-                    </button>
-                  </div>
-                </article>
-              </li>
-            ))}
+                    {/* Certificate ID Display */}
+                    <div className="mb-4 p-3 bg-[rgba(255,255,255,0.04)] rounded-lg border border-[rgba(255,255,255,0.08)]">
+                      <p className="text-[0.72rem] text-text-faint mb-1">Certificate ID</p>
+                      <p className="text-[0.8rem] text-text-secondary font-mono break-all">{certId}</p>
+                    </div>
+
+                    <div className="mt-auto space-y-2">
+                      {/* Primary Actions */}
+                      <div className="flex gap-2">
+                        <Link
+                          to={`/courses/${course.id}`}
+                          aria-label={`View ${course.title} course`}
+                          className="flex-1 text-center px-3 py-2.5 rounded-lg text-[0.82rem] no-underline border border-[rgba(255,255,255,0.12)] text-text-secondary hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+                        >
+                          View Course
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => downloadCertificate(course)}
+                          aria-label={`Download PDF for ${course.title}`}
+                          className="flex-1 px-3 py-2.5 rounded-lg text-[0.82rem] font-semibold border-none cursor-pointer bg-brand text-base hover:bg-opacity-90 transition-colors"
+                        >
+                          📥 Download PDF
+                        </button>
+                      </div>
+
+                      {/* Secondary Actions */}
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCertId(certId);
+                            setShowQRModal(true);
+                          }}
+                          aria-label={`View QR code for ${course.title}`}
+                          className="flex-1 px-3 py-2 rounded-lg text-[0.8rem] border border-[rgba(255,255,255,0.12)] text-text-secondary hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+                        >
+                          📱 QR Code
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShareCertData({ certId, courseName: course.title });
+                            setShowShareModal(true);
+                          }}
+                          aria-label={`Share ${course.title} certificate`}
+                          className="flex-1 px-3 py-2 rounded-lg text-[0.8rem] border border-[rgba(255,255,255,0.12)] text-text-secondary hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+                        >
+                          🔗 Share
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
+
+      {/* Modals */}
+      <QRCodeModal
+        isOpen={showQRModal && selectedCertId}
+        certId={selectedCertId}
+        onClose={() => setShowQRModal(false)}
+      />
+      <ShareModal
+        isOpen={showShareModal && shareCertData.certId}
+        certId={shareCertData.certId}
+        courseName={shareCertData.courseName}
+        onClose={() => setShowShareModal(false)}
+      />
     </main>
   );
 }
