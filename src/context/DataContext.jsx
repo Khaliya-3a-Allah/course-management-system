@@ -444,6 +444,21 @@ export function DataProvider({ children }) {
       };
     });
 
+    // Refresh the course's rating from the server so the stars update immediately
+    try {
+      const courseRes = await apiGet(`/courses/${courseId}`);
+      const freshCourse = normalizeCourse(courseRes?.data || courseRes);
+      if (freshCourse?.id) {
+        setCourses((prev) =>
+          prev.map((c) =>
+            c.id === freshCourse.id
+              ? { ...c, rating: freshCourse.rating, reviewCount: freshCourse.reviewCount }
+              : c
+          )
+        );
+      }
+    } catch { /* non-fatal — stale rating is better than a broken submit */ }
+
     return review;
   }
 

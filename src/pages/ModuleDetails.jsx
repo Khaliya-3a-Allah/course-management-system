@@ -335,7 +335,7 @@ export default function ModuleDetails() {
   const allModules = course?.modules || [];
   const currentModuleIndex = allModules.findIndex((m) => m.id === moduleId);
   const module = allModules[currentModuleIndex];
-  const completedLessons = lessonProgress[courseId] || {};
+  const completedLessons = lessonProgress[courseId] || {};  // base; effectiveCompleted merges in optimisticDone
 
   const [lastModuleId, setLastModuleId] = useState(moduleId);
   const [activeLesson, setActiveLesson] = useState(() => module?.lessons?.[0] ?? null);
@@ -347,6 +347,8 @@ export default function ModuleDetails() {
   const [selectedRating, setSelectedRating] = useState(() => currentUser?.reviews?.[courseId]?.rating ?? 0);
   const [reviewMessage, setReviewMessage] = useState(() => currentUser?.reviews?.[courseId]?.comment ?? "");
   const submitted = !!currentUser?.reviews?.[courseId];
+  const [optimisticDone, setOptimisticDone] = useState({});
+  const effectiveCompleted = { ...(lessonProgress[courseId] || {}), ...optimisticDone };
 
   // Reset active lesson and expand current module when navigating between modules.
   // Render-time setState is the React-recommended pattern for derived state on prop changes.
@@ -419,18 +421,26 @@ export default function ModuleDetails() {
   }
 
   const totalLessons = allModules.reduce((acc, m) => acc + (m.lessons?.length || 0), 0);
-  const completedCount = Object.keys(completedLessons).filter((k) => completedLessons[k]).length;
-  const progressPct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+  const completedCount = Object.keys(effectiveCompleted).filter((k) => effectiveCompleted[k]).length;
+  const rawProgressPct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+  const progressPct = isCompleted && rawProgressPct === 0 ? 100 : rawProgressPct;
 
   const isModuleComplete = (mod) =>
-    mod.lessons?.length > 0 && mod.lessons?.every((l) => completedLessons[l.id]);
+    mod.lessons?.length > 0 && mod.lessons?.every((l) => effectiveCompleted[l.id]);
 
   const toggleModule = (modId) =>
     setExpandedModules((prev) => ({ ...prev, [modId]: !prev[modId] }));
 
-  const handleMarkComplete = (lessonId) => {
-    markLessonComplete(courseId, lessonId);
-    const newCompleted = { ...completedLessons, [lessonId]: true };
+  const handleMarkComplete = async (lessonId) => {
+    setOptimisticDone((prev) => ({ ...prev, [lessonId]: true }));
+    try {
+      await markLessonComplete(courseId, lessonId);
+    } catch {
+      setOptimisticDone((prev) => { const next = { ...prev }; delete next[lessonId]; return next; });
+      addToast("Failed to mark lesson complete. Please try again.", "error");
+      return;
+    }
+    const newCompleted = { ...effectiveCompleted, [lessonId]: true };
     const newCount = Object.keys(newCompleted).filter((k) => newCompleted[k]).length;
     const newPct = totalLessons > 0 ? Math.round((newCount / totalLessons) * 100) : 0;
     if (newPct === 100 && !completionShown && !completedCourses.has(courseId)) {
@@ -539,7 +549,7 @@ export default function ModuleDetails() {
               const isCurrentModule = mod.id === moduleId;
               const isExpanded = expandedModules[mod.id];
               const modComplete = isModuleComplete(mod);
-              const modDone = mod.lessons?.filter((l) => completedLessons[l.id]).length || 0;
+              const modDone = mod.lessons?.filter((l) => effectiveCompleted[l.id]).length || 0;
               const modTotal = mod.lessons?.length || 0;
               const modPct = modTotal > 0 ? Math.round((modDone / modTotal) * 100) : 0;
 
@@ -576,7 +586,7 @@ export default function ModuleDetails() {
                     <div id={`mod-lessons-${mod.id}`} className="border-t border-[rgba(255,255,255,0.03)]">
                       {mod.lessons?.map((lesson) => {
                         const isActiveLesson = isCurrentModule && activeLesson?.id === lesson.id;
-                        const isDone = completedLessons[lesson.id];
+                        const isDone = effectiveCompleted[lesson.id];
                         return (
                           <button
                             key={lesson.id}
@@ -633,7 +643,7 @@ export default function ModuleDetails() {
                 <span className="text-[0.75rem] text-text-faint px-2.5 py-0.5 rounded-full border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.04)]">
                   {module.title}
                 </span>
-                {completedLessons[activeLesson.id] && (
+                {effectiveCompleted[activeLesson.id] && (
                   <span className="text-[0.72rem] font-semibold px-2.5 py-0.5 rounded-full border border-[rgba(34,197,94,0.2)] bg-[rgba(34,197,94,0.08)] text-[#22c55e]">
                     ✓ Completed
                   </span>
@@ -651,7 +661,11 @@ export default function ModuleDetails() {
                 </p>
               </article>
 
-              {!completedLessons[activeLesson.id] && (
+              {effectiveCompleted[activeLesson.id] ? (
+                <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-[0.85rem] mb-6 border border-[rgba(34,197,94,0.35)] bg-[rgba(34,197,94,0.12)] text-[#22c55e]">
+                  ✓ Completed
+                </div>
+              ) : (
                 <button
                   className="mark-complete-btn inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-[0.85rem] cursor-pointer mb-6 border border-[rgba(34,197,94,0.25)] bg-[rgba(34,197,94,0.08)] text-[#22c55e]"
                   onClick={() => handleMarkComplete(activeLesson.id)}
