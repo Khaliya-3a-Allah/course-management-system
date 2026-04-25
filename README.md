@@ -543,6 +543,7 @@ Send `challengeToken` as the `Authorization: Bearer <challengeToken>` header.
 
 <img width="1910" height="912" alt="image" src="https://github.com/user-attachments/assets/ad5847fd-608a-4695-b269-46f2be8befd6" />
 <img width="1915" height="908" alt="image" src="https://github.com/user-attachments/assets/9fbf1df8-5d03-4c83-8db5-466b3777a4dc" />
+<img width="984" height="478" alt="image" src="https://github.com/user-attachments/assets/51f5d70f-6c90-4798-8182-d8d39f22c54c" />
 <img width="1919" height="912" alt="image" src="https://github.com/user-attachments/assets/c2f40e52-89b7-4744-8e22-612c77cc5ff2" />
 <img width="1353" height="429" alt="Screenshot 2026-03-24 230503" src="https://github.com/user-attachments/assets/fb4f404b-9ead-42b0-a1f1-21fc88518492" />
 
@@ -574,6 +575,7 @@ Send `challengeToken` as the `Authorization: Bearer <challengeToken>` header.
 
 <img width="1918" height="910" alt="image" src="https://github.com/user-attachments/assets/cb04fdfc-ae29-42a1-901f-ba6e9a3b3176" />
 <img width="1913" height="910" alt="image" src="https://github.com/user-attachments/assets/271fc131-a75a-4955-adf1-acf7c6484fe1" />
+<img width="608" height="642" alt="image" src="https://github.com/user-attachments/assets/cc0865ba-8d3b-4f65-94c2-cbb8f942e142" />
 <img width="360" height="318" alt="image" src="https://github.com/user-attachments/assets/b0a7ee84-bf17-41ab-8fbf-32faff9c9785" />
 
 
