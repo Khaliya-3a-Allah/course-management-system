@@ -506,14 +506,14 @@ export function DataProvider({ children }) {
     return created;
   }
 
-  async function purchaseCourse(courseId) {
+  async function purchaseCourse(courseId, paymentDetails = {}) {
     if (!currentUser) throw new Error("You must be signed in to purchase.");
     const token = readToken();
     if (!token) throw new Error("Missing auth token. Please sign in again.");
 
     const purchaseResponse = await apiPost(
       "/purchases",
-      { userId: currentUser.id, courseId },
+      { userId: currentUser.id, courseId, ...paymentDetails },
       { token }
     );
     const purchase = purchaseResponse?.data || purchaseResponse;

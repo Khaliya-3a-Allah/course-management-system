@@ -237,7 +237,7 @@ export default function Checkout() {
     return true;
   };
 
-  const handlePayment = (event) => {
+  const handlePayment = async (event) => {
     event.preventDefault();
 
     if (!currentUser) {
@@ -247,7 +247,7 @@ export default function Checkout() {
     }
 
     if (!isPaidCourse) {
-      enrollCourse(course.id);
+      await enrollCourse(course.id);
       addToast("This is a free course. You are now enrolled.", "success");
       navigate(`/courses/${course.id}`);
       return;
@@ -264,7 +264,20 @@ export default function Checkout() {
 
     setIsPaying(true);
 
-    window.setTimeout(() => {
+    try {
+      const transactionId = `CW-${Date.now()}`;
+      const cardLast4 = cardForm.number.replace(/\D/g, "").slice(-4);
+
+      await purchaseCourse(course.id, {
+        paymentMethod: method,
+        transactionId,
+        cardLast4: method === "card" ? cardLast4 : "",
+        paypalEmail: method === "paypal" ? paypalEmail : "",
+        discount: totals.discount,
+        promoCode: appliedPromo,
+        referralCode: appliedReferral,
+      });
+
       const receiptData = {
         courseTitle: course.title,
         buyerName: currentUser?.name,
@@ -273,12 +286,10 @@ export default function Checkout() {
         total: totals.finalTotal,
         discount: totals.discount,
         price,
-        transactionId: `CW-${Date.now()}`,
+        transactionId,
         cardNumber: cardForm.number,
       };
 
-      purchaseCourse(course.id);
-      setIsPaying(false);
       addToast("Payment successful. You now own this course!", "success");
 
       const receiptWin = window.open("", "_blank", "width=920,height=760");
@@ -290,7 +301,11 @@ export default function Checkout() {
       }
 
       navigate(`/courses/${course.id}`);
-    }, 700);
+    } catch {
+      addToast("Payment failed. Please try again.", "error");
+    } finally {
+      setIsPaying(false);
+    }
   };
 
   const handlePrintReceipt = () => {

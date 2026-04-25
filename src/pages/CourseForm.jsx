@@ -91,7 +91,7 @@ export default function CourseForm() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e?.preventDefault();
 
     const { errors: formErrs, isValid: formValid } = validateCourseForm(form);
@@ -129,26 +129,30 @@ export default function CourseForm() {
       })),
     }));
 
-    if (isEdit) {
-      updateCourse({
-        ...existing,
-        ...sanitizedForm,
-        tags: tagsArr,
-        modules: finalModules,
-      });
-    } else {
-      addCourse({
-        id: newCourseId,
-        ...sanitizedForm,
-        tags: tagsArr,
-        rating: 0,
-        modules: finalModules,
-        instructorName: currentUser?.name || "Unknown",
-      });
-    }
-
     setSubmitted(true);
-    setTimeout(() => navigate("/dashboard"), 1200);
+    try {
+      if (isEdit) {
+        await updateCourse({
+          ...existing,
+          ...sanitizedForm,
+          tags: tagsArr,
+          modules: finalModules,
+        });
+      } else {
+        await addCourse({
+          id: newCourseId,
+          ...sanitizedForm,
+          tags: tagsArr,
+          rating: 0,
+          modules: finalModules,
+          instructorName: currentUser?.name || "Unknown",
+        });
+      }
+      navigate("/dashboard");
+    } catch {
+      addToast("Failed to save course. Please try again.", "error");
+      setSubmitted(false);
+    }
   };
 
   const handleDeleteCourse = () => {

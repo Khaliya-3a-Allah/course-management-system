@@ -1,6 +1,7 @@
 import { listByUser, findById, create } from "../data/store.js";
 import { buildCrudControllers } from "./crudFactory.js";
 import { ApiError } from "../utils/ApiError.js";
+import User from "../models/User.js";
 
 const base = buildCrudControllers("purchases");
 
@@ -23,26 +24,47 @@ export async function getPurchaseById(req, res) {
 export async function createPurchase(req, res) {
   if (!req.user?.id) throw new ApiError(401, "Authentication required");
 
-  const { courseId } = req.body || {};
-  if (!courseId) {
-    throw new ApiError(400, "courseId is required");
-  }
+  const {
+    courseId,
+    paymentMethod = "card",
+    transactionId = "",
+    cardLast4 = "",
+    paypalEmail = "",
+    discount = 0,
+    promoCode = "",
+    referralCode = "",
+  } = req.body || {};
+
+  if (!courseId) throw new ApiError(400, "courseId is required");
 
   const course = await findById("courses", courseId);
   if (!course) throw new ApiError(404, "Course not found");
 
   const userId = req.user.id;
   const amount = Number(course.price || 0);
+  const finalAmount = Math.max(0, Number((amount - discount).toFixed(2)));
+
   const payload = {
     userId,
     courseId,
     amount,
+    discount: Number(discount) || 0,
+    finalAmount,
     status: "paid",
+    paymentMethod,
+    transactionId,
+    cardLast4,
+    paypalEmail,
+    promoCode,
+    referralCode,
     createdBy: userId,
   };
 
   try {
     const item = await create("purchases", payload);
+    await User.findByIdAndUpdate(req.user.id, {
+      $addToSet: { purchasedCourseIds: item.courseId },
+    });
     res.status(201).json({ success: true, data: item });
   } catch (err) {
     if (err.code === 11000) throw new ApiError(409, "You have already purchased this course");
