@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { api } from "../utils/api";
+import { apiGet } from "../utils/api";
 
 function VerifyCertificate() {
   const { certId } = useParams();
@@ -13,20 +13,20 @@ function VerifyCertificate() {
     const verifyCert = async () => {
       try {
         setLoading(true);
-        const response = await api.get(`/certificates/verify/${certId}`);
+        const response = await apiGet(`/certificates/verify/${certId}`);
 
-        if (response.data.valid) {
-          setCertificate(response.data.certificate);
+        if (response.valid) {
+          setCertificate(response.certificate);
           // Generate QR code URL
           const qr = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
             window.location.href
           )}`;
           setQrUrl(qr);
         } else {
-          setError(response.data.message || "Certificate verification failed");
+          setError(response.message || "Certificate verification failed");
         }
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to verify certificate");
+        setError(err.message || "Failed to verify certificate");
       } finally {
         setLoading(false);
       }

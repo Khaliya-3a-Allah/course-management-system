@@ -21,8 +21,10 @@ function buildCertificateId(userId, courseId) {
 function QRCodeModal({ isOpen, certId, onClose }) {
   if (!isOpen) return null;
 
+  // Use hash routing URL format
+  const verificationUrl = `${window.location.origin}/#/verify/${certId}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-    `${window.location.origin}/verify/${certId}`
+    verificationUrl
   )}`;
 
   return (
@@ -66,7 +68,8 @@ function QRCodeModal({ isOpen, certId, onClose }) {
 // Share Modal Component
 function ShareModal({ isOpen, certId, courseName, onClose }) {
   const [copied, setCopied] = useState(false);
-  const verificationUrl = `${window.location.origin}/verify/${certId}`;
+  // Use hash routing URL format
+  const verificationUrl = `${window.location.origin}/#/verify/${certId}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(verificationUrl);
@@ -168,6 +171,9 @@ export default function Certificates() {
     const height = doc.internal.pageSize.getHeight();
     const issueDate = formatDate(new Date());
     const certId = buildCertificateId(currentUser.id, course.id);
+    
+    // Generate verification URL with hash routing
+    const verificationUrl = `${window.location.origin}/#/verify/${certId}`;
 
     // Borders
     doc.setDrawColor(217, 119, 6);
@@ -222,35 +228,50 @@ export default function Certificates() {
     // Signature lines
     doc.setDrawColor(209, 213, 219);
     doc.setLineWidth(1);
-    doc.line(100, height - 132, 290, height - 132);
-    doc.line(width - 290, height - 132, width - 100, height - 132);
+    doc.line(100, height - 150, 280, height - 150);
+    doc.line(width - 280, height - 150, width - 100, height - 150);
+
+    // Signature image (left side)
+    try {
+      // Using public assets path
+      const signaturePath = "/signature.png";
+      doc.addImage(signaturePath, "PNG", 110, height - 145, 60, 30);
+    } catch (err) {
+      console.log("Signature image not found, skipping");
+    }
 
     // Signature labels
     doc.setFont("helvetica", "bold");
     doc.setTextColor(55, 65, 81);
-    doc.setFontSize(12);
-    doc.text("Date Issued", 195, height - 115, { align: "center" });
-    doc.text("Authorized by Courseware", width - 195, height - 115, { align: "center" });
+    doc.setFontSize(11);
+    doc.text("Date Issued", 190, height - 130, { align: "center" });
+    doc.text("Authorized by Courseware", width - 190, height - 130, { align: "center" });
 
     // Signature values
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(12);
-    doc.text(issueDate, 195, height - 98, { align: "center" });
-    doc.text("Learning Team", width - 195, height - 98, { align: "center" });
-
-    // Certificate ID and verification info
     doc.setFontSize(10);
-    doc.setTextColor(107, 114, 128);
-    doc.text(`Certificate ID: ${certId}`, width / 2, height - 70, { align: "center" });
-    doc.text("Verify this certificate at: ", width / 2, height - 54, { align: "center" });
-    doc.setTextColor(217, 119, 6);
-    doc.text(`${window.location.origin}/verify/${certId}`, width / 2, height - 40, { align: "center" });
+    doc.text(issueDate, 190, height - 110, { align: "center" });
+    doc.text("Learning Platform", width - 190, height - 110, { align: "center" });
 
-    // QR Code
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
-      `${window.location.origin}/verify/${certId}`
-    )}`;
-    doc.addImage(qrUrl, "PNG", width - 180, height - 170, 120, 120);
+    // Certificate ID
+    doc.setFontSize(9);
+    doc.setTextColor(107, 114, 128);
+    doc.text(`Certificate ID: ${certId}`, width / 2, height - 82, { align: "center" });
+    
+    // Verification info
+    doc.setFontSize(8);
+    doc.text("Verify at:", width / 2, height - 72, { align: "center" });
+    doc.setTextColor(217, 119, 6);
+    doc.setFont("helvetica", "bold");
+    doc.text(verificationUrl, width / 2, height - 64, { align: "center" });
+
+    // QR Code positioned at bottom right
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(verificationUrl)}`;
+    try {
+      doc.addImage(qrUrl, "PNG", width - 130, height - 130, 95, 95);
+    } catch (err) {
+      console.log("QR code generation failed");
+    }
 
     const safeCourse = course.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
     const safeUser = currentUser.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
