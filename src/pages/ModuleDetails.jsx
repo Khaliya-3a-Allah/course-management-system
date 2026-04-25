@@ -383,9 +383,11 @@ export default function ModuleDetails() {
 
   const price = Number(course.price || 0);
   const isPaidCourse = price > 0;
-  const owned = isPaidCourse
-    ? (currentUser?.purchasedCourseIds?.includes(courseId) ?? false)
-    : true;
+  const isCreator = currentUser && (
+    String(course.instructorId?._id || course.instructorId || "") === String(currentUser.id || "") ||
+    (currentUser.createdCourseIds || []).includes(courseId)
+  );
+  const owned = !isPaidCourse || isCreator || (currentUser?.purchasedCourseIds?.includes(courseId) ?? false);
   const enrolled = currentUser?.enrolledCourseIds?.includes(courseId) ?? false;
   const isCompleted = completedCourses.has(courseId);
   const hasAccess = enrolled || isCompleted;

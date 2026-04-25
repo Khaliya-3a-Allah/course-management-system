@@ -45,9 +45,11 @@ export default function CourseDetails() {
 
   const price = Number(course.price || 0);
   const isPaidCourse = price > 0;
-  const owned = isPaidCourse
-    ? (currentUser?.purchasedCourseIds?.includes(course.id) ?? false)
-    : true;
+  const isCreator = currentUser && (
+    String(course.instructorId?._id || course.instructorId || "") === String(currentUser.id || "") ||
+    (currentUser.createdCourseIds || []).includes(course.id)
+  );
+  const owned = !isPaidCourse || isCreator || (currentUser?.purchasedCourseIds?.includes(course.id) ?? false);
   const enrolled = currentUser?.enrolledCourseIds?.includes(course.id) ?? false;
   const saved = currentUser?.savedCourseIds?.includes(course.id) ?? false;
   const ratingSubmitted = !!currentUser?.reviews?.[course.id];

@@ -10,7 +10,7 @@ import Modal from "../components/Modal";
 
 const emptyForm = {
   title: "", category: "", level: "",
-  description: "", thumbnail: "", tags: "",
+  description: "", thumbnail: "", tags: "", price: "",
 };
 
 export default function CourseForm() {
@@ -47,6 +47,7 @@ export default function CourseForm() {
         description: existing.description || "",
         thumbnail: existing.thumbnail || "",
         tags: existing.tags?.join(", ") || "",
+        price: existing.price != null ? String(existing.price) : "",
       });
       setModules(
         (existing.modules || []).map((mod) => ({
@@ -111,6 +112,7 @@ export default function CourseForm() {
       description: sanitizeInput(form.description),
       thumbnail: form.thumbnail.trim(),
       tags: form.tags,
+      price: form.price === "" ? 0 : Math.max(0, Number(form.price) || 0),
     };
     const tagsArr = sanitizedForm.tags.split(",").map((t) => sanitizeInput(t)).filter(Boolean);
     const newCourseId = isEdit ? existing.id : `c-${Date.now()}`;
@@ -289,6 +291,22 @@ export default function CourseForm() {
               onChange={(e) => set("tags", e.target.value)}
               placeholder="React, JavaScript, Frontend"
               aria-describedby="f-tags-hint"
+              className={INPUT_CLASS}
+              style={buildInputBorder(false)}
+            />
+          </FormField>
+
+          {/* Price */}
+          <FormField label="Price ($)" htmlFor="f-price" hint="Leave 0 or empty for a free course">
+            <input
+              id="f-price"
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.price}
+              onChange={(e) => set("price", e.target.value)}
+              placeholder="0"
+              aria-describedby="f-price-hint"
               className={INPUT_CLASS}
               style={buildInputBorder(false)}
             />
