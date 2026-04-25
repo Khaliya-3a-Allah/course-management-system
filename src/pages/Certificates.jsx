@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { jsPDF } from "jspdf";
 import { useAppContext } from "../context/AppContext";
-import { useUiContext } from "../context/UiContext";
 
 function formatDate(value) {
   return new Intl.DateTimeFormat("en-US", {
@@ -15,6 +14,24 @@ function formatDate(value) {
 function buildCertificateId(userId, courseId) {
   const compactDate = new Date().toISOString().slice(0, 10).replace(/-/g, "");
   return `CERT-${userId.toUpperCase()}-${courseId.toUpperCase()}-${compactDate}`;
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function loadImageDataUrl(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to load image: ${url}`);
+  }
+  const blob = await response.blob();
+  return blobToDataUrl(blob);
 }
 
 // QR Code Modal Component
@@ -163,7 +180,7 @@ export default function Certificates() {
     [courses, completedCourses]
   );
 
-  function downloadCertificate(course) {
+  async function downloadCertificate(course) {
     if (!currentUser) return;
 
     const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
@@ -184,93 +201,120 @@ export default function Certificates() {
     doc.setLineWidth(0.8);
     doc.rect(36, 36, width - 72, height - 72);
 
+    // Top accent bar
+    doc.setFillColor(255, 248, 236);
+    doc.roundedRect(52, 52, width - 104, 40, 6, 6, "F");
+
     // Header
     doc.setFont("times", "bold");
     doc.setTextColor(90, 90, 90);
-    doc.setFontSize(18);
-    doc.text("Courseware", width / 2, 86, { align: "center" });
+    doc.setFontSize(16);
+    doc.text("Courseware", width / 2, 78, { align: "center" });
 
     // Title
-    doc.setFontSize(44);
+    doc.setFontSize(42);
     doc.setTextColor(217, 119, 6);
-    doc.text("Certificate of Completion", width / 2, 150, { align: "center" });
+    doc.text("Certificate of Completion", width / 2, 142, { align: "center" });
 
     // Recipient intro
     doc.setFont("helvetica", "normal");
     doc.setTextColor(75, 85, 99);
-    doc.setFontSize(16);
-    doc.text("This certificate is proudly presented to", width / 2, 200, { align: "center" });
+    doc.setFontSize(15);
+    doc.text("This certificate is proudly presented to", width / 2, 188, { align: "center" });
 
     // Recipient name
     doc.setFont("times", "bold");
     doc.setTextColor(17, 24, 39);
-    doc.setFontSize(34);
-    doc.text(currentUser.name, width / 2, 250, { align: "center" });
+    doc.setFontSize(36);
+    doc.text(currentUser.name, width / 2, 238, { align: "center" });
 
     // Course intro
     doc.setFont("helvetica", "normal");
     doc.setTextColor(75, 85, 99);
-    doc.setFontSize(16);
-    doc.text("for successfully completing the course", width / 2, 286, { align: "center" });
+    doc.setFontSize(15);
+    doc.text("for successfully completing the course", width / 2, 274, { align: "center" });
 
     // Course name
     doc.setFont("times", "bold");
     doc.setTextColor(217, 119, 6);
-    doc.setFontSize(28);
-    doc.text(course.title, width / 2, 326, { align: "center" });
+    doc.setFontSize(30);
+    const courseTitleLines = doc.splitTextToSize(course.title, width - 240);
+    doc.text(courseTitleLines, width / 2, 316, { align: "center" });
 
     // Instructor
     doc.setFont("helvetica", "normal");
     doc.setTextColor(75, 85, 99);
     doc.setFontSize(14);
-    doc.text(`Instructor: ${course.instructorName}`, width / 2, 356, { align: "center" });
+    doc.text(`Instructor: ${course.instructorName}`, width / 2, 358, { align: "center" });
 
-    // Signature lines
+    // Bottom signature/media guides
     doc.setDrawColor(209, 213, 219);
     doc.setLineWidth(1);
-    doc.line(100, height - 150, 280, height - 150);
-    doc.line(width - 280, height - 150, width - 100, height - 150);
+    doc.line(92, height - 154, 292, height - 154);
+    doc.line(width - 292, height - 154, width - 92, height - 154);
 
-    // Signature image (left side)
+    // Course cover image in left block (fallback if unavailable)
+    const mediaX = 96;
+    const mediaY = height - 148;
+    const mediaW = 96;
+    const mediaH = 72;
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(mediaX, mediaY, mediaW, mediaH, 6, 6, "F");
     try {
-      // Using public assets path
-      const signaturePath = "/signature.png";
-      doc.addImage(signaturePath, "PNG", 110, height - 145, 60, 30);
-    } catch (err) {
-      console.log("Signature image not found, skipping");
+      if (course.thumbnail) {
+        const thumbDataUrl = await loadImageDataUrl(course.thumbnail);
+        doc.addImage(thumbDataUrl, "JPEG", mediaX, mediaY, mediaW, mediaH);
+      }
+    } catch {
+      doc.setTextColor(100, 116, 139);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("COURSE", mediaX + mediaW / 2, mediaY + 30, { align: "center" });
+      doc.text("COVER", mediaX + mediaW / 2, mediaY + 44, { align: "center" });
     }
 
-    // Signature labels
+    // Labels
     doc.setFont("helvetica", "bold");
     doc.setTextColor(55, 65, 81);
     doc.setFontSize(11);
-    doc.text("Date Issued", 190, height - 130, { align: "center" });
-    doc.text("Authorized by Courseware", width - 190, height - 130, { align: "center" });
+    doc.text("Date Issued", 222, height - 132, { align: "center" });
+    doc.text("Authorized by Courseware", width - 192, height - 132, { align: "center" });
 
-    // Signature values
+    // Values
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    doc.text(issueDate, 190, height - 110, { align: "center" });
-    doc.text("Learning Platform", width - 190, height - 110, { align: "center" });
+    doc.text(issueDate, 222, height - 114, { align: "center" });
+    doc.text("Learning Platform", width - 192, height - 114, { align: "center" });
 
     // Certificate ID
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(107, 114, 128);
     doc.text(`Certificate ID: ${certId}`, width / 2, height - 82, { align: "center" });
-    
-    // Verification info
-    doc.setFontSize(8);
-    doc.text("Verify at:", width / 2, height - 72, { align: "center" });
+
+    // Verification link (short label + clickable full link)
+    doc.setFontSize(9);
+    doc.setTextColor(75, 85, 99);
+    doc.text("Verify this certificate online:", width / 2, height - 66, { align: "center" });
     doc.setTextColor(217, 119, 6);
     doc.setFont("helvetica", "bold");
-    doc.text(verificationUrl, width / 2, height - 64, { align: "center" });
+    const linkText = "Open Verification Page";
+    const linkWidth = doc.getTextWidth(linkText);
+    const linkX = width / 2 - linkWidth / 2;
+    const linkY = height - 52;
+    doc.textWithLink(linkText, linkX, linkY, { url: verificationUrl });
+    doc.setDrawColor(217, 119, 6);
+    doc.line(linkX, linkY + 2, linkX + linkWidth, linkY + 2);
 
-    // QR Code positioned at bottom right
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(verificationUrl)}`;
+    // QR Code positioned cleanly in right block
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(verificationUrl)}`;
     try {
-      doc.addImage(qrUrl, "PNG", width - 130, height - 130, 95, 95);
-    } catch (err) {
-      console.log("QR code generation failed");
+      const qrDataUrl = await loadImageDataUrl(qrUrl);
+      doc.addImage(qrDataUrl, "PNG", width - 190, height - 146, 94, 94);
+    } catch {
+      doc.setTextColor(120, 120, 120);
+      doc.setFontSize(9);
+      doc.text("QR unavailable", width - 144, height - 98, { align: "center" });
     }
 
     const safeCourse = course.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
