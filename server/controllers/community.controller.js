@@ -373,7 +373,11 @@ export async function moderateThread(req, res) {
   thread.moderationReason = reason;
   await thread.save();
 
-  res.status(200).json({ success: true, data: thread.toJSON() });
+  const updatedThread = await Thread.findById(thread._id)
+    .populate("createdBy", "name role reputationScore")
+    .lean({ virtuals: true });
+
+  res.status(200).json({ success: true, data: updatedThread });
 }
 
 export async function moderateComment(req, res) {
@@ -394,5 +398,9 @@ export async function moderateComment(req, res) {
   comment.moderationReason = reason;
   await comment.save();
 
-  res.status(200).json({ success: true, data: comment.toJSON() });
+  const updatedComment = await Comment.findById(comment._id)
+    .populate("createdBy", "name role reputationScore")
+    .lean({ virtuals: true });
+
+  res.status(200).json({ success: true, data: updatedComment });
 }

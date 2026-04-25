@@ -9,8 +9,8 @@ import {
   generateLinkedInShareText,
 } from "../utils/certificateSigning.js";
 import { generateQRCodeData } from "../utils/qrCode.js";
-import ApiError from "../utils/ApiError.js";
-import asyncHandler from "../utils/asyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 const certificatesController = buildCrudControllers("certificates");
 

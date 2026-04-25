@@ -190,6 +190,8 @@ export default function Community() {
       setSelectedThreadData(response?.data?.thread || null);
       setComments(response?.data?.comments || []);
     } catch (error) {
+      setSelectedThreadData(null);
+      setComments([]);
       addToast(error.message || "Failed to load thread details", "error");
     }
   }
@@ -239,7 +241,14 @@ export default function Community() {
       );
       setThreadTitle("");
       setThreadBody("");
-      addToast("Thread posted", "success");
+      const created = response?.data;
+      const isPending = created?.status === "pending";
+      addToast(
+        isPending
+          ? "Thread submitted for review — it will appear once approved"
+          : "Thread posted",
+        isPending ? "warning" : "success"
+      );
       fetchThreads();
       fetchModerationQueue();
     } catch (error) {
