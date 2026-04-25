@@ -99,6 +99,10 @@ export function AuthProvider({ children }) {
     setAuthStatus(AUTH_STATUS.LOADING);
     try {
       const response = await apiPost("/auth/login", { email, password });
+      if (response?.emailVerificationRequired) {
+        setAuthStatus(AUTH_STATUS.UNAUTHENTICATED);
+        return { emailVerificationRequired: true, email: response.email };
+      }
       if (response?.twoFactorRequired) {
         setAuthStatus(AUTH_STATUS.UNAUTHENTICATED);
         return {
@@ -128,10 +132,12 @@ export function AuthProvider({ children }) {
         role: form.role || "student",
       });
 
-      applyAuthenticatedSession({
-        token: response.token,
-        user: response.data,
-      });
+      if (response?.emailVerificationRequired) {
+        setAuthStatus(AUTH_STATUS.UNAUTHENTICATED);
+        return { emailVerificationRequired: true, email: response.email };
+      }
+
+      applyAuthenticatedSession({ token: response.token, user: response.data });
 
       const extras = pickProfileExtras(form);
       if (Object.keys(extras).length > 0) {
@@ -146,10 +152,7 @@ export function AuthProvider({ children }) {
             setCurrentUser(normalized);
           }
         } catch (profileError) {
-          // Profile extras are optional — the account is still created.
-          if (import.meta.env.DEV) {
-            console.warn("Failed to save profile extras:", profileError);
-          }
+          if (import.meta.env.DEV) console.warn("Failed to save profile extras:", profileError);
         }
       }
 
@@ -158,6 +161,16 @@ export function AuthProvider({ children }) {
       setAuthStatus(AUTH_STATUS.ERROR);
       throw error;
     }
+  }, []);
+
+  const verifyEmail = useCallback(async ({ email, code }) => {
+    const response = await apiPost("/auth/verify-email", { email, code });
+    applyAuthenticatedSession({ token: response.token, user: response.data });
+    return { user: response.data };
+  }, []);
+
+  const resendVerificationCode = useCallback(async ({ email }) => {
+    await apiPost("/auth/resend-verification", { email });
   }, []);
 
   const completeTwoFactor = useCallback(async ({ challengeToken, code }) => {
@@ -262,6 +275,8 @@ export function AuthProvider({ children }) {
         enableTwoFactor,
         disableTwoFactor,
         updateProfile,
+        verifyEmail,
+        resendVerificationCode,
       }}
     >
       {children}

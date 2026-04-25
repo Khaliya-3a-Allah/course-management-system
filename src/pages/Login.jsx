@@ -49,6 +49,11 @@ export default function Login() {
     try {
       const result = await login({ email: form.email, password: form.password });
 
+      if (result?.emailVerificationRequired) {
+        navigate("/verify-email", { state: { email: result.email } });
+        return;
+      }
+
       if (result?.twoFactorRequired) {
         setPendingChallenge({
           challengeToken: result.challengeToken,

@@ -25,4 +25,6 @@ export const env = {
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "7d",
   JWT_CHALLENGE_EXPIRES_IN: process.env.JWT_CHALLENGE_EXPIRES_IN || "5m",
   TOTP_ISSUER: process.env.TOTP_ISSUER || "Courseware",
+  GMAIL_USER: process.env.GMAIL_USER || "",
+  GMAIL_PASS: process.env.GMAIL_PASS || "",
 };

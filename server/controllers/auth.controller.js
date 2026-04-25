@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import { create, findById } from "../data/store.js";
 import { ApiError } from "../utils/ApiError.js";
 import { signSessionToken, signChallengeToken } from "../utils/tokens.js";
+import { sendVerificationEmail } from "../utils/mailer.js";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
@@ -37,22 +38,28 @@ export async function register(req, res) {
   const SELF_ASSIGNABLE_ROLES = ["student", "instructor"];
   const safeRole = SELF_ASSIGNABLE_ROLES.includes(role) ? role : "student";
 
-  const user = await create("users", {
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const hashedCode = await bcrypt.hash(code, 10);
+
+  await create("users", {
     name,
     email: String(email).toLowerCase(),
     password,
     role: safeRole,
     phone: "",
     bio: "",
+    verified: false,
+    verificationCode: hashedCode,
+    verificationCodeExpires: new Date(Date.now() + 15 * 60 * 1000),
   });
 
-  const token = signSessionToken(String(user._id));
+  await sendVerificationEmail(String(email).toLowerCase(), code);
 
   res.status(201).json({
     success: true,
-    message: "Registered successfully",
-    token,
-    data: { ...user, id: String(user._id) }, // password is excluded by store.create (select: false + re-fetch)
+    emailVerificationRequired: true,
+    message: "Account created. Please check your email for a verification code.",
+    email: String(email).toLowerCase(),
   });
 }
 
@@ -81,6 +88,23 @@ export async function login(req, res) {
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
     throw new ApiError(401, "Invalid email or password");
+  }
+
+  if (user.verified === false) {
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const hashedCode = await bcrypt.hash(code, 10);
+    await User.findByIdAndUpdate(user._id, {
+      verificationCode: hashedCode,
+      verificationCodeExpires: new Date(Date.now() + 15 * 60 * 1000),
+    });
+    await sendVerificationEmail(user.email, code);
+    res.status(200).json({
+      success: true,
+      emailVerificationRequired: true,
+      message: "Please verify your email before logging in. A new code has been sent.",
+      email: user.email,
+    });
+    return;
   }
 
   // Strip the password before sending back to the client

@@ -116,7 +116,7 @@ export default function Register() {
     setAuthError("");
 
     try {
-      await register({
+      const result = await register({
         ...form,
         interests: form.interests.filter((i) => INTERESTS.includes(i)),
         name: sanitizeInput(form.name),
@@ -124,6 +124,10 @@ export default function Register() {
         expertise: sanitizeInput(form.expertise),
         website: form.website.trim(),
       });
+      if (result?.emailVerificationRequired) {
+        navigate("/verify-email", { state: { email: result.email } });
+        return;
+      }
       addToast("Account created successfully!", "success");
       navigate("/dashboard");
     } catch (error) {

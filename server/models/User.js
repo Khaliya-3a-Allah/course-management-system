@@ -29,6 +29,9 @@ const userSchema = new mongoose.Schema(
     // Base32-encoded TOTP secret, only read when verifying or enabling 2FA.
     twoFactorSecret: { type: String, default: "", select: false },
     twoFactorEnabled: { type: Boolean, default: false },
+    verified: { type: Boolean, default: false },
+    verificationCode: { type: String, default: "", select: false },
+    verificationCodeExpires: { type: Date, default: null },
   },
   {
     timestamps: true,

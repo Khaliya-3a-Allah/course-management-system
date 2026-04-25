@@ -19,7 +19,7 @@ services:
       - key: JWT_CHALLENGE_EXPIRES_IN
         value: 5m
       - key: TOTP_ISSUER
-        value: Coursewave
+        value: Courseware
       - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
