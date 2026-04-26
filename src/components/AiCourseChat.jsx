@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { apiPost } from "../utils/api";
@@ -194,6 +194,7 @@ export default function AiCourseChat() {
   const { courses, currentUser, getCourseProgress } = useAppContext();
   const [isOpen, setIsOpen] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [isPreviewLeaving, setIsPreviewLeaving] = useState(false);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState(() => [
@@ -204,20 +205,32 @@ export default function AiCourseChat() {
   ]);
   const inputRef = useRef(null);
 
+  const hidePreview = useCallback(() => {
+    setIsPreviewLeaving(true);
+    window.setTimeout(() => {
+      setShowPreview(false);
+      setIsPreviewLeaving(false);
+    }, 240);
+  }, []);
+
   useEffect(() => {
     if (isOpen) return undefined;
-    const timer = window.setTimeout(() => setShowPreview(true), 2500);
+    const timer = window.setTimeout(() => {
+      setIsPreviewLeaving(false);
+      setShowPreview(true);
+    }, 2500);
     return () => window.clearTimeout(timer);
   }, [isOpen]);
 
   useEffect(() => {
     if (!showPreview || isOpen) return undefined;
-    const timer = window.setTimeout(() => setShowPreview(false), 7000);
+    const timer = window.setTimeout(hidePreview, 7000);
     return () => window.clearTimeout(timer);
-  }, [isOpen, showPreview]);
+  }, [hidePreview, isOpen, showPreview]);
 
   const openChat = () => {
     setShowPreview(false);
+    setIsPreviewLeaving(false);
     setIsOpen(true);
     setTimeout(() => inputRef.current?.focus(), 0);
   };
@@ -315,6 +328,10 @@ export default function AiCourseChat() {
           0% { opacity: 0; transform: translateX(12px) scale(0.97); }
           100% { opacity: 1; transform: translateX(0) scale(1); }
         }
+        @keyframes aiPreviewOut {
+          0% { opacity: 1; transform: translateX(0) scale(1); }
+          100% { opacity: 0; transform: translateX(14px) scale(0.96); }
+        }
         @keyframes aiButtonPulse {
           0%, 100% { box-shadow: 0 18px 44px rgba(217,119,6,0.32); }
           50% { box-shadow: 0 18px 54px rgba(217,119,6,0.5); }
@@ -325,6 +342,11 @@ export default function AiCourseChat() {
         }
         .ai-chat-preview {
           animation: aiPreviewIn 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+          transform-origin: center right;
+        }
+        .ai-chat-preview-leaving {
+          animation: aiPreviewOut 240ms ease forwards;
+          pointer-events: none;
         }
         .ai-chat-launcher {
           animation: aiButtonPulse 2.8s ease-in-out infinite;
@@ -332,6 +354,7 @@ export default function AiCourseChat() {
         @media (prefers-reduced-motion: reduce) {
           .ai-chat-panel,
           .ai-chat-preview,
+          .ai-chat-preview-leaving,
           .ai-chat-launcher {
             animation: none;
           }
@@ -432,7 +455,7 @@ export default function AiCourseChat() {
         <button
           type="button"
           onClick={openChat}
-          className="ai-chat-preview mr-2 max-w-[250px] rounded-xl border border-[rgba(255,255,255,0.13)] bg-[#111114] px-3 py-2 text-left text-sm leading-5 text-[#f5f2ec] shadow-[0_18px_44px_rgba(0,0,0,0.3)] ring-1 ring-brand/10 transition hover:border-brand sm:mr-3"
+          className={`ai-chat-preview ${isPreviewLeaving ? "ai-chat-preview-leaving" : ""} mr-2 max-w-[250px] rounded-xl border border-[rgba(255,255,255,0.13)] bg-[#111114] px-3 py-2 text-left text-sm leading-5 text-[#f5f2ec] shadow-[0_18px_44px_rgba(0,0,0,0.3)] ring-1 ring-brand/10 transition hover:border-brand sm:mr-3`}
           aria-label="Open AI assistant"
         >
           <span className="mb-1 flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.16em] text-brand">
