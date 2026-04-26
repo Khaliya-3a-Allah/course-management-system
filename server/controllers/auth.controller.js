@@ -3,10 +3,51 @@ import User from "../models/User.js";
 import { create, findById } from "../data/store.js";
 import { ApiError } from "../utils/ApiError.js";
 import { signSessionToken, signChallengeToken } from "../utils/tokens.js";
-import { sendVerificationEmail } from "../utils/mailer.js";
+import { sendPasswordCodeEmail, sendVerificationEmail } from "../utils/mailer.js";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
+
+function generateCode() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function validatePasswordValue(password) {
+  if (String(password || "").length < MIN_PASSWORD_LENGTH) {
+    throw new ApiError(400, `Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+  }
+  if (new TextEncoder().encode(String(password)).length > 72) {
+    throw new ApiError(400, "Password cannot exceed 72 bytes");
+  }
+}
+
+async function sendPasswordCode(user, fieldPrefix, purpose) {
+  const code = generateCode();
+  const hashedCode = await bcrypt.hash(code, 10);
+  await User.findByIdAndUpdate(user._id, {
+    [`${fieldPrefix}Code`]: hashedCode,
+    [`${fieldPrefix}CodeExpires`]: new Date(Date.now() + 15 * 60 * 1000),
+  });
+  await sendPasswordCodeEmail(user.email, code, purpose);
+}
+
+async function verifyPasswordCode(user, code, fieldPrefix) {
+  const codeField = `${fieldPrefix}Code`;
+  const expiresField = `${fieldPrefix}CodeExpires`;
+
+  if (!user[codeField] || !user[expiresField]) {
+    throw new ApiError(400, "No verification code found. Please request a new one.");
+  }
+
+  if (new Date() > user[expiresField]) {
+    throw new ApiError(400, "Verification code has expired. Please request a new one.");
+  }
+
+  const isMatch = await bcrypt.compare(String(code || "").trim(), user[codeField]);
+  if (!isMatch) {
+    throw new ApiError(400, "Invalid verification code");
+  }
+}
 
 export async function register(req, res) {
   const { name, email, password, role = "student" } = req.body || {};
@@ -150,5 +191,83 @@ export async function logout(req, res) {
   res.status(200).json({
     success: true,
     message: "Logout successful",
+  });
+}
+
+export async function requestPasswordReset(req, res) {
+  const { email } = req.body || {};
+  if (!email) throw new ApiError(400, "Email is required");
+
+  const user = await User.findOne({ email: String(email).toLowerCase() });
+
+  // Keep the response neutral so this endpoint does not reveal accounts.
+  if (user) {
+    await sendPasswordCode(user, "passwordReset", "reset");
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "If an account exists for that email, a reset code has been sent.",
+  });
+}
+
+export async function resetPassword(req, res) {
+  const { email, code, password } = req.body || {};
+  if (!email || !code || !password) {
+    throw new ApiError(400, "Email, code, and new password are required");
+  }
+  validatePasswordValue(password);
+
+  const user = await User.findOne({ email: String(email).toLowerCase() })
+    .select("+passwordResetCode +passwordResetCodeExpires +password");
+  if (!user) throw new ApiError(400, "Invalid reset request");
+
+  await verifyPasswordCode(user, code, "passwordReset");
+
+  user.password = password;
+  user.verified = true;
+  user.passwordResetCode = "";
+  user.passwordResetCodeExpires = null;
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Password reset successfully. You can now sign in.",
+  });
+}
+
+export async function requestPasswordChange(req, res) {
+  const user = await User.findById(req.user.id);
+  if (!user) throw new ApiError(404, "User not found");
+
+  await sendPasswordCode(user, "passwordChange", "change");
+
+  res.status(200).json({
+    success: true,
+    message: "Password change verification code sent.",
+  });
+}
+
+export async function changePassword(req, res) {
+  const { code, password } = req.body || {};
+  if (!code || !password) {
+    throw new ApiError(400, "Verification code and new password are required");
+  }
+  validatePasswordValue(password);
+
+  const user = await User.findById(req.user.id)
+    .select("+passwordChangeCode +passwordChangeCodeExpires +password");
+  if (!user) throw new ApiError(404, "User not found");
+
+  await verifyPasswordCode(user, code, "passwordChange");
+
+  user.password = password;
+  user.passwordChangeCode = "";
+  user.passwordChangeCodeExpires = null;
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Password changed successfully.",
   });
 }

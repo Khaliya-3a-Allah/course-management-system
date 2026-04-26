@@ -8,7 +8,7 @@ import EmailAutocompleteInput from "./EmailAutocompleteInput";
  * LoginForm — credentials entry form (email + password).
  * Extracted from Login.jsx to support 2FA flow.
  */
-export default function LoginForm({ form, onFieldChange, onSubmit, errors, authError, isSubmitting }) {
+export default function LoginForm({ form, onFieldChange, onSubmit, onForgotPassword, errors, authError, isSubmitting }) {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
@@ -89,6 +89,14 @@ export default function LoginForm({ form, onFieldChange, onSubmit, errors, authE
             {isSubmitting ? "Signing in..." : "Sign In"}
           </button>
         </form>
+
+        <button
+          type="button"
+          onClick={onForgotPassword}
+          className="mt-4 w-full text-center text-[0.84rem] font-semibold text-brand hover:text-brand-light"
+        >
+          Forgot password?
+        </button>
 
         <p className="text-center text-sm text-text-dim mt-6">
           Don&apos;t have an account?{" "}

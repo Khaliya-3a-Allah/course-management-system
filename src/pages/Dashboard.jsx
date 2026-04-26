@@ -13,7 +13,10 @@ import {
   validateBio,
   validateExpertise,
   validateOptionalUrl,
+  validatePassword,
+  validatePasswordMatch,
   sanitizeInput,
+  validateTwoFactorCode,
 } from "../utils/validators";
 
 function formatDate(dateValue) {
@@ -38,7 +41,17 @@ function formatCountdown(daysRemaining) {
 }
 
 export default function Dashboard() {
-  const { currentUser, courses, unenrollCourse, updateProfile, addToast, deleteCourse, unsaveCourse } = useAppContext();
+  const {
+    currentUser,
+    courses,
+    unenrollCourse,
+    updateProfile,
+    addToast,
+    deleteCourse,
+    unsaveCourse,
+    requestPasswordChange,
+    changePassword,
+  } = useAppContext();
   const navigate = useNavigate();
 
   const [dashboardData, setDashboardData] = useState(null);
@@ -48,6 +61,7 @@ export default function Dashboard() {
   const [unenrollTarget, setUnenrollTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [profileErrors, setProfileErrors] = useState({});
   const [profileForm, setProfileForm] = useState({
     name: "",
@@ -57,6 +71,14 @@ export default function Dashboard() {
     website: "",
     profileImage: "",
   });
+  const [passwordForm, setPasswordForm] = useState({
+    code: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [passwordErrors, setPasswordErrors] = useState({});
+  const [passwordStatus, setPasswordStatus] = useState("");
+  const [isPasswordSubmitting, setIsPasswordSubmitting] = useState(false);
 
   useEffect(() => {
     if (!currentUser) {
@@ -221,6 +243,56 @@ export default function Dashboard() {
       await loadDashboard();
     } catch (error) {
       addToast(error?.message || "Could not delete this course.", "error");
+    }
+  }
+
+  async function openPasswordChange() {
+    setPasswordForm({ code: "", password: "", confirmPassword: "" });
+    setPasswordErrors({});
+    setPasswordStatus("");
+    setShowPasswordModal(true);
+    setIsPasswordSubmitting(true);
+    try {
+      await requestPasswordChange();
+      setPasswordStatus("Check your email for a 6-digit verification code.");
+    } catch (error) {
+      setPasswordStatus(error?.message || "Could not send verification code.");
+    } finally {
+      setIsPasswordSubmitting(false);
+    }
+  }
+
+  function updatePasswordField(key, value) {
+    setPasswordForm((prev) => ({ ...prev, [key]: value }));
+    if (passwordErrors[key]) {
+      setPasswordErrors((prev) => ({ ...prev, [key]: "" }));
+    }
+    setPasswordStatus("");
+  }
+
+  async function handleChangePassword(event) {
+    event.preventDefault();
+
+    const errors = {
+      code: validateTwoFactorCode(passwordForm.code),
+      password: validatePassword(passwordForm.password),
+      confirmPassword: validatePasswordMatch(passwordForm.password, passwordForm.confirmPassword),
+    };
+    setPasswordErrors(errors);
+    if (Object.values(errors).some(Boolean)) return;
+
+    setIsPasswordSubmitting(true);
+    try {
+      await changePassword({
+        code: passwordForm.code,
+        password: passwordForm.password,
+      });
+      setShowPasswordModal(false);
+      addToast("Password changed successfully.", "success");
+    } catch (error) {
+      setPasswordStatus(error?.message || "Could not change password.");
+    } finally {
+      setIsPasswordSubmitting(false);
     }
   }
 
@@ -763,6 +835,20 @@ export default function Dashboard() {
             {profileErrors.profileImage && <span role="alert" className="text-[#ef4444] text-[0.74rem]">{profileErrors.profileImage}</span>}
           </label>
 
+          <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-4">
+            <p className="text-[0.86rem] font-semibold text-[#f5f2ec] mb-1">Password</p>
+            <p className="text-[0.78rem] text-[#9ca3af] mb-3">
+              Change your password with a 6-digit verification code sent to your email.
+            </p>
+            <button
+              type="button"
+              onClick={openPasswordChange}
+              className="px-4 py-2 rounded-lg text-[0.82rem] font-semibold border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.1)] text-[#f6c56b]"
+            >
+              Change Password
+            </button>
+          </div>
+
           <div className="flex gap-3 mt-2">
             <button
               type="submit"
@@ -778,6 +864,59 @@ export default function Dashboard() {
               Cancel
             </button>
           </div>
+        </form>
+      </Modal>
+
+      <Modal isOpen={showPasswordModal} onClose={() => setShowPasswordModal(false)} title="Change Password">
+        {passwordStatus && (
+          <p className="mb-4 rounded-lg border border-[rgba(245,158,11,0.25)] bg-[rgba(245,158,11,0.08)] px-3 py-2 text-[0.85rem] text-[#f6c56b]">
+            {passwordStatus}
+          </p>
+        )}
+        <form onSubmit={handleChangePassword} className="space-y-4">
+          <label className="flex flex-col gap-1.5 text-[0.82rem] text-[#9ca3af]">
+            6-Digit Email Code
+            <input
+              value={passwordForm.code}
+              onChange={(event) => updatePasswordField("code", event.target.value)}
+              inputMode="numeric"
+              maxLength={6}
+              className="w-full rounded-lg px-3 py-2.5 border border-[rgba(255,255,255,0.12)] bg-[#121216] text-[#e8e6e0]"
+            />
+            {passwordErrors.code && <span role="alert" className="text-[#ef4444] text-[0.74rem]">{passwordErrors.code}</span>}
+          </label>
+
+          <label className="flex flex-col gap-1.5 text-[0.82rem] text-[#9ca3af]">
+            New Password
+            <input
+              type="password"
+              value={passwordForm.password}
+              onChange={(event) => updatePasswordField("password", event.target.value)}
+              autoComplete="new-password"
+              className="w-full rounded-lg px-3 py-2.5 border border-[rgba(255,255,255,0.12)] bg-[#121216] text-[#e8e6e0]"
+            />
+            {passwordErrors.password && <span role="alert" className="text-[#ef4444] text-[0.74rem]">{passwordErrors.password}</span>}
+          </label>
+
+          <label className="flex flex-col gap-1.5 text-[0.82rem] text-[#9ca3af]">
+            Confirm Password
+            <input
+              type="password"
+              value={passwordForm.confirmPassword}
+              onChange={(event) => updatePasswordField("confirmPassword", event.target.value)}
+              autoComplete="new-password"
+              className="w-full rounded-lg px-3 py-2.5 border border-[rgba(255,255,255,0.12)] bg-[#121216] text-[#e8e6e0]"
+            />
+            {passwordErrors.confirmPassword && <span role="alert" className="text-[#ef4444] text-[0.74rem]">{passwordErrors.confirmPassword}</span>}
+          </label>
+
+          <button
+            type="submit"
+            disabled={isPasswordSubmitting}
+            className="w-full py-3 rounded-lg font-bold text-[0.9rem] cursor-pointer border-none text-[#0c0c0e] bg-[#d97706] disabled:opacity-60"
+          >
+            {isPasswordSubmitting ? "Working..." : "Update Password"}
+          </button>
         </form>
       </Modal>
 

@@ -173,6 +173,24 @@ export function AuthProvider({ children }) {
     await apiPost("/auth/resend-verification", { email });
   }, []);
 
+  const requestPasswordReset = useCallback(async ({ email }) => {
+    return apiPost("/auth/password/forgot", { email });
+  }, []);
+
+  const resetPassword = useCallback(async ({ email, code, password }) => {
+    return apiPost("/auth/password/reset", { email, code, password });
+  }, []);
+
+  const requestPasswordChange = useCallback(async () => {
+    const token = readToken();
+    return apiPost("/auth/password/change/request", {}, { token });
+  }, []);
+
+  const changePassword = useCallback(async ({ code, password }) => {
+    const token = readToken();
+    return apiPost("/auth/password/change", { code, password }, { token });
+  }, []);
+
   const completeTwoFactor = useCallback(async ({ challengeToken, code }) => {
     setAuthStatus(AUTH_STATUS.LOADING);
     try {
@@ -277,6 +295,10 @@ export function AuthProvider({ children }) {
         updateProfile,
         verifyEmail,
         resendVerificationCode,
+        requestPasswordReset,
+        resetPassword,
+        requestPasswordChange,
+        changePassword,
       }}
     >
       {children}
