@@ -1,6 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
+import { apiGet } from "../utils/api";
+import { readToken } from "../utils/authStorage";
+import { RESOURCE_STATUS } from "../utils/status";
 import CourseCard from "../components/CourseCard";
 import Modal from "../components/Modal";
 import TwoFactorEnroll from "../components/TwoFactorEnroll";
@@ -13,31 +16,38 @@ import {
   sanitizeInput,
 } from "../utils/validators";
 
+function formatDate(dateValue) {
+  if (!dateValue) return "Soon";
+  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(dateValue));
+}
+
+function formatShortDateTime(dateValue) {
+  if (!dateValue) return "Recently";
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(dateValue));
+}
+
+function formatCountdown(daysRemaining) {
+  if (daysRemaining === 0) return "Today";
+  if (daysRemaining === 1) return "1 day left";
+  return `${daysRemaining} days left`;
+}
+
 export default function Dashboard() {
-  const {
-    currentUser,
-    courses,
-    unenrollCourse,
-    unsaveCourse,
-    completedCourses,
-    getCourseProgress,
-    updateProfile,
-    deleteCourse,
-    addToast,
-  } = useAppContext();
+  const { currentUser, unenrollCourse, updateProfile, addToast } = useAppContext();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [dashboardData, setDashboardData] = useState(null);
+  const [dashboardStatus, setDashboardStatus] = useState(RESOURCE_STATUS.IDLE);
+  const [dashboardError, setDashboardError] = useState("");
   const [visible, setVisible] = useState(false);
   const [unenrollTarget, setUnenrollTarget] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileErrors, setProfileErrors] = useState({});
-  const [animatedCounts, setAnimatedCounts] = useState({
-    enrolled: 0,
-    completed: 0,
-    saved: 0,
-    created: 0,
-  });
   const [profileForm, setProfileForm] = useState({
     name: "",
     phone: "",
@@ -48,128 +58,96 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    if (!currentUser) { navigate("/login"); return; }
-    const t = setTimeout(() => setVisible(true), 50);
-    return () => clearTimeout(t);
+    if (!currentUser) {
+      navigate("/login");
+      return;
+    }
+
+    const timer = setTimeout(() => setVisible(true), 50);
+    return () => clearTimeout(timer);
   }, [currentUser, navigate]);
 
-  const isInstructor = currentUser?.role === "instructor";
+  async function loadDashboard() {
+    const token = readToken();
+    if (!token) {
+      setDashboardStatus(RESOURCE_STATUS.ERROR);
+      setDashboardError("Missing authentication token. Please sign in again.");
+      return;
+    }
 
-  const enrolledCourses = useMemo(
-    () => courses.filter((c) => currentUser?.enrolledCourseIds?.includes(c.id) && !completedCourses.has(c.id)),
-    [courses, currentUser?.enrolledCourseIds, completedCourses]
-  );
-  const completedCoursesList = useMemo(
-    () => courses.filter((c) => completedCourses.has(c.id)),
-    [courses, completedCourses]
-  );
-  const savedCourses = useMemo(
-    () => courses.filter((c) => currentUser?.savedCourseIds?.includes(c.id)),
-    [courses, currentUser?.savedCourseIds]
-  );
-  const createdCourses = useMemo(
-    () => courses.filter((c) => String(c.instructorId?._id || c.instructorId || "") === String(currentUser?.id || "") || currentUser?.createdCourseIds?.includes(c.id)),
-    [courses, currentUser?.createdCourseIds, currentUser?.id]
-  );
+    setDashboardStatus(RESOURCE_STATUS.LOADING);
+    setDashboardError("");
 
-  const tabs = useMemo(() => [
-    { id: "enrolled", label: "Enrolled", count: enrolledCourses.length },
-    { id: "completed", label: "Completed", count: completedCoursesList.length },
-    { id: "saved", label: "Saved", count: savedCourses.length },
-    ...(isInstructor ? [{ id: "created", label: "Created", count: createdCourses.length }] : []),
-  ], [enrolledCourses.length, completedCoursesList.length, savedCourses.length, createdCourses.length, isInstructor]);
-
-  const stats = useMemo(
-    () => [
-      { key: "enrolled", label: "Enrolled", value: enrolledCourses.length },
-      { key: "completed", label: "Completed", value: completedCoursesList.length },
-      { key: "saved", label: "Saved", value: savedCourses.length },
-      ...(isInstructor ? [{ key: "created", label: "Created", value: createdCourses.length }] : []),
-    ],
-    [enrolledCourses.length, completedCoursesList.length, savedCourses.length, createdCourses.length, isInstructor]
-  );
+    try {
+      const response = await apiGet("/dashboard/me", { token });
+      setDashboardData(response?.data || null);
+      setDashboardStatus(RESOURCE_STATUS.SUCCESS);
+    } catch (error) {
+      setDashboardData(null);
+      setDashboardStatus(RESOURCE_STATUS.ERROR);
+      setDashboardError(error?.message || "Could not load your dashboard.");
+    }
+  }
 
   useEffect(() => {
-    const startValues = { enrolled: 0, completed: 0, saved: 0, created: 0 };
-    const targetValues = {
-      enrolled: enrolledCourses.length,
-      completed: completedCoursesList.length,
-      saved: savedCourses.length,
-      created: createdCourses.length,
-    };
-    const duration = 650;
-    const startTime = performance.now();
-    let frame = null;
+    if (!currentUser) return;
+    loadDashboard();
+    // The dashboard should refresh when the authenticated user changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id]);
 
-    const tick = (now) => {
-      const progress = Math.min((now - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
+  const summary = dashboardData?.summary || {};
+  const continueWatching = dashboardData?.continueWatching || [];
+  const deadlineReminders = dashboardData?.deadlineReminders || [];
+  const completionForecast = dashboardData?.completionForecast || [];
+  const recommendations = dashboardData?.recommendations || [];
+  const isLoading = dashboardStatus === RESOURCE_STATUS.LOADING || dashboardStatus === RESOURCE_STATUS.IDLE;
+  const hasError = dashboardStatus === RESOURCE_STATUS.ERROR;
 
-      setAnimatedCounts({
-        enrolled: Math.round(startValues.enrolled + (targetValues.enrolled - startValues.enrolled) * eased),
-        completed: Math.round(startValues.completed + (targetValues.completed - startValues.completed) * eased),
-        saved: Math.round(startValues.saved + (targetValues.saved - startValues.saved) * eased),
-        created: Math.round(startValues.created + (targetValues.created - startValues.created) * eased),
-      });
+  const summaryCards = [
+    {
+      label: "Learning streak",
+      value: `${summary.currentStreakDays || 0} day${summary.currentStreakDays === 1 ? "" : "s"}`,
+      hint: summary.currentStreakDays > 0 ? "Keep the chain alive today." : "Start a new streak today.",
+    },
+    {
+      label: "Weekly goal",
+      value: `${summary.studyDaysThisWeek || 0}/${summary.weeklyGoalDays || 0} days`,
+      hint: `${summary.weeklyGoalProgress || 0}% of your study goal complete.`,
+    },
+    {
+      label: "Active courses",
+      value: `${summary.enrolledCourses || 0}`,
+      hint: `${summary.completedCourses || 0} course${summary.completedCourses === 1 ? "" : "s"} completed.`,
+    },
+    {
+      label: "Velocity",
+      value: `${summary.averageVelocityPerDay || 0}%/day`,
+      hint: `Current pace suggests ${summary.preferredLevel || "Beginner"} tracks next.`,
+    },
+  ];
 
-      if (progress < 1) {
-        frame = requestAnimationFrame(tick);
-      }
-    };
-
-    frame = requestAnimationFrame(tick);
-    return () => {
-      if (frame) cancelAnimationFrame(frame);
-    };
-  }, [enrolledCourses.length, completedCoursesList.length, savedCourses.length, createdCourses.length]);
-
-  const requestedTab = searchParams.get("tab");
-  const activeTab = (requestedTab && tabs.some((t) => t.id === requestedTab)) ? requestedTab : "enrolled";
-
-  if (!currentUser) return null;
-
-  const roleColor = isInstructor ? "#d97706" : "#6366f1";
-
-  const getTabData = () => {
-    switch (activeTab) {
-      case "enrolled": return enrolledCourses;
-      case "completed": return completedCoursesList;
-      case "saved": return savedCourses;
-      case "created": return createdCourses;
-      default: return [];
-    }
-  };
-
-  const activeData = getTabData();
-
-  const emptyMessages = {
-    enrolled: "No courses in progress.",
-    completed: "You haven't completed any courses yet.",
-    saved: "You haven't saved any courses yet.",
-    created: "You haven't created any courses yet.",
-  };
-
-  const openProfileEditor = () => {
+  function openProfileEditor() {
     setProfileForm({
-      name: currentUser.name || "",
-      phone: currentUser.phone || "",
-      bio: currentUser.bio || "",
-      expertise: currentUser.expertise || "",
-      website: currentUser.website || "",
-      profileImage: currentUser.profileImage || "",
+      name: currentUser?.name || "",
+      phone: currentUser?.phone || "",
+      bio: currentUser?.bio || "",
+      expertise: currentUser?.expertise || "",
+      website: currentUser?.website || "",
+      profileImage: currentUser?.profileImage || "",
     });
     setProfileErrors({});
     setShowProfileModal(true);
-  };
+  }
 
-  const updateProfileField = (key, value) => {
+  function updateProfileField(key, value) {
     setProfileForm((prev) => ({ ...prev, [key]: value }));
     if (profileErrors[key]) {
       setProfileErrors((prev) => ({ ...prev, [key]: "" }));
     }
-  };
+  }
 
-  const handleProfileImageChange = (event) => {
+  function handleProfileImageChange(event) {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
@@ -182,11 +160,12 @@ export default function Dashboard() {
       updateProfileField("profileImage", String(reader.result || ""));
     };
     reader.readAsDataURL(file);
-  };
+  }
 
-  const handleSaveProfile = (e) => {
-    e.preventDefault();
+  async function handleSaveProfile(event) {
+    event.preventDefault();
 
+    const isInstructor = currentUser?.role === "instructor";
     const errors = {
       name: validateName(profileForm.name),
       phone: validatePhone(profileForm.phone),
@@ -196,11 +175,10 @@ export default function Dashboard() {
       profileImage: "",
     };
 
-    const hasErrors = Object.values(errors).some(Boolean);
     setProfileErrors(errors);
-    if (hasErrors) return;
+    if (Object.values(errors).some(Boolean)) return;
 
-    updateProfile({
+    await updateProfile({
       name: sanitizeInput(profileForm.name),
       phone: sanitizeInput(profileForm.phone),
       bio: sanitizeInput(profileForm.bio),
@@ -211,18 +189,20 @@ export default function Dashboard() {
 
     setShowProfileModal(false);
     addToast("Profile updated successfully.", "success");
-  };
+  }
 
-  const handleDeleteCourse = () => {
-    if (!deleteTarget) return;
-    const success = deleteCourse(deleteTarget.id);
-    if (success) {
-      addToast("Course deleted successfully.", "success");
-    } else {
-      addToast("Could not delete this course.", "error");
+  async function handleUnenroll(courseId) {
+    try {
+      await unenrollCourse(courseId);
+      setUnenrollTarget(null);
+      addToast("You were unenrolled from the course.", "success");
+      await loadDashboard();
+    } catch (error) {
+      addToast(error?.message || "Could not unenroll from this course.", "error");
     }
-    setDeleteTarget(null);
-  };
+  }
+
+  if (!currentUser) return null;
 
   return (
     <div
@@ -231,91 +211,95 @@ export default function Dashboard() {
     >
       <style>{`
         .dash-surface { background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015)); }
-        .dash-stat { transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease; }
-        .dash-stat:hover { transform: translateY(-3px); border-color: rgba(217,119,6,0.35); box-shadow: 0 14px 30px rgba(0,0,0,0.25); }
+        .dash-card { transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease; }
+        .dash-card:hover { transform: translateY(-3px); border-color: rgba(217,119,6,0.35); box-shadow: 0 14px 30px rgba(0,0,0,0.25); }
         .dash-pill { transition: all 220ms ease; }
       `}</style>
+
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
         <div className="absolute -top-24 left-[12%] h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(217,119,6,0.2)_0%,rgba(217,119,6,0)_72%)] blur-3xl" />
         <div className="absolute bottom-[-90px] right-[8%] h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(245,158,11,0.16)_0%,rgba(245,158,11,0)_72%)] blur-3xl" />
         <div className="absolute inset-0 opacity-[0.14]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "56px 56px" }} />
       </div>
 
-      {/* Profile banner */}
       <header className="relative z-10 bg-[#111114]/85 border-b border-[rgba(255,255,255,0.06)] px-4 md:px-8 py-6 md:py-8 backdrop-blur-sm">
         <div className="max-w-[1100px] mx-auto">
-          {/* Profile row */}
-          <div className="dash-surface rounded-2xl border border-[rgba(255,255,255,0.08)] p-4 md:p-5 flex items-center gap-4 md:gap-5 mb-6 md:mb-7 flex-wrap">
-            {currentUser.profileImage ? (
-              <img
-                src={currentUser.profileImage}
-                alt={`${currentUser.name} profile`}
-                className="w-[72px] h-[72px] rounded-full shrink-0 border-2 border-[rgba(217,119,6,0.4)] object-cover"
-              />
-            ) : (
-              <div
-                className="w-[72px] h-[72px] rounded-full flex items-center justify-center font-['Playfair_Display',serif] text-[1.8rem] shrink-0 border-2 border-[rgba(217,119,6,0.4)] bg-[rgba(217,119,6,0.15)] text-[#d97706]"
-                aria-hidden="true"
-              >
-                {currentUser.name.charAt(0).toUpperCase()}
+          <div className="dash-surface rounded-3xl border border-[rgba(255,255,255,0.08)] p-4 md:p-6 lg:p-7">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+              <div className="flex items-start gap-4 md:gap-5 flex-1 min-w-0">
+                {currentUser.profileImage ? (
+                  <img
+                    src={currentUser.profileImage}
+                    alt={`${currentUser.name} profile`}
+                    className="w-[74px] h-[74px] rounded-2xl shrink-0 border border-[rgba(217,119,6,0.45)] object-cover"
+                  />
+                ) : (
+                  <div
+                    className="w-[74px] h-[74px] rounded-2xl flex items-center justify-center font-['Playfair_Display',serif] text-[1.8rem] shrink-0 border border-[rgba(217,119,6,0.45)] bg-[rgba(217,119,6,0.15)] text-[#d97706]"
+                    aria-hidden="true"
+                  >
+                    {currentUser.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+
+                <div className="min-w-0">
+                  <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#d97706] mb-2">Personalized dashboard</p>
+                  <h1 className="font-['Playfair_Display',serif] text-[2rem] md:text-[2.35rem] text-[#f5f2ec] leading-tight mb-2">
+                    {currentUser.name}
+                  </h1>
+                  <p className="text-[0.9rem] text-[#9ca3af] max-w-[58ch] mb-3">
+                    Your progress is computed from live enrollment and progress records in MongoDB, so the streak, reminders, and recommendations reflect real activity.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2.5 mb-4">
+                    <span className="px-3 py-1 rounded-full text-[0.72rem] font-bold tracking-wider uppercase border border-[rgba(245,158,11,0.25)] bg-[rgba(245,158,11,0.08)] text-[#f6c56b]">
+                      {currentUser.role}
+                    </span>
+                    {!!currentUser.email && <span className="text-[0.82rem] text-[#6b7280]">{currentUser.email}</span>}
+                    {!!currentUser.phone && <span className="text-[0.82rem] text-[#6b7280]">{currentUser.phone}</span>}
+                  </div>
+                  {!!currentUser.bio && <p className="text-[0.86rem] text-[#a3a3a3] max-w-[72ch]">{currentUser.bio}</p>}
+                </div>
               </div>
-            )}
-            <div className="flex-1">
-              <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#d97706] mb-1">Your Dashboard</p>
-              <h1 className="font-['Playfair_Display',serif] text-[1.8rem] md:text-[2rem] text-[#f5f2ec] mb-1 leading-tight">{currentUser.name}</h1>
-              <p className="text-[0.88rem] text-[#6b7280] mb-2">{currentUser.email}</p>
-              {!!currentUser.phone && <p className="text-[0.82rem] text-[#9ca3af] mb-1">{currentUser.phone}</p>}
-              {!!currentUser.bio && <p className="text-[0.82rem] text-[#9ca3af] max-w-[620px]">{currentUser.bio}</p>}
-              <span
-                className="inline-block px-3 py-0.5 rounded-full text-[0.72rem] font-bold tracking-widest uppercase"
-                style={{ backgroundColor: `${roleColor}20`, color: roleColor, border: `1px solid ${roleColor}40` }}
-              >
-                {currentUser.role}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2.5">
-              <button
-                onClick={openProfileEditor}
-                className="dash-pill px-4 py-2.5 rounded-lg font-bold text-[0.83rem] border border-[rgba(255,255,255,0.14)] text-[#e8e6e0] hover:border-[rgba(217,119,6,0.4)]"
-              >
-                Edit Profile
-              </button>
-              <Link
-                to="/certificates"
-                className="dash-pill px-4 py-2.5 rounded-lg no-underline font-bold text-[0.83rem] border border-[rgba(255,255,255,0.14)] text-[#e8e6e0] hover:border-[rgba(217,119,6,0.4)]"
-              >
-                Certificates
-              </Link>
-              {isInstructor && (
-                <Link to="/course-form" className="dash-pill px-4 py-2.5 rounded-lg no-underline font-bold text-[0.83rem] bg-[#d97706] text-[#0c0c0e] hover:brightness-110">
-                  + Add Course
+
+              <div className="flex flex-wrap gap-2.5 shrink-0">
+                <button
+                  onClick={openProfileEditor}
+                  className="dash-pill px-4 py-2.5 rounded-xl font-bold text-[0.83rem] border border-[rgba(255,255,255,0.14)] text-[#e8e6e0] hover:border-[rgba(217,119,6,0.4)]"
+                >
+                  Edit Profile
+                </button>
+                <Link
+                  to="/certificates"
+                  className="dash-pill px-4 py-2.5 rounded-xl no-underline font-bold text-[0.83rem] border border-[rgba(255,255,255,0.14)] text-[#e8e6e0] hover:border-[rgba(217,119,6,0.4)]"
+                >
+                  Certificates
                 </Link>
-              )}
+                <Link
+                  to="/courses"
+                  className="dash-pill px-4 py-2.5 rounded-xl no-underline font-bold text-[0.83rem] bg-[#d97706] text-[#0c0c0e] hover:brightness-110"
+                >
+                  Browse courses
+                </Link>
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
+              {summaryCards.map((card) => (
+                <div key={card.label} className="dash-card rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-4">
+                  <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#8b8f98] mb-2">{card.label}</p>
+                  <p className="font-['Playfair_Display',serif] text-[1.55rem] md:text-[1.75rem] text-[#f5f2ec] m-0">{card.value}</p>
+                  <p className="text-[0.82rem] text-[#9ca3af] mt-1.5 leading-relaxed">{card.hint}</p>
+                </div>
+              ))}
             </div>
           </div>
-
-          {/* Stats */}
-          <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 pb-1">
-            {stats.map((s, idx) => (
-              <div key={s.label} className="dash-stat relative overflow-hidden flex flex-col gap-1 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-4 py-3">
-                <span
-                  className="absolute left-0 top-0 h-full w-1"
-                  style={{ background: idx % 2 === 0 ? "linear-gradient(180deg, #d97706, transparent)" : "linear-gradient(180deg, #f59e0b, transparent)" }}
-                  aria-hidden="true"
-                />
-                <dt className="text-[0.75rem] text-[#6b7280] tracking-wide uppercase m-0">{s.label}</dt>
-                <dd className="font-['Playfair_Display',serif] text-[1.6rem] md:text-[1.75rem] tabular-nums text-[#f5f2ec] m-0">{animatedCounts[s.key]}</dd>
-              </div>
-            ))}
-          </dl>
         </div>
       </header>
 
-      {/* Tabs + content */}
       <main className="relative z-10 max-w-[1100px] mx-auto px-4 md:px-8 py-6 md:py-8">
         <section className="mb-6" aria-labelledby="dashboard-security-heading">
           <div className="mb-3">
-            <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#f6c56b] mb-1">Optional Security</p>
+            <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#f6c56b] mb-1">Optional security</p>
             <h2 id="dashboard-security-heading" className="font-['Playfair_Display',serif] text-[1.3rem] text-[#f5f2ec]">
               Account Protection
             </h2>
@@ -323,140 +307,229 @@ export default function Dashboard() {
           <TwoFactorEnroll />
         </section>
 
-        {/* Tab list */}
-        <div
-          role="tablist"
-          aria-label="Dashboard sections"
-          className="flex gap-2 mb-6 overflow-x-auto no-scrollbar rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-1.5"
-        >
-          {tabs.map((tab) => (
+        {hasError && (
+          <section className="mb-6 rounded-2xl border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <p className="text-[#fecaca] font-semibold mb-1">Dashboard unavailable</p>
+              <p className="text-[#fca5a5] text-[0.9rem]">{dashboardError}</p>
+            </div>
             <button
-              key={tab.id}
-              role="tab"
-              id={`tab-${tab.id}`}
-              aria-selected={activeTab === tab.id}
-              aria-controls={`tabpanel-${tab.id}`}
-              onClick={() => setSearchParams({ tab: tab.id })}
-              className="dash-pill flex items-center gap-2 px-4 py-2.5 border cursor-pointer text-[0.88rem] font-semibold whitespace-nowrap rounded-lg bg-transparent"
-              style={{
-                color: activeTab === tab.id ? "#f5f2ec" : "var(--color-text-dim)",
-                borderColor: activeTab === tab.id ? "rgba(217,119,6,0.35)" : "transparent",
-                backgroundColor: activeTab === tab.id ? "rgba(217,119,6,0.12)" : "transparent",
-              }}
+              onClick={loadDashboard}
+              className="self-start md:self-auto px-4 py-2 rounded-lg bg-[#ef4444] text-white font-semibold"
             >
-              {tab.label}
-              <span
-                className="px-2 py-0.5 rounded-full text-[0.7rem] font-bold"
-                style={{
-                  backgroundColor: activeTab === tab.id ? "rgba(245,158,11,0.2)" : "var(--color-surface-muted)",
-                  color: activeTab === tab.id ? "#f6c56b" : "var(--color-text-dim)",
-                }}
-              >
-                {tab.count}
-              </span>
+              Retry
             </button>
-          ))}
-        </div>
+          </section>
+        )}
 
-        {/* Tab panel */}
-        <div role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`} tabIndex={0} className="dash-surface rounded-2xl border border-[rgba(255,255,255,0.08)] p-4 md:p-5">
-          {activeData.length === 0 ? (
-            <section className="flex flex-col items-center py-16 px-6 text-center gap-3">
-              <span className="text-[0.74rem] uppercase tracking-[0.2em] text-[#6b7280]" aria-hidden="true">
-                {activeTab}
-              </span>
-              <p className="text-[#6b7280] text-[0.92rem]">{emptyMessages[activeTab]}</p>
-              {activeTab === "created" ? (
-                <Link to="/course-form" className="no-underline font-semibold text-[0.88rem] text-[#d97706]">Create your first course</Link>
+        {isLoading ? (
+          <section className="dash-surface rounded-2xl border border-[rgba(255,255,255,0.08)] p-6 text-center text-[#9ca3af]">
+            Loading your live dashboard from the database...
+          </section>
+        ) : (
+          <div className="space-y-8">
+            <section>
+              <div className="flex items-end justify-between gap-3 mb-4">
+                <div>
+                  <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#f6c56b] mb-1">Continue watching</p>
+                  <h2 className="font-['Playfair_Display',serif] text-[1.3rem] text-[#f5f2ec]">Pick up where you left off</h2>
+                </div>
+                <Link to="/courses" className="text-[0.88rem] font-semibold text-[#f6c56b] no-underline">
+                  Browse all courses
+                </Link>
+              </div>
+
+              {continueWatching.length === 0 ? (
+                <div className="dash-surface rounded-2xl border border-[rgba(255,255,255,0.08)] p-6 text-[#9ca3af]">
+                  You do not have any in-progress courses yet.
+                </div>
               ) : (
-                <Link to="/courses" className="no-underline font-semibold text-[0.88rem] text-[#d97706]">Browse courses</Link>
+                <div className="grid gap-5 lg:grid-cols-2">
+                  {continueWatching.map((item) => {
+                    const course = item.course || {};
+                    return (
+                      <article key={course.id} className="dash-surface rounded-2xl border border-[rgba(255,255,255,0.08)] p-4 md:p-5">
+                        <div className="grid gap-4 md:grid-cols-[220px,1fr] items-start">
+                          <CourseCard course={course} />
+
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#8b8f98] mb-1">Current progress</p>
+                              <div className="flex items-end justify-between gap-3">
+                                <h3 className="font-['Playfair_Display',serif] text-[1.4rem] text-[#f5f2ec] m-0">{course.title || "Untitled course"}</h3>
+                                <span className="text-[0.9rem] font-semibold text-[#f6c56b]">{item.progress || 0}%</span>
+                              </div>
+                              <div className="mt-3 h-2 rounded-full overflow-hidden bg-[rgba(255,255,255,0.08)]">
+                                <div className="h-full rounded-full bg-[linear-gradient(90deg,#d97706,#f59e0b)]" style={{ width: `${item.progress || 0}%` }} />
+                              </div>
+                              <p className="text-[0.86rem] text-[#9ca3af] mt-3 leading-relaxed">{item.nextAction}</p>
+                            </div>
+
+                            <div className="grid sm:grid-cols-3 gap-3 text-[0.84rem]">
+                              <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-3">
+                                <p className="text-[#8b8f98] mb-1">Forecast</p>
+                                <p className="text-[#f5f2ec] font-semibold">{formatDate(item.forecastDate)}</p>
+                              </div>
+                              <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-3">
+                                <p className="text-[#8b8f98] mb-1">Pace</p>
+                                <p className="text-[#f5f2ec] font-semibold">{item.velocityPerDay || 0}% / day</p>
+                              </div>
+                              <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-3">
+                                <p className="text-[#8b8f98] mb-1">Last active</p>
+                                <p className="text-[#f5f2ec] font-semibold">{formatShortDateTime(item.lastActivityAt)}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2.5">
+                              <Link
+                                to={`/courses/${course.id}`}
+                                className="px-4 py-2 rounded-lg no-underline bg-[#d97706] text-[#0c0c0e] font-bold text-[0.84rem]"
+                              >
+                                Continue course
+                              </Link>
+                              <button
+                                onClick={() => setUnenrollTarget(course)}
+                                className="px-4 py-2 rounded-lg border border-[rgba(239,68,68,0.22)] bg-[rgba(239,68,68,0.08)] text-[#f87171] font-bold text-[0.84rem]"
+                              >
+                                Unenroll
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
               )}
             </section>
-          ) : (
-            <ul
-              className="grid gap-5 list-none p-0 m-0"
-              style={{ gridTemplateColumns: "repeat(auto-fill, minmax(255px, 1fr))" }}
-            >
-              {activeData.map((course) => {
-                const progress = getCourseProgress(course.id);
-                return (
-                  <li key={course.id} className="flex flex-col gap-2">
-                    <CourseCard course={course} />
 
-                    {/* Progress bar */}
-                    {activeTab === "enrolled" && progress > 0 && (
-                      <div className="flex items-center gap-3" aria-label={`${progress}% complete`}>
-                        <div className="flex-1 h-1 rounded-full overflow-hidden bg-[rgba(255,255,255,0.07)]">
-                          <div
-                            className="h-full rounded-full transition-all duration-500"
-                            style={{ width: `${progress}%`, background: "linear-gradient(90deg, #d97706, #f59e0b)" }}
-                          />
+            <section className="grid gap-6 lg:grid-cols-[1.1fr,0.9fr]">
+              <div>
+                <div className="flex items-end justify-between gap-3 mb-4">
+                  <div>
+                    <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#f6c56b] mb-1">Deadlines</p>
+                    <h2 className="font-['Playfair_Display',serif] text-[1.3rem] text-[#f5f2ec]">Reminders and forecast</h2>
+                  </div>
+                </div>
+
+                {deadlineReminders.length === 0 ? (
+                  <div className="dash-surface rounded-2xl border border-[rgba(255,255,255,0.08)] p-6 text-[#9ca3af]">
+                    No deadline reminders right now.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {deadlineReminders.map((item) => (
+                      <div key={item.course?.id || item.course?.title} className="dash-surface rounded-2xl border border-[rgba(255,255,255,0.08)] p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                          <div>
+                            <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#8b8f98] mb-1">Reminder</p>
+                            <h3 className="font-['Playfair_Display',serif] text-[1.15rem] text-[#f5f2ec] m-0">{item.course?.title || "Course"}</h3>
+                            <p className="text-[0.88rem] text-[#9ca3af] mt-2 leading-relaxed">{item.reminder}</p>
+                          </div>
+                          <div className="rounded-xl border border-[rgba(245,158,11,0.18)] bg-[rgba(245,158,11,0.06)] px-3 py-2 text-[#f6c56b] text-[0.84rem] font-semibold shrink-0">
+                            {formatCountdown(item.daysRemaining)}
+                          </div>
                         </div>
-                        <span className="text-[0.72rem] font-bold shrink-0 text-[#d97706]">{progress}%</span>
+                        <div className="mt-4 grid sm:grid-cols-3 gap-3 text-[0.84rem]">
+                          <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-3">
+                            <p className="text-[#8b8f98] mb-1">Progress</p>
+                            <p className="text-[#f5f2ec] font-semibold">{item.progress || 0}%</p>
+                          </div>
+                          <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-3">
+                            <p className="text-[#8b8f98] mb-1">Forecast</p>
+                            <p className="text-[#f5f2ec] font-semibold">{formatDate(item.forecastDate)}</p>
+                          </div>
+                          <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-3">
+                            <p className="text-[#8b8f98] mb-1">Last activity</p>
+                            <p className="text-[#f5f2ec] font-semibold">{formatShortDateTime(item.lastActivityAt)}</p>
+                          </div>
+                        </div>
                       </div>
-                    )}
+                    ))}
+                  </div>
+                )}
+              </div>
 
-                    {/* Completed badge */}
-                    {activeTab === "completed" && (
-                      <span className="self-start text-[0.78rem] font-semibold px-3 py-1 rounded-full border border-[rgba(34,197,94,0.2)] bg-[rgba(34,197,94,0.08)] text-[#22c55e]">
-                        Completed
-                      </span>
-                    )}
+              <div>
+                <div className="flex items-end justify-between gap-3 mb-4">
+                  <div>
+                    <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#f6c56b] mb-1">Forecast</p>
+                    <h2 className="font-['Playfair_Display',serif] text-[1.3rem] text-[#f5f2ec]">Completion outlook</h2>
+                  </div>
+                </div>
 
-                    {/* Actions */}
-                    <div className="flex gap-2">
-                      {activeTab === "enrolled" && (
-                        <button
-                          onClick={() => setUnenrollTarget(course)}
-                          className="px-4 py-1.5 rounded-md text-[0.8rem] font-medium cursor-pointer border border-[rgba(239,68,68,0.2)] bg-[rgba(239,68,68,0.08)] text-[#ef4444]"
-                        >
-                          Unenroll
-                        </button>
-                      )}
-                      {activeTab === "saved" && (
-                        <button
-                          onClick={() => unsaveCourse(course.id)}
-                          className="px-4 py-1.5 rounded-md text-[0.8rem] font-medium cursor-pointer border border-[rgba(255,255,255,0.08)] bg-[#1a1a1e] text-[#9ca3af]"
-                        >
-                          Unsave
-                        </button>
-                      )}
-                      {activeTab === "created" && (
-                        <>
-                          <Link
-                            to={`/course-form/${course.id}`}
-                            className="px-4 py-1.5 rounded-md text-[0.8rem] font-medium no-underline border border-[rgba(255,255,255,0.08)] bg-[#1a1a1e] text-[#9ca3af]"
-                          >
-                            Edit
-                          </Link>
-                          <button
-                            onClick={() => setDeleteTarget(course)}
-                            className="px-4 py-1.5 rounded-md text-[0.8rem] font-medium cursor-pointer border border-[rgba(239,68,68,0.2)] bg-[rgba(239,68,68,0.08)] text-[#ef4444]"
-                          >
-                            Delete
-                          </button>
-                        </>
-                      )}
+                {completionForecast.length === 0 ? (
+                  <div className="dash-surface rounded-2xl border border-[rgba(255,255,255,0.08)] p-6 text-[#9ca3af]">
+                    You are caught up on every active course.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {completionForecast.map((item) => (
+                      <div key={item.course?.id || item.course?.title} className="dash-surface rounded-2xl border border-[rgba(255,255,255,0.08)] p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#8b8f98] mb-1">Projected finish</p>
+                            <h3 className="font-['Playfair_Display',serif] text-[1.15rem] text-[#f5f2ec] m-0">{item.course?.title || "Course"}</h3>
+                            <p className="text-[0.88rem] text-[#9ca3af] mt-2">{item.daysRemaining} days remaining</p>
+                          </div>
+                          <div className="rounded-xl border border-[rgba(52,211,153,0.18)] bg-[rgba(52,211,153,0.08)] px-3 py-2 text-[#86efac] text-[0.84rem] font-semibold shrink-0">
+                            {item.confidence}% confidence
+                          </div>
+                        </div>
+                        <p className="mt-3 text-[0.88rem] text-[#9ca3af]">Estimated completion date: {formatDate(item.projectedCompletionDate)}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section>
+              <div className="flex items-end justify-between gap-3 mb-4">
+                <div>
+                  <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#f6c56b] mb-1">Recommendations</p>
+                  <h2 className="font-['Playfair_Display',serif] text-[1.3rem] text-[#f5f2ec]">Picked for your pace and category affinity</h2>
+                </div>
+              </div>
+
+              {recommendations.length === 0 ? (
+                <div className="dash-surface rounded-2xl border border-[rgba(255,255,255,0.08)] p-6 text-[#9ca3af]">
+                  No new recommendations right now. Enroll in more courses to refine your feed.
+                </div>
+              ) : (
+                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  {recommendations.map((item) => (
+                    <div key={item.course.id} className="space-y-3">
+                      <CourseCard course={item.course} />
+                      <div className="dash-surface rounded-2xl border border-[rgba(255,255,255,0.08)] p-4">
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {item.reasons.slice(0, 3).map((reason) => (
+                            <span key={reason} className="px-2.5 py-1 rounded-full text-[0.72rem] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-[#d4d4d8]">
+                              {reason}
+                            </span>
+                          ))}
+                        </div>
+                        <Link to={`/courses/${item.course.id}`} className="inline-flex no-underline text-[0.86rem] font-semibold text-[#f6c56b]">
+                          View course
+                        </Link>
+                      </div>
                     </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+        )}
       </main>
 
-      {/* Unenroll modal */}
       <Modal isOpen={Boolean(unenrollTarget)} onClose={() => setUnenrollTarget(null)} title="Unenroll from Course?">
         <p className="text-[#9ca3af] mb-6 text-[0.95rem] leading-relaxed">
-          Are you sure you want to unenroll from{" "}
-          <strong className="text-[#f5f2ec]">{unenrollTarget?.title}</strong>?
-          You will lose access to all modules.
+          Are you sure you want to unenroll from <strong className="text-[#f5f2ec]">{unenrollTarget?.title}</strong>? You will lose access to all modules.
         </p>
         <div className="flex gap-3">
           <button
             type="button"
-            onClick={() => { unenrollCourse(unenrollTarget.id); setUnenrollTarget(null); }}
+            onClick={() => handleUnenroll(unenrollTarget.id)}
             className="flex-1 py-3 rounded-lg font-bold text-[0.9rem] cursor-pointer border-none text-white bg-[#ef4444]"
           >
             Yes, Unenroll
@@ -470,14 +543,13 @@ export default function Dashboard() {
         </div>
       </Modal>
 
-      {/* Profile edit modal */}
       <Modal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} title="Edit Profile">
         <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
           <label className="flex flex-col gap-1.5 text-[0.82rem] text-[#9ca3af]">
             Full Name
             <input
               value={profileForm.name}
-              onChange={(e) => updateProfileField("name", e.target.value)}
+              onChange={(event) => updateProfileField("name", event.target.value)}
               aria-invalid={!!profileErrors.name}
               className="w-full rounded-lg px-3 py-2.5 border border-[rgba(255,255,255,0.12)] bg-[#121216] text-[#e8e6e0]"
               maxLength={50}
@@ -489,7 +561,7 @@ export default function Dashboard() {
             Phone
             <input
               value={profileForm.phone}
-              onChange={(e) => updateProfileField("phone", e.target.value)}
+              onChange={(event) => updateProfileField("phone", event.target.value)}
               aria-invalid={!!profileErrors.phone}
               className="w-full rounded-lg px-3 py-2.5 border border-[rgba(255,255,255,0.12)] bg-[#121216] text-[#e8e6e0]"
             />
@@ -500,7 +572,7 @@ export default function Dashboard() {
             Bio
             <textarea
               value={profileForm.bio}
-              onChange={(e) => updateProfileField("bio", e.target.value)}
+              onChange={(event) => updateProfileField("bio", event.target.value)}
               rows={3}
               maxLength={300}
               aria-invalid={!!profileErrors.bio}
@@ -509,13 +581,13 @@ export default function Dashboard() {
             {profileErrors.bio && <span role="alert" className="text-[#ef4444] text-[0.74rem]">{profileErrors.bio}</span>}
           </label>
 
-          {isInstructor && (
+          {currentUser.role === "instructor" && (
             <>
               <label className="flex flex-col gap-1.5 text-[0.82rem] text-[#9ca3af]">
                 Expertise
                 <input
                   value={profileForm.expertise}
-                  onChange={(e) => updateProfileField("expertise", e.target.value)}
+                  onChange={(event) => updateProfileField("expertise", event.target.value)}
                   aria-invalid={!!profileErrors.expertise}
                   className="w-full rounded-lg px-3 py-2.5 border border-[rgba(255,255,255,0.12)] bg-[#121216] text-[#e8e6e0]"
                 />
@@ -526,8 +598,7 @@ export default function Dashboard() {
                 Website
                 <input
                   value={profileForm.website}
-                  onChange={(e) => updateProfileField("website", e.target.value)}
-                  placeholder="https://example.com"
+                  onChange={(event) => updateProfileField("website", event.target.value)}
                   aria-invalid={!!profileErrors.website}
                   className="w-full rounded-lg px-3 py-2.5 border border-[rgba(255,255,255,0.12)] bg-[#121216] text-[#e8e6e0]"
                 />
@@ -537,66 +608,32 @@ export default function Dashboard() {
           )}
 
           <label className="flex flex-col gap-1.5 text-[0.82rem] text-[#9ca3af]">
-            Profile Picture
+            Profile Image
             <input
               type="file"
               accept="image/*"
               onChange={handleProfileImageChange}
               className="w-full rounded-lg px-3 py-2.5 border border-[rgba(255,255,255,0.12)] bg-[#121216] text-[#e8e6e0]"
             />
-            {profileForm.profileImage && (
-              <div className="flex items-center gap-3 mt-1">
-                <img src={profileForm.profileImage} alt="Profile preview" className="w-12 h-12 rounded-full object-cover border border-[rgba(255,255,255,0.12)]" />
-                <button
-                  type="button"
-                  onClick={() => updateProfileField("profileImage", "")}
-                  className="text-[0.78rem] text-[#ef4444]"
-                >
-                  Remove picture
-                </button>
-              </div>
-            )}
-            {profileErrors.profileImage && <span className="text-[#ef4444] text-[0.74rem]">{profileErrors.profileImage}</span>}
+            {profileErrors.profileImage && <span role="alert" className="text-[#ef4444] text-[0.74rem]">{profileErrors.profileImage}</span>}
           </label>
 
-          <div className="flex gap-3 pt-1">
-            <button type="submit" className="flex-1 py-2.5 rounded-lg font-semibold bg-[#d97706] text-[#0c0c0e] border-none">
-              Save
+          <div className="flex gap-3 mt-2">
+            <button
+              type="submit"
+              className="flex-1 py-3 rounded-lg font-bold text-[0.9rem] cursor-pointer border-none text-[#0c0c0e] bg-[#d97706]"
+            >
+              Save Changes
             </button>
             <button
               type="button"
               onClick={() => setShowProfileModal(false)}
-              className="flex-1 py-2.5 rounded-lg font-medium text-[#e8e6e0] border border-[rgba(255,255,255,0.12)]"
+              className="flex-1 py-3 rounded-lg font-medium text-[0.9rem] cursor-pointer text-[#e8e6e0] border border-[rgba(255,255,255,0.12)] bg-transparent"
             >
               Cancel
             </button>
           </div>
         </form>
-      </Modal>
-
-      {/* Delete created course modal */}
-      <Modal isOpen={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)} title="Delete Course?">
-        <p className="text-[#9ca3af] mb-6 text-[0.95rem] leading-relaxed">
-          Are you sure you want to delete{" "}
-          <strong className="text-[#f5f2ec]">{deleteTarget?.title}</strong>?
-          This will remove it for all users.
-        </p>
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={handleDeleteCourse}
-            className="flex-1 py-3 rounded-lg font-bold text-[0.9rem] cursor-pointer border-none text-white bg-[#ef4444]"
-          >
-            Yes, Delete
-          </button>
-          <button
-            type="button"
-            onClick={() => setDeleteTarget(null)}
-            className="flex-1 py-3 rounded-lg font-medium text-[0.9rem] cursor-pointer text-[#e8e6e0] border border-[rgba(255,255,255,0.12)] bg-transparent"
-          >
-            Cancel
-          </button>
-        </div>
       </Modal>
     </div>
   );

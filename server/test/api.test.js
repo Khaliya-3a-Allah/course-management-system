@@ -1,3 +1,4 @@
+/* global process */
 /**
  * Full API integration test — hits every endpoint and verifies DB round-trips.
  * Run:  node --test server/test/api.test.js
@@ -439,6 +440,29 @@ describe("Progress", () => {
   it("GET /progress/:id → 200", async () => {
     const res = await GET(`/progress/${progressId}`, { token: studentToken });
     ok(res);
+  });
+});
+
+// ─── DASHBOARD ──────────────────────────────────────────────────────────────
+
+describe("Dashboard", () => {
+  it("GET /dashboard/me → 200 personalized analytics", async () => {
+    const res = await GET("/dashboard/me", { token: studentToken });
+    ok(res);
+
+    const dashboard = res.data.data;
+    assert.ok(dashboard.summary, "dashboard summary missing");
+    assert.equal(typeof dashboard.summary.currentStreakDays, "number");
+    assert.ok(Array.isArray(dashboard.continueWatching), "continueWatching should be an array");
+    assert.ok(Array.isArray(dashboard.deadlineReminders), "deadlineReminders should be an array");
+    assert.ok(Array.isArray(dashboard.completionForecast), "completionForecast should be an array");
+    assert.ok(Array.isArray(dashboard.recommendations), "recommendations should be an array");
+    assert.ok(
+      dashboard.continueWatching.some(
+        (item) => String(item.course?.id || item.course?._id || "") === String(courseId)
+      ),
+      "dashboard should include the enrolled course"
+    );
   });
 });
 
