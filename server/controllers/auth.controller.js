@@ -125,6 +125,9 @@ export async function login(req, res) {
   if (!user) {
     throw new ApiError(401, "Invalid email or password");
   }
+  if (user.isDeleted) {
+    throw new ApiError(403, "This account has been disabled by an administrator.");
+  }
 
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {

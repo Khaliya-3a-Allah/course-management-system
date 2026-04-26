@@ -4,7 +4,10 @@ import SearchQueryAnalytics from "../models/SearchQueryAnalytics.js";
 
 const coursesController = buildCrudControllers("courses");
 
-export const getAllCourses = coursesController.getAll;
+export async function getAllCourses(req, res) {
+	const data = await Course.find({ isDeleted: { $ne: true } }).lean({ virtuals: true });
+	res.status(200).json({ success: true, count: data.length, data });
+}
 export const getCourseById = coursesController.getById;
 export const createCourse = coursesController.create;
 export const updateCourse = coursesController.update;
@@ -34,7 +37,7 @@ function parsePagination(query) {
 }
 
 function buildFilterMatch({ category, level, tags, publishedOnly = false }) {
-	const match = {};
+	const match = { isDeleted: { $ne: true } };
 	if (publishedOnly) match.isPublished = true;
 	if (category.length > 0) match.category = { $in: category };
 	if (level.length > 0) match.level = { $in: level };

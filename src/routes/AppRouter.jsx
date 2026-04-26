@@ -19,6 +19,7 @@ import Register from "../pages/Register";
 import VerifyEmail from "../pages/VerifyEmail";
 import Support from "../pages/Support";
 import Checkout from "../pages/Checkout";
+import Admin from "../pages/Admin";
 
 export default function AppRouter() {
   return (
@@ -48,6 +49,9 @@ export default function AppRouter() {
             <Route path="/community" element={<Community />} />
             <Route path="/course-form" element={<CourseForm />} />
             <Route path="/course-form/:courseId" element={<CourseForm />} />
+          </Route>
+          <Route element={<ProtectedRoute roles={["admin"]} />}>
+            <Route path="/admin" element={<Admin />} />
           </Route>
         </Routes>
       </HashRouter>

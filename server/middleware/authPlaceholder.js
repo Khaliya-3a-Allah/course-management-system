@@ -26,6 +26,9 @@ export const authenticateRequest = asyncHandler(async (req, res, next) => {
   if (!user) {
     throw new ApiError(401, "User no longer exists.");
   }
+  if (user.isDeleted) {
+    throw new ApiError(403, "This account has been disabled by an administrator.");
+  }
 
   req.user = user;
   next();

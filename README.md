@@ -44,6 +44,7 @@ A full-stack online learning platform where students can browse and enroll in co
 - **Certificates** - issue course completion certificates, download/share them, and verify certificates publicly by certificate ID/QR link.
 - **Community Q&A** - authenticated learners can create course threads, answer questions, upvote useful posts, and accept best answers.
 - **Moderation tools** - instructors/admins can review pending community threads and comments.
+- **Admin control center** - admins can manage users, courses, reports, risk flags, soft deletes, restores, approvals, and audit logs.
 - **Course AI assistant** - floating AI chat recommends next courses using learner progress and the available course catalog.
 - **Authentication security** - email verification, JWT sessions, bcrypt password hashing, optional authenticator-app 2FA, and rate limits.
 - **Support tickets** - submit support requests from the support page and store them through the backend API.
@@ -757,6 +758,12 @@ The floating Course AI chat recommends courses from the catalog using the learne
 Certificates can be verified from a public `/verify/:certId` route with certificate details, QR code verification, print action, and LinkedIn sharing.
 
 <img width="1308" height="874" alt="image" src="https://github.com/user-attachments/assets/53e1a752-ca46-4f94-adfc-c4d249255ad5" />
+
+### 13. Admin control center
+
+Admins can review platform metrics, manage users/courses, approve or reject content, handle abuse reports, see risk flags, soft-delete or restore records, and audit administrative actions.
+
+<!-- Add admin screenshots here: overview metrics, users/courses table, reports queue, and audit log. -->
 
 
 ---

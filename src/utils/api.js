@@ -109,6 +109,10 @@ export function apiPut(path, body, options = {}) {
   return request("PUT", path, { ...options, body });
 }
 
+export function apiPatch(path, body, options = {}) {
+  return request("PATCH", path, { ...options, body });
+}
+
 export function apiDelete(path, options = {}) {
   return request("DELETE", path, options);
 }

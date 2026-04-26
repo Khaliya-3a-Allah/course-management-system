@@ -43,6 +43,10 @@ const userSchema = new mongoose.Schema(
       acceptedAnswers: { type: Number, default: 0 },
       upvotesReceived: { type: Number, default: 0 },
     },
+    isDeleted: { type: Boolean, default: false, index: true },
+    deletedAt: { type: Date, default: null },
+    deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    deletionReason: { type: String, default: "" },
   },
   {
     timestamps: true,

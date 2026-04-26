@@ -61,6 +61,7 @@ export default function Navbar() {
               { to: "/courses", label: "Courses" },
               ...(currentUser ? [{ to: "/community", label: "Community" }] : []),
               ...(currentUser ? [{ to: "/dashboard", label: "Dashboard" }] : []),
+              ...(currentUser?.role === "admin" ? [{ to: "/admin", label: "Admin" }] : []),
             ].map(({ to, label }) => (
               <li key={to}>
                 <Link
@@ -169,6 +170,16 @@ export default function Navbar() {
                     >
                       Certificates
                     </Link>
+                    {currentUser.role === "admin" && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setProfileMenuOpen(false)}
+                        role="menuitem"
+                        className="block rounded-lg px-2.5 py-2 no-underline text-[0.85rem] text-text-secondary hover:bg-[rgba(255,255,255,0.04)]"
+                      >
+                        Admin Center
+                      </Link>
+                    )}
                     <button
                       onClick={() => {
                         setProfileMenuOpen(false);
@@ -226,6 +237,7 @@ export default function Navbar() {
                 ...(currentUser ? [{ to: "/community", label: "Community" }] : []),
                 { to: "/support", label: "Support" },
                 ...(currentUser ? [{ to: "/dashboard", label: "Dashboard" }] : []),
+                ...(currentUser?.role === "admin" ? [{ to: "/admin", label: "Admin" }] : []),
               ].map(({ to, label }) => (
                 <li key={to}>
                   <Link
