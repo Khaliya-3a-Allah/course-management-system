@@ -34,6 +34,7 @@ function normalizeQuiz(quiz = {}) {
 export default function LessonEditor({ lesson, lessonIndex, onUpdate, onRemove, errors = {} }) {
   const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
   const [quizGenerationError, setQuizGenerationError] = useState("");
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleChange = (key, value) => {
     onUpdate({ ...lesson, [key]: value });
@@ -108,19 +109,52 @@ export default function LessonEditor({ lesson, lessonIndex, onUpdate, onRemove, 
     >
       {/* Header */}
       <div className="flex items-center justify-between">
-        <span className="text-[0.82rem] font-semibold text-text-secondary">
-          {label}
-        </span>
         <button
           type="button"
-          onClick={onRemove}
-          className="text-[0.78rem] font-medium cursor-pointer bg-transparent border-none rounded focus-visible:ring-2 focus-visible:ring-amber-600/50 focus-visible:outline-none"
-          style={{ color: "#ef4444" }}
-          aria-label={`Remove lesson ${lessonIndex + 1}`}
+          onClick={() => setIsCollapsed((value) => !value)}
+          className="flex min-w-0 flex-1 items-center gap-2 bg-transparent border-none p-0 text-left cursor-pointer rounded focus-visible:ring-2 focus-visible:ring-amber-600/50 focus-visible:outline-none"
+          aria-expanded={!isCollapsed}
         >
-          Remove
+          <span className="text-[0.78rem] text-brand" aria-hidden="true">
+            {isCollapsed ? "+" : "-"}
+          </span>
+          <span className="text-[0.82rem] font-semibold text-text-secondary truncate">
+            {label}{lesson.title ? `: ${lesson.title}` : ""}
+          </span>
+          {quiz.enabled && (
+            <span className="shrink-0 rounded-full border border-[rgba(217,119,6,0.25)] px-2 py-0.5 text-[0.7rem] text-brand">
+              Quiz
+            </span>
+          )}
         </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsCollapsed((value) => !value)}
+            className="text-[0.76rem] font-semibold cursor-pointer bg-transparent rounded-md px-2.5 py-1.5 text-text-dim border border-[rgba(255,255,255,0.08)] focus-visible:ring-2 focus-visible:ring-amber-600/50 focus-visible:outline-none"
+          >
+            {isCollapsed ? "Expand" : "Collapse"}
+          </button>
+          <button
+            type="button"
+            onClick={onRemove}
+            className="text-[0.78rem] font-medium cursor-pointer bg-transparent border-none rounded focus-visible:ring-2 focus-visible:ring-amber-600/50 focus-visible:outline-none"
+            style={{ color: "#ef4444" }}
+            aria-label={`Remove lesson ${lessonIndex + 1}`}
+          >
+            Remove
+          </button>
+        </div>
       </div>
+
+      {isCollapsed && (
+        <p className="m-0 text-[0.8rem] text-text-dim">
+          {lesson.title || "Untitled lesson"} - {lesson.duration || "No duration"}{quiz.enabled ? " - quiz enabled" : ""}
+        </p>
+      )}
+
+      {!isCollapsed && (
+        <>
 
       {/* Title + Duration row */}
       <div className="grid grid-cols-2 gap-3">
@@ -271,6 +305,8 @@ export default function LessonEditor({ lesson, lessonIndex, onUpdate, onRemove, 
           </div>
         )}
       </div>
+        </>
+      )}
     </div>
   );
 }
