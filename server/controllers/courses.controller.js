@@ -33,8 +33,9 @@ function parsePagination(query) {
 	return { page, pageSize };
 }
 
-function buildFilterMatch({ category, level, tags }) {
-	const match = { isPublished: true };
+function buildFilterMatch({ category, level, tags, publishedOnly = false }) {
+	const match = {};
+	if (publishedOnly) match.isPublished = true;
 	if (category.length > 0) match.category = { $in: category };
 	if (level.length > 0) match.level = { $in: level };
 	if (tags.length > 0) match.tags = { $in: tags };
@@ -202,6 +203,7 @@ export async function searchCourses(req, res) {
 		category: parseList(req.query.category),
 		level: parseList(req.query.level),
 		tags: parseList(req.query.tags),
+		publishedOnly: String(req.query.publishedOnly || "false").toLowerCase() === "true",
 	};
 
 	const { page, pageSize } = parsePagination(req.query);
@@ -264,6 +266,7 @@ export async function getCourseSearchFacets(req, res) {
 		category: parseList(req.query.category),
 		level: parseList(req.query.level),
 		tags: parseList(req.query.tags),
+		publishedOnly: String(req.query.publishedOnly || "false").toLowerCase() === "true",
 	};
 
 	const baseFilter = buildFilterMatch(filters);
