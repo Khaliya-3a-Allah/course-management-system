@@ -2,23 +2,25 @@ import nodemailer from "nodemailer";
 import { env } from "../config/env.js";
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: env.SMTP_HOST,
+  port: env.SMTP_PORT,
+  secure: env.SMTP_SECURE,
   auth: {
-    user: env.GMAIL_USER,
-    pass: env.GMAIL_PASS,
+    user: env.EMAIL_USER,
+    pass: env.EMAIL_PASS,
   },
 });
 
 function ensureMailerConfigured() {
-  if (!env.GMAIL_USER || !env.GMAIL_PASS) {
-    throw new Error("Email is not configured. Set GMAIL_USER and GMAIL_PASS in the backend environment.");
+  if (!env.EMAIL_USER || !env.EMAIL_PASS) {
+    throw new Error("Email is not configured. Set EMAIL_USER and EMAIL_PASS in the backend environment.");
   }
 }
 
 export async function sendVerificationEmail(toEmail, code) {
   ensureMailerConfigured();
   await transporter.sendMail({
-    from: `"Courseware" <${env.GMAIL_USER}>`,
+    from: `"Courseware" <${env.EMAIL_USER}>`,
     to: toEmail,
     subject: "Verify your Courseware account",
     html: `
@@ -53,7 +55,7 @@ export async function sendPasswordCodeEmail(toEmail, code, purpose = "reset") {
   ensureMailerConfigured();
   const isChange = purpose === "change";
   await transporter.sendMail({
-    from: `"Courseware" <${env.GMAIL_USER}>`,
+    from: `"Courseware" <${env.EMAIL_USER}>`,
     to: toEmail,
     subject: isChange ? "Confirm your Courseware password change" : "Reset your Courseware password",
     html: `
