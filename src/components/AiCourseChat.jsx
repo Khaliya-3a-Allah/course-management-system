@@ -204,6 +204,7 @@ export default function AiCourseChat() {
     },
   ]);
   const inputRef = useRef(null);
+  const messagesEndRef = useRef(null);
 
   const hidePreview = useCallback(() => {
     setIsPreviewLeaving(true);
@@ -227,6 +228,11 @@ export default function AiCourseChat() {
     const timer = window.setTimeout(hidePreview, 7000);
     return () => window.clearTimeout(timer);
   }, [hidePreview, isOpen, showPreview]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    messagesEndRef.current?.scrollIntoView({ block: "end" });
+  }, [isOpen, messages, isLoading]);
 
   const openChat = () => {
     setShowPreview(false);
@@ -318,20 +324,27 @@ export default function AiCourseChat() {
   }
 
   return (
-    <div className="fixed bottom-3 right-3 z-50 flex items-end sm:bottom-5 sm:right-5">
+    <div className={`fixed inset-0 z-[999] pointer-events-none ${isOpen ? "flex items-center justify-center p-3 sm:p-5" : ""}`}>
       {isOpen && (
-        <section
-          className="ai-chat-panel mb-3 flex h-[min(620px,calc(100dvh-6rem))] w-[calc(100vw-1.5rem)] max-w-[390px] flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.14)] bg-[#111114] shadow-[0_26px_80px_rgba(0,0,0,0.44)] ring-1 ring-brand/10 sm:w-[390px]"
-          aria-label="AI course recommendation chat"
-        >
-          <header className="flex items-center justify-between border-b border-[rgba(255,255,255,0.08)] bg-[#16161a] px-4 py-3">
+        <>
+          <button
+            type="button"
+            aria-label="Close AI chat overlay"
+            onClick={() => setIsOpen(false)}
+            className="pointer-events-auto absolute inset-0 bg-black/55 backdrop-blur-[2px]"
+          />
+          <section
+            className="ai-chat-panel pointer-events-auto relative flex h-[min(620px,calc(100dvh-1.5rem))] w-full max-w-[440px] flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.14)] bg-[#111114] shadow-[0_26px_80px_rgba(0,0,0,0.5)] ring-1 ring-brand/10 sm:h-[min(660px,calc(100vh-2.5rem))]"
+            aria-label="AI course recommendation chat"
+          >
+          <header className="flex min-h-[74px] items-center justify-between gap-3 border-b border-[rgba(255,255,255,0.08)] bg-[#16161a] px-4 py-3">
             <div className="flex min-w-0 items-center gap-3">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand text-white shadow-[0_10px_24px_rgba(217,119,6,0.28)]">
                 <SparkIcon size={18} />
               </span>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <h2 className="truncate text-sm font-semibold text-[#f5f2ec]">Course AI</h2>
-                <p className="truncate text-xs text-[#9ca3af]">{buildStarterMessage(currentUser)}</p>
+                <p className="text-xs leading-5 text-[#9ca3af]">{buildStarterMessage(currentUser)}</p>
               </div>
             </div>
             <button
@@ -345,14 +358,14 @@ export default function AiCourseChat() {
             </button>
           </header>
 
-          <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-4 sm:px-4">
             {messages.map((message, index) => (
               <div
                 key={`${message.role}-${index}`}
                 className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[86%] whitespace-pre-line rounded-lg px-3 py-2 text-sm leading-6 shadow-sm ${
+                  className={`max-w-[88%] overflow-hidden whitespace-pre-wrap break-words [overflow-wrap:anywhere] rounded-lg px-3 py-2 text-sm leading-6 shadow-sm sm:max-w-[86%] ${
                     message.role === "user"
                       ? "bg-brand text-white"
                       : "border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[#e8e6e0]"
@@ -369,18 +382,19 @@ export default function AiCourseChat() {
                 </p>
               </div>
             )}
+            <div ref={messagesEndRef} />
           </div>
 
-          <div className="border-t border-[rgba(255,255,255,0.08)] p-3">
+          <div className="border-t border-[rgba(255,255,255,0.08)] bg-[#111114] p-3">
             {!currentUser && (
-              <p className="mb-3 rounded-md border border-brand/30 bg-brand/10 px-3 py-2 text-xs text-[#e8e6e0]">
+              <p className="mb-3 rounded-md border border-brand/30 bg-brand/10 px-3 py-2 text-xs leading-5 text-[#e8e6e0]">
                 <Link to="/login" className="font-semibold text-brand-light hover:text-brand">
                   Sign in
                 </Link>{" "}
                 for suggestions based on your real progress.
               </p>
             )}
-            <div className="flex gap-2">
+            <div className="flex items-end gap-2">
               <textarea
                 ref={inputRef}
                 value={input}
@@ -393,13 +407,13 @@ export default function AiCourseChat() {
                 }}
                 placeholder="Ask what to take next..."
                 rows={2}
-                className="min-h-[48px] flex-1 resize-none rounded-md border border-[rgba(255,255,255,0.12)] bg-[#0c0c0e] px-3 py-2 text-sm text-[#f5f2ec] outline-none placeholder:text-[#6b7280]"
+                className="min-h-[52px] max-h-28 flex-1 resize-none rounded-md border border-[rgba(255,255,255,0.12)] bg-[#0c0c0e] px-3 py-2 text-sm leading-5 text-[#f5f2ec] outline-none placeholder:text-[#6b7280]"
               />
               <button
                 type="button"
                 onClick={() => sendMessage()}
                 disabled={isLoading || !input.trim()}
-                className="grid h-12 w-12 shrink-0 place-items-center rounded-md bg-brand text-white transition hover:bg-brand-light disabled:cursor-not-allowed disabled:opacity-50"
+                className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-md bg-brand text-white transition hover:bg-brand-light disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Send message"
                 title="Send"
               >
@@ -408,20 +422,21 @@ export default function AiCourseChat() {
             </div>
           </div>
         </section>
+        </>
       )}
 
       {!isOpen && showPreview && (
         <button
           type="button"
           onClick={openChat}
-          className={`ai-chat-preview ${isPreviewLeaving ? "ai-chat-preview-leaving" : ""} mr-2 max-w-[250px] rounded-xl border border-[rgba(255,255,255,0.13)] bg-[#111114] px-3 py-2 text-left text-sm leading-5 text-[#f5f2ec] shadow-[0_18px_44px_rgba(0,0,0,0.3)] ring-1 ring-brand/10 transition hover:border-brand sm:mr-3`}
+          className={`ai-chat-preview pointer-events-auto fixed bottom-[76px] right-3 w-[min(270px,calc(100vw-5.25rem))] rounded-xl border border-[rgba(255,255,255,0.13)] bg-[#111114] px-3 py-2 text-left text-sm leading-5 text-[#f5f2ec] shadow-[0_18px_44px_rgba(0,0,0,0.3)] ring-1 ring-brand/10 transition hover:border-brand sm:bottom-[88px] sm:right-5 ${isPreviewLeaving ? "ai-chat-preview-leaving" : ""}`}
           aria-label="Open AI assistant"
         >
-          <span className="mb-1 flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.16em] text-brand">
+          <span className="mb-1 flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-brand">
             <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden="true" />
             Course AI
           </span>
-          {buildPreviewMessage(currentUser)}
+          <span className="block break-words">{buildPreviewMessage(currentUser)}</span>
         </button>
       )}
 
@@ -432,7 +447,7 @@ export default function AiCourseChat() {
           setIsOpen((value) => !value);
           setTimeout(() => inputRef.current?.focus(), 0);
         }}
-        className="ai-chat-launcher grid h-12 w-12 place-items-center rounded-xl bg-brand text-white transition hover:bg-brand-light sm:h-14 sm:w-14"
+        className={`ai-chat-launcher pointer-events-auto fixed bottom-3 right-3 h-12 w-12 place-items-center rounded-xl bg-brand text-white transition hover:bg-brand-light sm:bottom-5 sm:right-5 sm:h-14 sm:w-14 ${isOpen ? "hidden" : "grid"}`}
         aria-label={isOpen ? "Hide AI course chat" : "Open AI course chat"}
         title={isOpen ? "Hide Course AI" : "Open Course AI"}
       >
