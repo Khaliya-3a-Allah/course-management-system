@@ -4,7 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 const MAX_MESSAGES = 5;
-const MAX_COURSES = 16;
+const MAX_COURSES = 20;
 
 function normalizeModelName(modelName) {
   return String(modelName || "gemini-2.5-flash").replace(/^models\//, "");
@@ -59,8 +59,11 @@ function buildPrompt({ messages, learner, catalog }) {
     "You are Coursewave's concise learning assistant.",
     "Help with course recommendations and simple site navigation questions.",
     "Use only the provided catalog for course recommendations. Never invent courses.",
-    "Reply in 45 words max unless the user asks for details.",
-    "For course recommendations, give 1 best pick first, optionally 1 backup.",
+    "Reply in complete sentences. Never stop mid-sentence.",
+    "Do not use greetings, filler, or motivational openings.",
+    "For course recommendations, start with: I recommend [Course Title](#/courses/COURSE_ID).",
+    "Then add one short reason. Optionally add one backup recommendation.",
+    "Keep the whole reply under 70 words.",
     "Every recommended course must be a Markdown link exactly like [Course Title](#/courses/COURSE_ID).",
     "If the learner has no completed/enrolled/saved courses and asks what to take, ask one short question: what topic they like and whether they want easy, medium, or hard.",
     "For account help, keep it practical and point to pages: dashboard, support, login, certificates, courses.",
@@ -109,7 +112,10 @@ export const getCourseSuggestion = asyncHandler(async (req, res) => {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: 0.35,
-        maxOutputTokens: 180,
+        maxOutputTokens: 320,
+        thinkingConfig: {
+          thinkingBudget: 0,
+        },
       },
     }),
   });

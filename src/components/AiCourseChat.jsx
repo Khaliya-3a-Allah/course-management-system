@@ -76,6 +76,69 @@ function getLocalHelpReply(content, currentUser) {
   return "";
 }
 
+function pickRecommendedCourse(courses, currentUser, content) {
+  const text = content.toLowerCase();
+  const completedIds = courseIdSet(currentUser?.completedCourseIds);
+  const enrolledIds = courseIdSet(currentUser?.enrolledCourseIds);
+  const savedIds = courseIdSet(currentUser?.savedCourseIds);
+  const completedCourses = courses.filter((course) => completedIds.has(String(course.id)));
+  const unavailableIds = new Set([...completedIds, ...enrolledIds]);
+
+  const wantsEasy = /\b(easy|beginner|start|simple)\b/.test(text);
+  const wantsHard = /\b(hard|advanced|difficult|challenge)\b/.test(text);
+  const preferredCategory = courses.find((course) =>
+    course.category && text.includes(String(course.category).toLowerCase())
+  )?.category;
+  const completedCategory = completedCourses[completedCourses.length - 1]?.category;
+  const targetCategory = preferredCategory || completedCategory;
+
+  const scored = courses
+    .filter((course) => !unavailableIds.has(String(course.id)))
+    .map((course) => {
+      let score = Number(course.rating || 0);
+      if (savedIds.has(String(course.id))) score += 3;
+      if (targetCategory && course.category === targetCategory) score += 4;
+      if (wantsEasy && course.level === "Beginner") score += 5;
+      if (wantsHard && course.level === "Advanced") score += 5;
+      if (!wantsEasy && !wantsHard && completedCourses.length > 0 && course.level === "Intermediate") score += 2;
+      if (Array.isArray(course.tags)) {
+        score += course.tags.filter((tag) => text.includes(String(tag).toLowerCase())).length * 2;
+      }
+      return { course, score };
+    })
+    .sort((left, right) => right.score - left.score);
+
+  return scored[0]?.course || courses.find((course) => !completedIds.has(String(course.id)));
+}
+
+function getLocalRecommendationReply(content, courses, currentUser) {
+  const text = content.toLowerCase();
+  const wantsRecommendation = /\b(recommend|suggest|what course|which course|take next|start with)\b/.test(text);
+  if (!wantsRecommendation) return "";
+
+  const hasLearningHistory = Boolean(
+    currentUser?.completedCourseIds?.length ||
+    currentUser?.enrolledCourseIds?.length ||
+    currentUser?.savedCourseIds?.length
+  );
+  const hasPreference = /\b(easy|beginner|medium|intermediate|hard|advanced|web|react|design|data|business|marketing|javascript|python)\b/.test(text);
+
+  if (!hasLearningHistory && !hasPreference) {
+    return "What topic do you like, and do you want something easy, medium, or hard?";
+  }
+
+  const course = pickRecommendedCourse(courses, currentUser, content);
+  if (!course) {
+    return "I do not see an available course to recommend yet. Try browsing [Courses](#/courses).";
+  }
+
+  const reason = course.category
+    ? `It matches ${course.category} and is ${course.level || "a good level"}`
+    : `It is ${course.level || "a good"} next step`;
+
+  return `I recommend [${course.title}](#/courses/${course.id}). ${reason}. Open it and check the modules first.`;
+}
+
 function renderLinkedText(text) {
   const parts = [];
   const linkPattern = /\[([^\]]+)\]\((#[^)]+)\)/g;
@@ -178,6 +241,12 @@ export default function AiCourseChat() {
     const localReply = getLocalHelpReply(content, currentUser);
     if (localReply) {
       setMessages([...nextMessages, { role: "assistant", content: localReply }]);
+      return;
+    }
+
+    const recommendationReply = getLocalRecommendationReply(content, courses, currentUser);
+    if (recommendationReply) {
+      setMessages([...nextMessages, { role: "assistant", content: recommendationReply }]);
       return;
     }
 
