@@ -3,8 +3,8 @@ import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
-const MAX_MESSAGES = 8;
-const MAX_COURSES = 24;
+const MAX_MESSAGES = 5;
+const MAX_COURSES = 16;
 
 function normalizeModelName(modelName) {
   return String(modelName || "gemini-2.5-flash").replace(/^models\//, "");
@@ -26,6 +26,7 @@ function sanitizeMessages(messages = []) {
 
 function sanitizeCatalog(catalog = []) {
   return catalog.slice(0, MAX_COURSES).map((course) => ({
+    id: compactText(course.id, 80),
     title: compactText(course.title, 120),
     category: compactText(course.category, 80),
     level: compactText(course.level, 40),
@@ -55,10 +56,14 @@ function buildPrompt({ messages, learner, catalog }) {
   };
 
   return [
-    "You are Coursewave's course recommendation assistant.",
-    "Recommend courses only from the provided catalog. Use the learner's completed, enrolled, saved, and progress context.",
-    "Be concise, practical, and friendly. Prefer 1-3 course suggestions with a short reason and next step.",
-    "If the catalog context is thin, ask one targeted question instead of inventing unavailable courses.",
+    "You are Coursewave's concise learning assistant.",
+    "Help with course recommendations and simple site navigation questions.",
+    "Use only the provided catalog for course recommendations. Never invent courses.",
+    "Reply in 45 words max unless the user asks for details.",
+    "For course recommendations, give 1 best pick first, optionally 1 backup.",
+    "Every recommended course must be a Markdown link exactly like [Course Title](#/courses/COURSE_ID).",
+    "If the learner has no completed/enrolled/saved courses and asks what to take, ask one short question: what topic they like and whether they want easy, medium, or hard.",
+    "For account help, keep it practical and point to pages: dashboard, support, login, certificates, courses.",
     "",
     `Learner context: ${JSON.stringify(learnerSummary)}`,
     `Course catalog: ${JSON.stringify(catalog)}`,
@@ -103,8 +108,8 @@ export const getCourseSuggestion = asyncHandler(async (req, res) => {
     body: JSON.stringify({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: {
-        temperature: 0.45,
-        maxOutputTokens: 450,
+        temperature: 0.35,
+        maxOutputTokens: 180,
       },
     }),
   });

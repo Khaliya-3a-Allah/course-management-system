@@ -54,9 +54,60 @@ function toCourseTitleList(courses, ids = []) {
     .filter(Boolean);
 }
 
+function getLocalHelpReply(content, currentUser) {
+  const text = content.toLowerCase();
+
+  if (/\b(password|reset|forgot|change password)\b/.test(text)) {
+    return currentUser
+      ? "Password changes are not available in the profile editor yet. Please open [Support](#/support) and send your account email so support can help."
+      : "Go to [Login](#/login) first. If you cannot sign in, open [Support](#/support) and send your account email.";
+  }
+
+  if (/\b(certificate|certificates)\b/.test(text)) {
+    return "Completed courses appear on [Certificates](#/certificates). If one is missing, reopen the final lesson and make sure every lesson is marked complete.";
+  }
+
+  if (/\b(profile|name|phone|bio|account)\b/.test(text)) {
+    return currentUser
+      ? "Open [Dashboard](#/dashboard), then use Edit Profile."
+      : "Sign in at [Login](#/login), then open your dashboard to edit your profile.";
+  }
+
+  return "";
+}
+
+function renderLinkedText(text) {
+  const parts = [];
+  const linkPattern = /\[([^\]]+)\]\((#[^)]+)\)/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = linkPattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    parts.push(
+      <Link
+        key={`${match[2]}-${match.index}`}
+        to={match[2].replace(/^#/, "")}
+        className="font-semibold text-brand-light underline decoration-brand-light/40 underline-offset-2 hover:text-brand"
+      >
+        {match[1]}
+      </Link>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts;
+}
+
 function buildStarterMessage(currentUser) {
   if (!currentUser) {
-    return "Tell me what you want to learn and I can suggest a good starting course.";
+    return "Tell me what you like and whether you want easy, medium, or hard.";
   }
 
   const completedCount = currentUser.completedCourseIds?.length || 0;
@@ -64,7 +115,7 @@ function buildStarterMessage(currentUser) {
     return "Ask me what to take next based on your completed courses.";
   }
 
-  return "Ask me for a course recommendation based on your enrollments and saved courses.";
+  return "Tell me what you like and whether you want easy, medium, or hard.";
 }
 
 export default function AiCourseChat() {
@@ -102,6 +153,7 @@ export default function AiCourseChat() {
       else if (purchasedIds.has(id)) status = "purchased";
 
       return {
+        id: course.id,
         title: course.title,
         category: course.category,
         level: course.level,
@@ -122,6 +174,13 @@ export default function AiCourseChat() {
     const nextMessages = [...messages, { role: "user", content }];
     setMessages(nextMessages);
     setInput("");
+
+    const localReply = getLocalHelpReply(content, currentUser);
+    if (localReply) {
+      setMessages([...nextMessages, { role: "assistant", content: localReply }]);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -180,15 +239,15 @@ export default function AiCourseChat() {
                 key={`${message.role}-${index}`}
                 className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
               >
-                <p
+                <div
                   className={`max-w-[86%] whitespace-pre-line rounded-lg px-3 py-2 text-sm leading-6 ${
                     message.role === "user"
                       ? "bg-brand text-white"
                       : "border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[#e8e6e0]"
                   }`}
                 >
-                  {message.content}
-                </p>
+                  {renderLinkedText(message.content)}
+                </div>
               </div>
             ))}
             {isLoading && (
