@@ -334,7 +334,7 @@ export default function AiCourseChat() {
             className="pointer-events-auto absolute inset-0 bg-black/55 backdrop-blur-[2px] sm:hidden"
           />
           <section
-            className="ai-chat-panel pointer-events-auto relative flex h-[min(620px,calc(100dvh-1.5rem))] w-full max-w-[440px] flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.14)] bg-[#111114] shadow-[0_26px_80px_rgba(0,0,0,0.5)] ring-1 ring-brand/10 sm:fixed sm:bottom-[92px] sm:right-5 sm:h-[min(620px,calc(100vh-7rem))] sm:w-[390px]"
+            className="ai-chat-panel pointer-events-auto relative flex h-[min(620px,calc(100dvh-1.5rem))] w-full max-w-[440px] flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.14)] bg-[#111114] shadow-[0_26px_80px_rgba(0,0,0,0.5)] ring-1 ring-brand/10 sm:fixed sm:bottom-5 sm:right-[92px] sm:h-[min(620px,calc(100vh-2.5rem))] sm:w-[390px]"
             aria-label="AI course recommendation chat"
           >
           <header className="flex min-h-[74px] items-center justify-between gap-3 border-b border-[rgba(255,255,255,0.08)] bg-[#16161a] px-4 py-3">
@@ -444,12 +444,14 @@ export default function AiCourseChat() {
         type="button"
         onClick={() => {
           setShowPreview(false);
-          setIsOpen((value) => !value);
+          if (!isOpen) {
+            setIsOpen(true);
+          }
           setTimeout(() => inputRef.current?.focus(), 0);
         }}
-        className={`ai-chat-launcher pointer-events-auto fixed bottom-3 right-3 h-12 w-12 place-items-center rounded-xl bg-brand text-white transition hover:bg-brand-light sm:bottom-5 sm:right-5 sm:h-14 sm:w-14 ${isOpen ? "hidden" : "grid"}`}
-        aria-label={isOpen ? "Hide AI course chat" : "Open AI course chat"}
-        title={isOpen ? "Hide Course AI" : "Open Course AI"}
+        className={`ai-chat-launcher pointer-events-auto fixed bottom-3 right-3 h-12 w-12 place-items-center rounded-xl bg-brand text-white transition hover:bg-brand-light sm:bottom-5 sm:right-5 sm:h-14 sm:w-14 ${isOpen ? "hidden sm:grid" : "grid"}`}
+        aria-label={isOpen ? "Focus AI course chat" : "Open AI course chat"}
+        title={isOpen ? "Course AI is open" : "Open Course AI"}
       >
         <SparkIcon size={22} />
       </button>
