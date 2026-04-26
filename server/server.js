@@ -1,6 +1,9 @@
 import app from "./app.js";
 import { env } from "./config/env.js";
 import { connectDB } from "./db/connection.js";
+import { startCacheCleanup } from "./utils/responseCache.js";
+
+startCacheCleanup();
 
 // Connect to MongoDB first, then start the HTTP server
 connectDB().then(() => {

@@ -26,6 +26,7 @@ const purchaseSchema = new mongoose.Schema(
     paypalEmail: { type: String, default: "" },
     promoCode: { type: String, default: "" },
     referralCode: { type: String, default: "" },
+    idempotencyKey: { type: String, default: "", index: true },
     purchasedAt: { type: Date, default: Date.now },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
@@ -43,6 +44,7 @@ const purchaseSchema = new mongoose.Schema(
 );
 
 purchaseSchema.index({ userId: 1, courseId: 1 }, { unique: true });
+purchaseSchema.index({ userId: 1, idempotencyKey: 1 }, { unique: true, sparse: true });
 
 const Purchase = mongoose.model("Purchase", purchaseSchema);
 export default Purchase;

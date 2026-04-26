@@ -8,7 +8,7 @@ export default function CourseDetails() {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const {
-    courses, currentUser,
+    courses, coursesStatus, currentUser,
     enrollCourse, unenrollCourse,
     saveCourse, unsaveCourse,
     completedCourses, getCourseProgress,
@@ -31,6 +31,27 @@ export default function CourseDetails() {
     const t = setTimeout(() => setVisible(true), 50);
     return () => clearTimeout(t);
   }, []);
+
+  if (!course && coursesStatus === "loading") {
+    return (
+      <main className="min-h-screen bg-base text-text-secondary">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8 py-10 animate-pulse">
+          <div className="h-4 w-32 rounded-full bg-[rgba(255,255,255,0.06)] mb-5" />
+          <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-8">
+            <div className="space-y-4">
+              <div className="h-3 w-24 rounded-full bg-[rgba(255,255,255,0.05)]" />
+              <div className="h-10 w-3/4 rounded-full bg-[rgba(255,255,255,0.06)]" />
+              <div className="h-4 w-1/2 rounded-full bg-[rgba(255,255,255,0.05)]" />
+              <div className="h-4 w-40 rounded-full bg-[rgba(255,255,255,0.05)]" />
+            </div>
+            <div className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-surface overflow-hidden">
+              <div className="h-[300px] bg-[rgba(255,255,255,0.05)]" />
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   if (!course) {
     return (

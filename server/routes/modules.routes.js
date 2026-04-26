@@ -6,6 +6,7 @@ import {
   deleteModule,
 } from "../controllers/modules.controller.js";
 import { createCrudRouter } from "../utils/createCrudRouter.js";
+import { createCacheMiddleware } from "../utils/responseCache.js";
 import {
   authenticateRequest,
   authorizeOwner,
@@ -27,5 +28,12 @@ export const modulesRouter = createCrudRouter(
   {
     authMiddleware: [authenticateRequest],
     ownerMiddleware: [authorizeOwner("modules")],
+    cacheMiddleware: createCacheMiddleware({
+      keyBuilder: (req) => {
+        if (req.method !== "GET") return null;
+        return `modules:${req.originalUrl}`;
+      },
+      ttlMs: 15_000,
+    }),
   }
 );

@@ -1,6 +1,7 @@
 import { list, findById, create, update, remove } from "../data/store.js";
 import { ApiError } from "../utils/ApiError.js";
 import User from "../models/User.js";
+import { invalidateCachedResponses } from "../utils/responseCache.js";
 
 export function buildCrudControllers(resourceName) {
   return {
@@ -37,6 +38,10 @@ export function buildCrudControllers(resourceName) {
         });
       }
 
+      if (["courses", "modules", "lessons", "purchases"].includes(resourceName)) {
+        invalidateCachedResponses([`${resourceName}:`, "courses:"]);
+      }
+
       res.status(201).json({ success: true, data: item });
     },
 
@@ -45,6 +50,10 @@ export function buildCrudControllers(resourceName) {
       if (!item) {
         throw new ApiError(404, `${resourceName} item not found`);
       }
+
+      if (["courses", "modules", "lessons", "purchases"].includes(resourceName)) {
+        invalidateCachedResponses([`${resourceName}:`, "courses:"]);
+      }
       res.status(200).json({ success: true, data: item });
     },
 
@@ -52,6 +61,10 @@ export function buildCrudControllers(resourceName) {
       const deleted = await remove(resourceName, req.params.id);
       if (!deleted) {
         throw new ApiError(404, `${resourceName} item not found`);
+      }
+
+      if (["courses", "modules", "lessons", "purchases"].includes(resourceName)) {
+        invalidateCachedResponses([`${resourceName}:`, "courses:"]);
       }
       res.status(200).json({ success: true, data: deleted });
     },

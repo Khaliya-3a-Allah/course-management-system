@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { apiGet, apiPost, apiPut, apiDelete } from "../utils/api";
 import { RESOURCE_STATUS } from "../utils/status";
@@ -8,6 +9,41 @@ import { useUiContext } from "./UiContext";
 const DataContext = createContext(null);
 
 const COLD_START_THRESHOLD_MS = 3000;
+const COURSE_CACHE_KEY = "cms_course_bundle_v1";
+
+function readCourseCache() {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(COURSE_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed?.courses) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCourseCache(courses) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      COURSE_CACHE_KEY,
+      JSON.stringify({
+        savedAt: new Date().toISOString(),
+        courses,
+      })
+    );
+  } catch {
+    // Cache writes are opportunistic.
+  }
+}
+
+function makeIdempotencyKey(prefix = "purchase") {
+  if (typeof window !== "undefined" && window.crypto?.randomUUID) {
+    return `${prefix}-${window.crypto.randomUUID()}`;
+  }
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 function normalizeCourse(raw) {
   if (!raw) return raw;
@@ -145,9 +181,18 @@ export function DataProvider({ children }) {
       });
 
       setCourses(list);
+      writeCourseCache(list);
       setCoursesStatus(RESOURCE_STATUS.SUCCESS);
       return list;
     } catch (error) {
+      const cached = readCourseCache();
+      if (cached?.courses?.length) {
+        setCourses(cached.courses.map((raw) => normalizeCourse(raw)));
+        setCoursesStatus(RESOURCE_STATUS.SUCCESS);
+        setCoursesError(null);
+        return cached.courses;
+      }
+
       setCoursesError(error);
       setCoursesStatus(RESOURCE_STATUS.ERROR);
       throw error;
@@ -511,44 +556,89 @@ export function DataProvider({ children }) {
     const token = readToken();
     if (!token) throw new Error("Missing auth token. Please sign in again.");
 
-    const purchaseResponse = await apiPost(
-      "/purchases",
-      { userId: currentUser.id, courseId, ...paymentDetails },
-      { token }
-    );
-    const purchase = purchaseResponse?.data || purchaseResponse;
-    setPurchases((prev) => [...prev, purchase]);
+    const idempotencyKey = paymentDetails.idempotencyKey || makeIdempotencyKey();
+    const optimisticPurchase = {
+      id: `optimistic-${idempotencyKey}`,
+      idempotencyKey,
+      userId: currentUser.id,
+      courseId,
+      amount: Number(
+        courses.find((course) => course.id === courseId)?.price || 0
+      ),
+      finalAmount: Number(
+        courses.find((course) => course.id === courseId)?.price || 0
+      ),
+      status: "paid",
+      paymentMethod: paymentDetails.paymentMethod || "card",
+      purchasedAt: new Date().toISOString(),
+      __optimistic: true,
+    };
 
-    const alreadyEnrolled = enrollments.some((row) => {
-      const rowCourseId = row.courseId?._id || row.courseId;
-      return String(rowCourseId) === String(courseId);
-    });
-    if (!alreadyEnrolled) {
-      const enrollResponse = await apiPost(
-        "/enrollments",
-        { userId: currentUser.id, courseId },
-        { token }
-      );
-      const enrollment = enrollResponse?.data || enrollResponse;
-      setEnrollments((prev) => [...prev, enrollment]);
-    }
+    const previousPurchases = purchases;
+    const previousEnrollments = enrollments;
+    const previousUser = currentUser;
 
+    setPurchases((prev) => [...prev, optimisticPurchase]);
     setCurrentUser((prev) => {
       if (!prev) return prev;
-      const purchasedIds = prev.purchasedCourseIds || [];
-      const enrolledIds = prev.enrolledCourseIds || [];
       return normalizeUserCollections({
         ...prev,
-        purchasedCourseIds: purchasedIds.includes(courseId)
-          ? purchasedIds
-          : [...purchasedIds, courseId],
-        enrolledCourseIds: enrolledIds.includes(courseId)
-          ? enrolledIds
-          : [...enrolledIds, courseId],
+        purchasedCourseIds: [...new Set([...(prev.purchasedCourseIds || []), courseId])],
+        enrolledCourseIds: [...new Set([...(prev.enrolledCourseIds || []), courseId])],
       });
     });
 
-    return purchase;
+    try {
+      const purchaseResponse = await apiPost(
+        "/purchases",
+        { userId: currentUser.id, courseId, idempotencyKey, ...paymentDetails },
+        { token }
+      );
+      const purchase = purchaseResponse?.data || purchaseResponse;
+      setPurchases((prev) => [
+        ...prev.filter((row) => row.idempotencyKey !== idempotencyKey),
+        purchase,
+      ]);
+
+      const alreadyEnrolled = previousEnrollments.some((row) => {
+        const rowCourseId = row.courseId?._id || row.courseId;
+        return String(rowCourseId) === String(courseId);
+      });
+      if (!alreadyEnrolled) {
+        const enrollResponse = await apiPost(
+          "/enrollments",
+          { userId: currentUser.id, courseId },
+          { token }
+        );
+        const enrollment = enrollResponse?.data || enrollResponse;
+        setEnrollments((prev) => [
+          ...prev.filter((row) => !(String(row.courseId?._id || row.courseId) === String(courseId) && String(row.userId?._id || row.userId) === String(currentUser.id))),
+          enrollment,
+        ]);
+      }
+
+      setCurrentUser((prev) => {
+        if (!prev) return prev;
+        const purchasedIds = prev.purchasedCourseIds || [];
+        const enrolledIds = prev.enrolledCourseIds || [];
+        return normalizeUserCollections({
+          ...prev,
+          purchasedCourseIds: purchasedIds.includes(courseId)
+            ? purchasedIds
+            : [...purchasedIds, courseId],
+          enrolledCourseIds: enrolledIds.includes(courseId)
+            ? enrolledIds
+            : [...enrolledIds, courseId],
+        });
+      });
+
+      return purchase;
+    } catch (error) {
+      setPurchases(previousPurchases);
+      setEnrollments(previousEnrollments);
+      setCurrentUser(previousUser);
+      throw error;
+    }
   }
 
   async function unenrollCourse(courseId) {

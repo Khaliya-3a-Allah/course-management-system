@@ -10,6 +10,7 @@ import {
 } from "../controllers/courses.controller.js";
 import { Router } from "express";
 import { createCrudRouter } from "../utils/createCrudRouter.js";
+import { createCacheMiddleware } from "../utils/responseCache.js";
 import {
   authenticateRequest,
   authorizeRoles,
@@ -36,6 +37,17 @@ const baseCrudRouter = createCrudRouter(
 );
 
 export const coursesRouter = Router();
+
+coursesRouter.use(
+  createCacheMiddleware({
+    keyBuilder: (req) => {
+      if (req.method !== "GET") return null;
+      if (req.originalUrl.includes("/search/analytics")) return null;
+      return `courses:${req.originalUrl}`;
+    },
+    ttlMs: 15_000,
+  })
+);
 
 coursesRouter.get("/search", searchCourses);
 coursesRouter.get("/search/facets", getCourseSearchFacets);

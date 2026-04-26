@@ -44,7 +44,7 @@ function loadSavedSearches() {
 }
 
 export default function Courses() {
-  const { courses } = useAppContext();
+  const { courses, coursesStatus } = useAppContext();
   const [searchParams] = useSearchParams();
 
   const [query, setQuery] = useState("");
@@ -385,9 +385,22 @@ export default function Courses() {
                   {searchError}
                 </p>
               </section>
-            ) : isSearching ? (
-              <section className="flex items-center justify-center py-20 text-text-dim" aria-label="Loading search results">
-                Searching courses...
+            ) : isSearching || coursesStatus === "loading" ? (
+              <section className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5" aria-label="Loading search results">
+                {Array.from({ length: PAGE_SIZE }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="rounded-xl border border-[rgba(255,255,255,0.07)] bg-surface overflow-hidden animate-pulse"
+                  >
+                    <div className="h-44 bg-[rgba(255,255,255,0.05)]" />
+                    <div className="p-4 space-y-3">
+                      <div className="h-3 w-20 rounded-full bg-[rgba(255,255,255,0.06)]" />
+                      <div className="h-5 w-4/5 rounded-full bg-[rgba(255,255,255,0.06)]" />
+                      <div className="h-3 w-2/3 rounded-full bg-[rgba(255,255,255,0.06)]" />
+                      <div className="h-4 w-full rounded-full bg-[rgba(255,255,255,0.05)]" />
+                    </div>
+                  </div>
+                ))}
               </section>
             ) : results.length === 0 ? (
               <section

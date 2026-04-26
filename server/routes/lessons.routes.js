@@ -6,6 +6,7 @@ import {
   deleteLesson,
 } from "../controllers/lessons.controller.js";
 import { createCrudRouter } from "../utils/createCrudRouter.js";
+import { createCacheMiddleware } from "../utils/responseCache.js";
 import {
   authenticateRequest,
   authorizeOwner,
@@ -27,5 +28,12 @@ export const lessonsRouter = createCrudRouter(
   {
     authMiddleware: [authenticateRequest],
     ownerMiddleware: [authorizeOwner("lessons")],
+    cacheMiddleware: createCacheMiddleware({
+      keyBuilder: (req) => {
+        if (req.method !== "GET") return null;
+        return `lessons:${req.originalUrl}`;
+      },
+      ttlMs: 15_000,
+    }),
   }
 );

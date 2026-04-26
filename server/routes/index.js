@@ -1,4 +1,5 @@
 import { Router } from "express";
+import mongoose from "mongoose";
 import { authRouter } from "./auth.routes.js";
 import { usersRouter } from "./users.routes.js";
 import { coursesRouter } from "./courses.routes.js";
@@ -19,6 +20,12 @@ router.get("/health", (req, res) => {
   res.status(200).json({
     success: true,
     message: "Server is running",
+    database: {
+      connected: mongoose.connection.readyState === 1,
+      state: mongoose.connection.readyState,
+      host: mongoose.connection.host || null,
+      name: mongoose.connection.name || null,
+    },
     timestamp: new Date().toISOString(),
   });
 });

@@ -5,9 +5,14 @@ import { asyncHandler } from "./asyncHandler.js";
 // options.authMiddleware   — middleware array applied to POST, PUT, DELETE
 // options.ownerMiddleware  — middleware array applied to PUT and DELETE (ownership check)
 // options.readMiddleware   — middleware array applied to GET (for protected resources)
+// options.cacheMiddleware   — middleware applied before GET handlers for cacheable resources
 export function createCrudRouter(controllers, options = {}) {
-  const { authMiddleware = [], ownerMiddleware = [], readMiddleware = [] } = options;
+  const { authMiddleware = [], ownerMiddleware = [], readMiddleware = [], cacheMiddleware = null } = options;
   const router = Router();
+
+  if (cacheMiddleware) {
+    router.use(cacheMiddleware);
+  }
 
   router
     .route("/")

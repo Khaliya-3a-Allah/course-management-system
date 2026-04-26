@@ -2,6 +2,7 @@ import { listByUser, findById, create } from "../data/store.js";
 import { buildCrudControllers } from "./crudFactory.js";
 import { ApiError } from "../utils/ApiError.js";
 import User from "../models/User.js";
+import Purchase from "../models/Purchase.js";
 
 const base = buildCrudControllers("purchases");
 
@@ -33,6 +34,7 @@ export async function createPurchase(req, res) {
     discount = 0,
     promoCode = "",
     referralCode = "",
+    idempotencyKey = "",
   } = req.body || {};
 
   if (!courseId) throw new ApiError(400, "courseId is required");
@@ -43,6 +45,26 @@ export async function createPurchase(req, res) {
   const userId = req.user.id;
   const amount = Number(course.price || 0);
   const finalAmount = Math.max(0, Number((amount - discount).toFixed(2)));
+
+  const existingByCourse = await Purchase.findOne({
+    userId,
+    courseId,
+  }).lean({ virtuals: true });
+  if (existingByCourse) {
+    res.status(200).json({ success: true, data: existingByCourse });
+    return;
+  }
+
+  if (idempotencyKey) {
+    const existingByKey = await Purchase.findOne({
+      userId,
+      idempotencyKey,
+    }).lean({ virtuals: true });
+    if (existingByKey) {
+      res.status(200).json({ success: true, data: existingByKey });
+      return;
+    }
+  }
 
   const payload = {
     userId,
@@ -57,6 +79,7 @@ export async function createPurchase(req, res) {
     paypalEmail,
     promoCode,
     referralCode,
+    idempotencyKey,
     createdBy: userId,
   };
 
@@ -67,7 +90,17 @@ export async function createPurchase(req, res) {
     });
     res.status(201).json({ success: true, data: item });
   } catch (err) {
-    if (err.code === 11000) throw new ApiError(409, "You have already purchased this course");
+    if (err.code === 11000) {
+      const fallback = await Purchase.findOne({
+        userId,
+        $or: [{ courseId }, ...(idempotencyKey ? [{ idempotencyKey }] : [])],
+      }).lean({ virtuals: true });
+      if (fallback) {
+        res.status(200).json({ success: true, data: fallback });
+        return;
+      }
+      throw new ApiError(409, "You have already purchased this course");
+    }
     throw err;
   }
 }

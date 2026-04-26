@@ -56,10 +56,13 @@ function VideoPlayer({ src, title, moduleName, duration }) {
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.load();
-      setCurrentTime(0);
-      setTotalDuration(0);
-      setPlaying(false);
-      setSpeed(1);
+      const frame = requestAnimationFrame(() => {
+        setCurrentTime(0);
+        setTotalDuration(0);
+        setPlaying(false);
+        setSpeed(1);
+      });
+      return () => cancelAnimationFrame(frame);
     }
   }, [src]);
 
@@ -329,13 +332,12 @@ const vStyles = {
 export default function ModuleDetails() {
   const { courseId, moduleId } = useParams();
   const navigate = useNavigate();
-  const { courses, submitReview, currentUser, lessonProgress, markLessonComplete, markCourseComplete, completedCourses, addToast } = useAppContext();
+  const { courses, coursesStatus, submitReview, currentUser, lessonProgress, markLessonComplete, markCourseComplete, completedCourses, addToast } = useAppContext();
 
   const course = courses.find((c) => c.id === courseId);
   const allModules = course?.modules || [];
   const currentModuleIndex = allModules.findIndex((m) => m.id === moduleId);
   const module = allModules[currentModuleIndex];
-  const completedLessons = lessonProgress[courseId] || {};  // base; effectiveCompleted merges in optimisticDone
 
   const [lastModuleId, setLastModuleId] = useState(moduleId);
   const [activeLesson, setActiveLesson] = useState(() => module?.lessons?.[0] ?? null);
@@ -364,6 +366,20 @@ export default function ModuleDetails() {
   }, []);
 
   if (!course) {
+    if (coursesStatus === "loading") {
+      return (
+        <div className="min-h-[80vh] bg-base text-text-secondary p-6 animate-pulse">
+          <div className="max-w-[1280px] mx-auto grid gap-6" style={{ gridTemplateColumns: "300px 1fr" }}>
+            <div className="h-[240px] rounded-xl bg-[rgba(255,255,255,0.05)]" />
+            <div className="space-y-4">
+              <div className="h-[320px] rounded-xl bg-[rgba(255,255,255,0.05)]" />
+              <div className="h-[120px] rounded-xl bg-[rgba(255,255,255,0.05)]" />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center bg-base gap-4">
         <h2 className="font-heading text-[1.5rem] text-text-primary">Course Not Found</h2>
