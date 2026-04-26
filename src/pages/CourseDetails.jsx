@@ -382,7 +382,7 @@ export default function CourseDetails() {
 
           {/* Side Card */}
           <aside
-            className="bg-[#16161a] border border-[rgba(255,255,255,0.07)] rounded-[14px] overflow-hidden sticky top-[75px]"
+            className="bg-[#16161a] border border-[rgba(255,255,255,0.07)] rounded-[14px] overflow-hidden lg:sticky lg:top-[75px]"
             aria-label="Course enrollment"
           >
             {course.thumbnail && (
@@ -462,7 +462,7 @@ export default function CourseDetails() {
         <p className="text-[#9ca3af] mb-6 text-[0.95rem] leading-[1.6]">
           You need to be logged in to enroll or save courses.
         </p>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <Link
             to="/login"
             onClick={() => setModalOpen(false)}
@@ -486,7 +486,7 @@ export default function CourseDetails() {
           Are you sure you want to unenroll from{" "}
           <strong className="text-[#f5f2ec]">{course.title}</strong>? You will lose access to all modules.
         </p>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={handleUnenroll}
             className="flex-1 py-3 bg-[#ef4444] text-white rounded-lg font-bold text-[0.9rem] border-none cursor-pointer"

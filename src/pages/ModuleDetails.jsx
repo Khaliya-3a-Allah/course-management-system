@@ -368,8 +368,8 @@ export default function ModuleDetails() {
   if (!course) {
     if (coursesStatus === "loading") {
       return (
-        <div className="min-h-[80vh] bg-base text-text-secondary p-6 animate-pulse">
-          <div className="max-w-[1280px] mx-auto grid gap-6" style={{ gridTemplateColumns: "300px 1fr" }}>
+        <div className="min-h-[80vh] bg-base text-text-secondary p-4 sm:p-6 animate-pulse">
+          <div className="max-w-[1280px] mx-auto grid grid-cols-1 md:grid-cols-[300px_1fr] gap-4 md:gap-6">
             <div className="h-[240px] rounded-xl bg-[rgba(255,255,255,0.05)]" />
             <div className="space-y-4">
               <div className="h-[320px] rounded-xl bg-[rgba(255,255,255,0.05)]" />
@@ -527,13 +527,13 @@ export default function ModuleDetails() {
 
       {/* Top Bar */}
       <header className="sticky top-0 z-10 border-b border-[rgba(255,255,255,0.06)] px-6 bg-sidebar">
-        <div className="max-w-[1280px] mx-auto h-[53px] flex items-center gap-3 text-[0.85rem] flex-wrap">
+        <div className="max-w-[1280px] mx-auto min-h-[53px] flex items-center gap-2 sm:gap-3 text-[0.8rem] sm:text-[0.85rem] flex-wrap py-2">
           <Link to={`/courses/${courseId}`} className="no-underline font-semibold text-brand">← {course.title}</Link>
           <span className="text-text-faint" aria-hidden="true">/</span>
           <span className="text-text-muted font-normal flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{module.title}</span>
           <div className="flex items-center gap-2.5 shrink-0" aria-label={`Progress: ${progressPct}%`}>
             <span className="text-[0.75rem] font-bold min-w-[2.5rem] text-right text-brand">{progressPct}%</span>
-            <div className="w-[100px] h-1 rounded-full overflow-hidden bg-[rgba(255,255,255,0.08)]">
+            <div className="w-16 sm:w-[100px] h-1 rounded-full overflow-hidden bg-[rgba(255,255,255,0.08)]">
               <div className="progress-fill" style={{ width: `${progressPct}%` }} />
             </div>
           </div>

@@ -377,7 +377,7 @@ export default function Certificates() {
   }
 
   return (
-    <main className="min-h-screen bg-base text-[#e8e6e0] px-6 md:px-8 py-10">
+    <main className="min-h-screen bg-base text-[#e8e6e0] px-4 sm:px-6 md:px-8 py-8 md:py-10">
       <section className="max-w-[1100px] mx-auto" aria-labelledby="certificates-heading">
         <header className="mb-8">
           <p className="text-[0.72rem] uppercase tracking-[0.2em] text-[#f59e0b] mb-2" aria-hidden="true">Achievements</p>
@@ -399,7 +399,7 @@ export default function Certificates() {
             </Link>
           </section>
         ) : (
-          <ul aria-label="Certificates" className="grid gap-6 list-none p-0 m-0" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))" }}>
+          <ul aria-label="Certificates" className="grid gap-4 sm:gap-6 list-none p-0 m-0" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 300px), 1fr))" }}>
             {completedCourseList.map((course) => {
               const certId =
                 issuedCertByCourse[String(course.id)] ||
@@ -429,7 +429,7 @@ export default function Certificates() {
                     </div>
 
                     <div className="p-5 flex flex-col gap-4 flex-1">
-                      <div className="grid grid-cols-2 gap-3 text-[0.8rem]">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[0.8rem]">
                         <div className="rounded-lg border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] p-2.5">
                           <p className="text-text-faint mb-1">Recipient</p>
                           <p className="text-text-secondary font-medium truncate">{currentUser?.name}</p>
@@ -446,7 +446,7 @@ export default function Certificates() {
                       </div>
 
                       <div className="mt-auto space-y-2.5">
-                        <div className="grid grid-cols-2 gap-2.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                           <Link
                             to={`/courses/${course.id}`}
                             aria-label={`View ${course.title} course`}
@@ -464,7 +464,7 @@ export default function Certificates() {
                           </button>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                           <button
                             type="button"
                             onClick={async () => {

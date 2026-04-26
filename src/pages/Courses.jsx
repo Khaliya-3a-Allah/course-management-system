@@ -386,7 +386,7 @@ export default function Courses() {
                 </p>
               </section>
             ) : isSearching || coursesStatus === "loading" ? (
-              <section className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5" aria-label="Loading search results">
+              <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5" aria-label="Loading search results">
                 {Array.from({ length: PAGE_SIZE }).map((_, index) => (
                   <div
                     key={index}
@@ -446,7 +446,7 @@ export default function Courses() {
             ) : (
               <>
                 <ul
-                  className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 list-none p-0 m-0"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 list-none p-0 m-0"
                   aria-label="Course results"
                 >
                 {results.map((course, index) => (

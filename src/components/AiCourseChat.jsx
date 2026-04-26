@@ -275,10 +275,10 @@ export default function AiCourseChat() {
   }
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex items-end">
+    <div className="fixed bottom-3 right-3 z-50 flex items-end sm:bottom-5 sm:right-5">
       {isOpen && (
         <section
-          className="mb-3 flex h-[min(620px,calc(100vh-7rem))] w-[min(390px,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg border border-[rgba(255,255,255,0.12)] bg-[#111114] shadow-[0_26px_70px_rgba(0,0,0,0.36)]"
+          className="mb-3 flex h-[min(620px,calc(100dvh-6rem))] w-[calc(100vw-1.5rem)] max-w-[390px] flex-col overflow-hidden rounded-lg border border-[rgba(255,255,255,0.12)] bg-[#111114] shadow-[0_26px_70px_rgba(0,0,0,0.36)] sm:w-[390px]"
           aria-label="AI course recommendation chat"
         >
           <header className="flex items-center justify-between border-b border-[rgba(255,255,255,0.08)] bg-[#16161a] px-4 py-3">
@@ -373,7 +373,7 @@ export default function AiCourseChat() {
           setIsOpen((value) => !value);
           setTimeout(() => inputRef.current?.focus(), 0);
         }}
-        className="grid h-14 w-14 place-items-center rounded-lg bg-brand text-white shadow-[0_18px_44px_rgba(217,119,6,0.32)] transition hover:bg-brand-light"
+        className="grid h-12 w-12 place-items-center rounded-lg bg-brand text-white shadow-[0_18px_44px_rgba(217,119,6,0.32)] transition hover:bg-brand-light sm:h-14 sm:w-14"
         aria-label={isOpen ? "Hide AI course chat" : "Open AI course chat"}
         title={isOpen ? "Hide Course AI" : "Open Course AI"}
       >
