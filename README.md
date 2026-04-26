@@ -675,8 +675,6 @@ Browse the course catalog, inspect featured content, and filter courses before o
 Course pages show pricing, enrollment state, modules, lessons, and learner progress through the curriculum.
 
 <img width="1910" height="912" alt="image" src="https://github.com/user-attachments/assets/ad5847fd-608a-4695-b269-46f2be8befd6" />
-<img width="1915" height="908" alt="image" src="https://github.com/user-attachments/assets/9fbf1df8-5d03-4c83-8db5-466b3777a4dc" />
-<img width="984" height="478" alt="image" src="https://github.com/user-attachments/assets/51f5d70f-6c90-4798-8182-d8d39f22c54c" />
 <img width="1919" height="912" alt="image" src="https://github.com/user-attachments/assets/c2f40e52-89b7-4744-8e22-612c77cc5ff2" />
 <img width="1353" height="429" alt="Screenshot 2026-03-24 230503" src="https://github.com/user-attachments/assets/fb4f404b-9ead-42b0-a1f1-21fc88518492" />
 
@@ -725,7 +723,9 @@ Authentication includes registration, login, email verification, protected route
 
 Paid courses support card or PayPal-style checkout, promo/referral discounts, sale pricing, validation, purchase records, and printable receipts.
 
-<!-- Add checkout screenshots here: payment form, order summary, and printed receipt window. -->
+<img width="1915" height="908" alt="image" src="https://github.com/user-attachments/assets/9fbf1df8-5d03-4c83-8db5-466b3777a4dc" />
+
+<img width="984" height="478" alt="image" src="https://github.com/user-attachments/assets/51f5d70f-6c90-4798-8182-d8d39f22c54c" />
 
 ### 9. Lesson quizzes and assessment attempts
 
