@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { BookIcon } from "./Icons";
+import { BookIcon, StarIcon } from "./Icons";
 import { getActiveSale } from "../utils/pricing";
 import SaleCountdown from "./SaleCountdown";
 
@@ -87,14 +87,7 @@ export default function CourseCard({ course }) {
             {/* Stars */}
             <div className="flex items-center gap-px shrink-0" aria-label={`Rating: ${course.rating?.toFixed(1)} out of 5`}>
               {[...Array(5)].map((_, i) => (
-                <span
-                  key={i}
-                  className="text-[0.75rem]"
-                  aria-hidden="true"
-                  style={{ color: i < Math.round(course.rating) ? "#f59e0b" : "#374151" }}
-                >
-                  ★
-                </span>
+                <StarIcon key={i} size={12} filled={i < Math.round(course.rating)} color={i < Math.round(course.rating) ? "#f59e0b" : "#374151"} />
               ))}
               <span className="text-[0.75rem] text-text-muted ml-1.5">
                 {course.rating?.toFixed(1)}

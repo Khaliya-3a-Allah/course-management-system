@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAppContext } from "../context/AppContext";
 import { apiGet, apiPost } from "../utils/api";
 import { readToken } from "../utils/authStorage";
+import { ChevronUpIcon } from "../components/Icons";
 
 function formatTime(value) {
   return new Intl.DateTimeFormat("en-US", {
@@ -59,7 +60,7 @@ function ThreadItem({ thread, isActive, onOpen, onUpvote, currentUserId }) {
                 : "border-[rgba(255,255,255,0.12)] text-text-secondary"
             }`}
           >
-            ▲ {thread.upvotesCount || 0}
+            <ChevronUpIcon size={12} /> {thread.upvotesCount || 0}
           </button>
         </div>
       </div>
@@ -329,7 +330,7 @@ export default function Community() {
   }
 
   return (
-    <main className="min-h-screen bg-base text-[#e8e6e0] px-6 md:px-8 py-10">
+    <main className="min-h-screen bg-base text-[#e8e6e0] px-4 md:px-8 py-8 md:py-10">
       <section className="max-w-[1200px] mx-auto">
         <header className="mb-6">
           <p className="text-[0.72rem] uppercase tracking-[0.2em] text-[#f59e0b] mb-2">Community</p>
@@ -339,7 +340,7 @@ export default function Community() {
           </p>
         </header>
 
-        <div className="grid lg:grid-cols-[360px,1fr] gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[320px,1fr] gap-4 md:gap-6 mb-6">
           <aside className="rounded-2xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] p-4 h-fit">
             <div className="mb-3">
               <label htmlFor="course-filter" className="text-[0.78rem] uppercase tracking-[0.12em] text-text-faint">
@@ -381,7 +382,7 @@ export default function Community() {
               </button>
             </form>
 
-            <div className="space-y-2 max-h-[560px] overflow-auto pr-1">
+            <div className="space-y-2 max-h-[320px] lg:max-h-[560px] overflow-auto pr-1">
               {loading ? (
                 <p className="text-text-faint text-[0.84rem]">Loading threads...</p>
               ) : threads.length === 0 ? (
@@ -401,7 +402,7 @@ export default function Community() {
             </div>
           </aside>
 
-          <section className="rounded-2xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] p-5">
+          <section className="rounded-2xl border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] p-4 md:p-5">
             {!selectedThread ? (
               <p className="text-text-faint">Select a thread to see answers.</p>
             ) : (
@@ -452,7 +453,7 @@ export default function Community() {
                                     : "border-[rgba(255,255,255,0.12)] text-text-secondary"
                                 }`}
                               >
-                                ▲ {comment.upvotesCount || 0}
+                                <ChevronUpIcon size={12} /> {comment.upvotesCount || 0}
                               </button>
                               {!comment.isAccepted && canAccept ? (
                                 <button

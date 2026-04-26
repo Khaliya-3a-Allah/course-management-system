@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { apiGet } from "../utils/api";
+import { AlertIcon, CheckIcon, InfoIcon, PrinterIcon, LinkedInIcon } from "../components/Icons";
 
 function VerifyCertificate() {
   const { certId } = useParams();
@@ -58,7 +59,7 @@ function VerifyCertificate() {
         {error ? (
           // Error State
           <section className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-surface p-8 text-center">
-            <div className="text-4xl mb-4">⚠️</div>
+            <div className="text-4xl mb-4 flex justify-center text-amber-400"><AlertIcon size={40} /></div>
             <h1 className="font-heading text-2xl text-text-primary mb-2">
               Certificate Not Valid
             </h1>
@@ -83,8 +84,8 @@ function VerifyCertificate() {
           <section className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-surface p-8">
             {/* Verification Badge */}
             <div className="text-center mb-8 pb-8 border-b border-[rgba(255,255,255,0.1)]">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500 bg-opacity-20 mb-4">
-                <span className="text-3xl">✓</span>
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500 bg-opacity-20 mb-4 text-green-400">
+                <CheckIcon size={32} />
               </div>
               <p className="text-[0.85rem] uppercase tracking-[0.15em] text-green-400 mb-2">
                 Verified
@@ -174,7 +175,7 @@ function VerifyCertificate() {
             {/* Info Box */}
             <div className="bg-[rgba(245, 158, 11, 0.1)] border border-[#f59e0b] border-opacity-30 rounded-lg p-4 mb-8">
               <p className="text-sm text-text-secondary">
-                ℹ️ <strong>Certificate Information:</strong> This certificate has been issued by Courseware
+                <span className="inline-flex items-start gap-1.5"><InfoIcon size={15} className="shrink-0 mt-0.5" /> <strong>Certificate Information:</strong></span> This certificate has been issued by Courseware
                 and can be shared publicly. The certificate ID contains cryptographic verification data to prevent forgery.
               </p>
             </div>
@@ -183,17 +184,17 @@ function VerifyCertificate() {
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={() => window.print()}
-                className="flex-1 px-4 py-3 rounded-lg bg-brand text-base font-semibold hover:bg-opacity-90 transition-colors text-center cursor-pointer border-none"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-brand text-base font-semibold hover:bg-opacity-90 transition-colors text-center cursor-pointer border-none"
               >
-                🖨️ Print Certificate
+                <PrinterIcon size={16} /> Print Certificate
               </button>
               <a
                 href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 px-4 py-3 rounded-lg bg-[#0A66C2] text-white font-semibold hover:bg-[#084699] transition-colors text-center no-underline"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-[#0A66C2] text-white font-semibold hover:bg-[#084699] transition-colors text-center no-underline"
               >
-                🔗 Share on LinkedIn
+                <LinkedInIcon size={16} /> Share on LinkedIn
               </a>
             </div>
 

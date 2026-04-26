@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import Modal from "./Modal";
-import { CloseIcon, MenuIcon, MoonIcon, SunIcon } from "./Icons";
+import { CloseIcon, MenuIcon, MoonIcon, SunIcon, DiamondIcon, ArrowRightIcon } from "./Icons";
 import useClickOutside from "../hooks/useClickOutside";
 
 export default function Navbar() {
@@ -37,7 +37,7 @@ export default function Navbar() {
         style={{ backdropFilter: "blur(12px)" }}
       >
         <nav
-          className="max-w-[1200px] mx-auto px-5 h-[62px] flex items-center gap-8"
+          className="max-w-[1200px] mx-auto px-4 sm:px-5 h-[62px] flex items-center gap-4 sm:gap-8"
           aria-label="Main navigation"
         >
           <Link
@@ -46,7 +46,7 @@ export default function Navbar() {
             aria-label="Courseware home"
             className="flex items-center gap-2.5 no-underline shrink-0 leading-none"
           >
-            <span className="text-brand leading-none" style={{ fontSize: "1.25rem" }} aria-hidden="true">◈</span>
+            <span className="text-brand leading-none" aria-hidden="true"><DiamondIcon size={20} /></span>
             <span className="font-heading text-[1.1rem] text-text-primary font-bold leading-none">
               Courseware
             </span>
@@ -279,9 +279,9 @@ export default function Navbar() {
                   <Link
                     to="/register"
                     onClick={closeMenu}
-                    className="block py-3 px-2 no-underline text-[0.95rem] font-bold text-brand"
+                    className="flex items-center gap-1.5 py-3 px-2 no-underline text-[0.95rem] font-bold text-brand"
                   >
-                    Get Started →
+                    Get Started <ArrowRightIcon size={14} />
                   </Link>
                 </li>
               </ul>

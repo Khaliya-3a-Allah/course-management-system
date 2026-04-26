@@ -6,6 +6,7 @@ import EmailAutocompleteInput from "../components/EmailAutocompleteInput";
 import paypalIcon from "../assets/PayPal.svg";
 import { getActiveSale, formatMoney } from "../utils/pricing";
 import SaleCountdown from "../components/SaleCountdown";
+import { ArrowLeftIcon } from "../components/Icons";
 
 function normalizeCardNumber(value) {
   return value.replace(/\D/g, "").slice(0, 19);
@@ -163,7 +164,7 @@ export default function Checkout() {
         <span className="text-[0.75rem] tracking-[0.22em] uppercase text-text-dim mb-4">Not Found</span>
         <h2 className="font-['Playfair_Display',serif] text-[1.8rem] text-text-primary mb-2">Course Not Found</h2>
         <p className="text-text-dim mb-6">This checkout link is invalid.</p>
-        <Link to="/courses" className="text-[#d97706] no-underline font-semibold">← Back to Courses</Link>
+        <Link to="/courses" className="text-[#d97706] no-underline font-semibold inline-flex items-center gap-1.5"><ArrowLeftIcon size={14} /> Back to Courses</Link>
       </main>
     );
   }
@@ -340,7 +341,7 @@ export default function Checkout() {
     <main className="min-h-screen bg-base text-text-secondary px-5 py-10 md:px-8">
       <div className="max-w-[980px] mx-auto grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <section className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-surface p-5 md:p-7">
-          <Link to={`/courses/${course.id}`} className="text-[#d97706] no-underline text-[0.86rem] font-semibold">← Back to Course</Link>
+          <Link to={`/courses/${course.id}`} className="text-[#d97706] no-underline text-[0.86rem] font-semibold inline-flex items-center gap-1.5"><ArrowLeftIcon size={14} /> Back to Course</Link>
           <p className="mt-4 mb-2 text-[0.72rem] tracking-[0.2em] uppercase text-[#f6c56b]">Checkout</p>
           <h1 className="m-0 font-['Playfair_Display',serif] text-[1.9rem] text-text-primary">{course.title}</h1>
           <p className="mt-2 mb-0 text-text-dim text-[0.92rem]">Complete payment to unlock full access and mark this course as owned.</p>

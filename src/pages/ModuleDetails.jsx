@@ -3,6 +3,11 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import Modal from "../components/Modal";
 import LessonQuiz from "../components/LessonQuiz";
+import {
+  CheckIcon, StarIcon, ChevronUpIcon, ChevronDownIcon,
+  ArrowRightIcon, ArrowLeftIcon, PlayIcon, BookIcon,
+  TrophyIcon, ClockIcon,
+} from "../components/Icons";
 
 // ── SVG Icons ────────────────────────────────────────────────────────────────
 const IconPlay = () => (
@@ -300,7 +305,7 @@ function VideoPlayer({ src, title, moduleName, duration }) {
               )}
             </div>
 
-            <span style={vStyles.durBadge}>⏱ {duration}</span>
+            <span style={vStyles.durBadge} className="inline-flex items-center gap-1"><ClockIcon size={12} /> {duration}</span>
             <button className="vp-btn" onClick={toggleFS} aria-label="Fullscreen">
               <IconFullscreen />
             </button>
@@ -384,7 +389,7 @@ export default function ModuleDetails() {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center bg-base gap-4">
         <h2 className="font-heading text-[1.5rem] text-text-primary">Course Not Found</h2>
-        <Link to="/courses" className="no-underline font-semibold text-brand">← All Courses</Link>
+        <Link to="/courses" className="no-underline font-semibold text-brand inline-flex items-center gap-1.5"><ArrowLeftIcon size={14} /> All Courses</Link>
       </div>
     );
   }
@@ -393,7 +398,7 @@ export default function ModuleDetails() {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center bg-base gap-4">
         <h2 className="font-heading text-[1.5rem] text-text-primary">Module Not Found</h2>
-        <Link to={`/courses/${courseId}`} className="no-underline font-semibold text-brand">← Back to Course</Link>
+        <Link to={`/courses/${courseId}`} className="no-underline font-semibold text-brand inline-flex items-center gap-1.5"><ArrowLeftIcon size={14} /> Back to Course</Link>
       </div>
     );
   }
@@ -414,7 +419,7 @@ export default function ModuleDetails() {
       <div className="min-h-[80vh] flex flex-col items-center justify-center bg-base gap-4 text-center px-6">
         <h2 className="font-heading text-[1.5rem] text-text-primary">Sign In Required</h2>
         <p className="text-text-dim m-0">You need to sign in to access course lessons.</p>
-        <Link to="/login" className="no-underline font-semibold text-brand">Go to Login →</Link>
+        <Link to="/login" className="no-underline font-semibold text-brand inline-flex items-center gap-1.5">Go to Login <ArrowRightIcon size={14} /></Link>
       </div>
     );
   }
@@ -424,7 +429,7 @@ export default function ModuleDetails() {
       <div className="min-h-[80vh] flex flex-col items-center justify-center bg-base gap-4 text-center px-6">
         <h2 className="font-heading text-[1.5rem] text-text-primary">Purchase Required</h2>
         <p className="text-text-dim m-0">Buy this course to unlock all modules and lessons.</p>
-        <Link to={`/checkout/${courseId}`} className="no-underline font-semibold text-brand">Go to Checkout →</Link>
+        <Link to={`/checkout/${courseId}`} className="no-underline font-semibold text-brand inline-flex items-center gap-1.5">Go to Checkout <ArrowRightIcon size={14} /></Link>
       </div>
     );
   }
@@ -434,7 +439,7 @@ export default function ModuleDetails() {
       <div className="min-h-[80vh] flex flex-col items-center justify-center bg-base gap-4 text-center px-6">
         <h2 className="font-heading text-[1.5rem] text-text-primary">Enrollment Required</h2>
         <p className="text-text-dim m-0">Enroll in this course before opening lessons.</p>
-        <Link to={`/courses/${courseId}`} className="no-underline font-semibold text-brand">Back to Course →</Link>
+        <Link to={`/courses/${courseId}`} className="no-underline font-semibold text-brand inline-flex items-center gap-1.5">Back to Course <ArrowRightIcon size={14} /></Link>
       </div>
     );
   }
@@ -529,7 +534,7 @@ export default function ModuleDetails() {
       {/* Top Bar */}
       <header className="sticky top-0 z-10 border-b border-[rgba(255,255,255,0.06)] px-6 bg-sidebar">
         <div className="max-w-[1280px] mx-auto min-h-[53px] flex items-center gap-2 sm:gap-3 text-[0.8rem] sm:text-[0.85rem] flex-wrap py-2">
-          <Link to={`/courses/${courseId}`} className="no-underline font-semibold text-brand">← {course.title}</Link>
+          <Link to={`/courses/${courseId}`} className="no-underline font-semibold text-brand inline-flex items-center gap-1.5"><ArrowLeftIcon size={14} /> {course.title}</Link>
           <span className="text-text-faint" aria-hidden="true">/</span>
           <span className="text-text-muted font-normal flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{module.title}</span>
           <div className="flex items-center gap-2.5 shrink-0" aria-label={`Progress: ${progressPct}%`}>
@@ -583,7 +588,7 @@ export default function ModuleDetails() {
                       className="font-heading text-[1rem] min-w-[1.75rem] font-bold"
                       style={{ color: modComplete ? "#22c55e" : isCurrentModule ? "#d97706" : "rgba(217,119,6,0.3)" }}
                     >
-                      {modComplete ? "✓" : String(modIdx + 1).padStart(2, "0")}
+                      {modComplete ? <CheckIcon size={16} /> : String(modIdx + 1).padStart(2, "0")}
                     </span>
                     <span className="flex-1 flex flex-col gap-1.5 min-w-0">
                       <span className="text-[0.85rem] text-text-secondary font-medium">{mod.title}</span>
@@ -597,7 +602,7 @@ export default function ModuleDetails() {
                         <span className="text-[0.65rem] text-text-faint shrink-0">{modDone}/{modTotal}</span>
                       </span>
                     </span>
-                    <span className="text-[0.6rem] text-text-dim shrink-0" aria-hidden="true">{isExpanded ? "▲" : "▼"}</span>
+                    <span className="text-text-dim shrink-0" aria-hidden="true">{isExpanded ? <ChevronUpIcon size={13} /> : <ChevronDownIcon size={13} />}</span>
                   </button>
 
                   {isExpanded && (
@@ -631,8 +636,8 @@ export default function ModuleDetails() {
                               </span>
                               <span className="text-[0.7rem] text-text-dim">{lesson.duration}</span>
                             </span>
-                            {isActiveLesson && !isDone && <span className="text-[0.55rem] text-brand shrink-0" aria-hidden="true">▶</span>}
-                            {isDone && <span className="text-[0.7rem] text-[#22c55e] shrink-0" aria-label="Completed">✓</span>}
+                            {isActiveLesson && !isDone && <span className="text-brand shrink-0" aria-hidden="true"><PlayIcon size={9} /></span>}
+                            {isDone && <span className="text-[#22c55e] shrink-0" aria-label="Completed"><CheckIcon size={13} /></span>}
                           </button>
                         );
                       })}
@@ -657,13 +662,13 @@ export default function ModuleDetails() {
 
               {/* Lesson meta */}
               <div className="flex gap-3 mb-3 items-center flex-wrap">
-                <span className="text-[0.8rem] text-text-dim">⏱ {activeLesson.duration}</span>
+                <span className="text-[0.8rem] text-text-dim flex items-center gap-1"><ClockIcon size={13} /> {activeLesson.duration}</span>
                 <span className="text-[0.75rem] text-text-faint px-2.5 py-0.5 rounded-full border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.04)]">
                   {module.title}
                 </span>
                 {effectiveCompleted[activeLesson.id] && (
-                  <span className="text-[0.72rem] font-semibold px-2.5 py-0.5 rounded-full border border-[rgba(34,197,94,0.2)] bg-[rgba(34,197,94,0.08)] text-[#22c55e]">
-                    ✓ Completed
+                  <span className="inline-flex items-center gap-1 text-[0.72rem] font-semibold px-2.5 py-0.5 rounded-full border border-[rgba(34,197,94,0.2)] bg-[rgba(34,197,94,0.08)] text-[#22c55e]">
+                    <CheckIcon size={11} /> Completed
                   </span>
                 )}
               </div>
@@ -683,7 +688,7 @@ export default function ModuleDetails() {
 
               {effectiveCompleted[activeLesson.id] ? (
                 <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-[0.85rem] mb-6 border border-[rgba(34,197,94,0.35)] bg-[rgba(34,197,94,0.12)] text-[#22c55e]">
-                  ✓ Completed
+                  <CheckIcon size={16} /> Completed
                 </div>
               ) : activeLesson.quiz?.enabled ? (
                 <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-[0.85rem] mb-6 border border-[rgba(217,119,6,0.25)] bg-[rgba(217,119,6,0.08)] text-brand">
@@ -694,7 +699,7 @@ export default function ModuleDetails() {
                   className="mark-complete-btn inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-[0.85rem] cursor-pointer mb-6 border border-[rgba(34,197,94,0.25)] bg-[rgba(34,197,94,0.08)] text-[#22c55e]"
                   onClick={() => handleMarkComplete(activeLesson.id)}
                 >
-                  ✓ Mark as Complete
+                  <CheckIcon size={16} /> Mark as Complete
                 </button>
               )}
 
@@ -704,23 +709,23 @@ export default function ModuleDetails() {
                     onClick={goToPrevLesson}
                     className="px-5 py-2.5 rounded-lg font-medium text-[0.88rem] cursor-pointer border border-[rgba(255,255,255,0.08)] bg-surface text-text-secondary"
                   >
-                    <span aria-hidden="true">← </span>{isFirstLesson && prevModule ? "Prev Module" : "Prev Lesson"}
+                    <span className="inline-flex items-center gap-1.5"><ArrowLeftIcon size={14} />{isFirstLesson && prevModule ? "Prev Module" : "Prev Lesson"}</span>
                   </button>
                 )}
                 {!isLastLesson ? (
                   <button onClick={goToNextLesson} className="px-5 py-2.5 rounded-lg font-medium text-[0.88rem] cursor-pointer border border-[rgba(217,119,6,0.3)] bg-[rgba(217,119,6,0.08)] text-brand ml-auto">
-                    Next Lesson <span aria-hidden="true">→</span>
+                    <span className="inline-flex items-center gap-1.5">Next Lesson <ArrowRightIcon size={14} /></span>
                   </button>
                 ) : nextModule ? (
                   <button onClick={goToNextModule} className="px-5 py-2.5 rounded-lg font-medium text-[0.88rem] cursor-pointer border border-[rgba(217,119,6,0.3)] bg-[rgba(217,119,6,0.08)] text-brand ml-auto">
-                    Next Module <span aria-hidden="true">→</span>
+                    <span className="inline-flex items-center gap-1.5">Next Module <ArrowRightIcon size={14} /></span>
                   </button>
                 ) : null}
               </nav>
             </div>
           ) : (
             <div className="h-[60vh] flex flex-col items-center justify-center gap-4 text-text-faint text-[0.95rem]">
-              <span className="text-[2.5rem]" aria-hidden="true">📖</span>
+              <span className="text-text-faint" aria-hidden="true"><BookIcon size={40} /></span>
               <p>Select a lesson from the sidebar to begin.</p>
             </div>
           )}
@@ -732,7 +737,7 @@ export default function ModuleDetails() {
         {!submitted ? (
           <div className="flex flex-col gap-6">
             <div className="text-center">
-              <span className="text-[3rem] block mb-3" aria-hidden="true">🎉</span>
+              <span className="text-brand block mb-3" aria-hidden="true"><TrophyIcon size={48} /></span>
               <h2 className="font-heading text-[1.5rem] text-text-primary mb-2">Course Complete!</h2>
               <p className="text-[0.9rem] text-text-muted leading-relaxed m-0">
                 You've finished <strong className="text-text-primary">{course.title}</strong>.<br />Share how it went!
@@ -743,7 +748,7 @@ export default function ModuleDetails() {
               <div className="flex justify-center gap-1 mb-2" role="group" aria-label="Star rating">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button key={star} className="star-btn" onClick={() => setSelectedRating(star)} onMouseEnter={() => setHoveredStar(star)} onMouseLeave={() => setHoveredStar(0)} aria-label={`Rate ${star} stars`} aria-pressed={selectedRating === star}>
-                    <span style={{ color: star <= (hoveredStar || selectedRating) ? "#f59e0b" : "#2d2d35", transition: "color 0.12s" }}>★</span>
+                    <StarIcon size={28} filled={star <= (hoveredStar || selectedRating)} color={star <= (hoveredStar || selectedRating) ? "#f59e0b" : "#2d2d35"} />
                   </button>
                 ))}
               </div>
@@ -782,7 +787,7 @@ export default function ModuleDetails() {
             </div>
             <div className="flex flex-col gap-3">
               <Link to="/courses" onClick={() => setShowCompletion(false)} className="block text-center py-3.5 rounded-lg no-underline font-bold text-[0.92rem] bg-brand text-base">
-                Browse More Courses <span aria-hidden="true">→</span>
+                <span className="inline-flex items-center gap-1.5">Browse More Courses <ArrowRightIcon size={14} /></span>
               </Link>
               <button type="button" onClick={() => setShowCompletion(false)} className="w-full py-3 rounded-lg text-[0.88rem] cursor-pointer border border-[rgba(255,255,255,0.07)] bg-transparent text-text-dim">
                 Close

@@ -7,6 +7,7 @@ import FormField, { INPUT_CLASS, buildInputBorder } from "../components/FormFiel
 import AutocompleteInput from "../components/AutocompleteInput";
 import CurriculumBuilder from "../components/curriculum/CurriculumBuilder";
 import Modal from "../components/Modal";
+import { ArrowLeftIcon, CheckIcon } from "../components/Icons";
 
 const emptyForm = {
   title: "", category: "", level: "",
@@ -73,7 +74,7 @@ export default function CourseForm() {
       <div className="min-h-[60vh] flex flex-col items-center justify-center bg-base gap-4">
         <h2 className="font-heading text-[1.5rem] text-text-primary">Course Not Found</h2>
         <Link to="/dashboard" className="no-underline font-semibold" style={{ color: "#d97706" }}>
-          ← Back to Dashboard
+          <span className="inline-flex items-center gap-1.5"><ArrowLeftIcon size={14} /> Back to Dashboard</span>
         </Link>
       </div>
     );
@@ -201,7 +202,7 @@ export default function CourseForm() {
           className="no-underline text-[0.85rem] font-semibold inline-block mb-6"
           style={{ color: "#d97706" }}
         >
-          ← Back to Dashboard
+          <span className="inline-flex items-center gap-1.5"><ArrowLeftIcon size={14} /> Back to Dashboard</span>
         </Link>
 
         <h1 className="font-heading text-[2rem] text-text-primary mb-1">
@@ -223,7 +224,7 @@ export default function CourseForm() {
               color: "#22c55e",
             }}
           >
-            ✓ Course {isEdit ? "updated" : "created"} successfully! Redirecting…
+            <span className="inline-flex items-center gap-1.5"><CheckIcon size={15} /> Course {isEdit ? "updated" : "created"} successfully! Redirecting…</span>
           </div>
         )}
 

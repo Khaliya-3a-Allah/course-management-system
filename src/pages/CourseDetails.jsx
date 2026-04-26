@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import Modal from "../components/Modal";
-import { BookIcon, CapIcon, LockIcon, TargetIcon } from "../components/Icons";
+import {
+  BookIcon, CapIcon, LockIcon, TargetIcon,
+  CheckIcon, StarIcon, ChevronUpIcon, ChevronDownIcon,
+  ArrowRightIcon, ArrowLeftIcon, HeartIcon, PlayIcon,
+} from "../components/Icons";
 import { getActiveSale, formatMoney } from "../utils/pricing";
 import SaleCountdown from "../components/SaleCountdown";
 
@@ -61,7 +65,7 @@ export default function CourseDetails() {
         <span className="text-[0.75rem] tracking-[0.22em] uppercase text-text-dim mb-4">Not Found</span>
         <h2 className="font-['Playfair_Display',serif] text-[1.75rem] text-text-primary mb-2">Course Not Found</h2>
         <p className="text-text-dim mb-6">The course you're looking for doesn't exist or has been removed.</p>
-        <Link to="/courses" className="text-[#d97706] no-underline font-semibold">← Back to All Courses</Link>
+        <Link to="/courses" className="text-[#d97706] no-underline font-semibold inline-flex items-center gap-1.5"><ArrowLeftIcon size={14} /> Back to All Courses</Link>
       </div>
     );
   }
@@ -139,9 +143,9 @@ export default function CourseDetails() {
           <div className="pointer-events-none absolute -top-24 -left-20 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(217,119,6,0.14)_0%,rgba(217,119,6,0)_72%)]" aria-hidden="true" />
           <div className="pointer-events-none absolute -bottom-28 right-8 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(245,158,11,0.12)_0%,rgba(245,158,11,0)_70%)]" aria-hidden="true" />
 
-          <div className="relative z-[2] max-w-[1200px] mx-auto px-5 md:px-8 py-10 md:py-12 grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-8 items-center">
+          <div className="relative z-[2] max-w-[1200px] mx-auto px-4 md:px-8 py-8 md:py-12 grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-6 md:gap-8 items-center">
             <div>
-              <Link to="/courses" className="text-[#d97706] no-underline text-[0.85rem] inline-block mb-4">← All Courses</Link>
+              <Link to="/courses" className="text-[#d97706] no-underline text-[0.85rem] inline-flex items-center gap-1.5 mb-4"><ArrowLeftIcon size={14} /> All Courses</Link>
               <div className="flex gap-[0.6rem] mb-4 flex-wrap">
                 <span
                   className="px-3 py-[0.2rem] rounded-full text-[0.72rem] font-bold text-[#0c0c0e] uppercase"
@@ -153,8 +157,8 @@ export default function CourseDetails() {
                   {course.category}
                 </span>
                 {isCompleted && (
-                  <span className="px-3 py-[0.2rem] rounded-full text-[0.72rem] font-bold bg-[rgba(34,197,94,0.15)] border border-[rgba(34,197,94,0.3)] text-[#22c55e]">
-                    ✓ Completed
+                  <span className="px-3 py-[0.2rem] rounded-full text-[0.72rem] font-bold bg-[rgba(34,197,94,0.15)] border border-[rgba(34,197,94,0.3)] text-[#22c55e] inline-flex items-center gap-1">
+                    <CheckIcon size={11} /> Completed
                   </span>
                 )}
               </div>
@@ -172,7 +176,7 @@ export default function CourseDetails() {
 
               <div className="flex items-center gap-[2px]" aria-label={`Rating: ${course.rating?.toFixed(1)} out of 5`}>
                 {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-[1.1rem]" style={{ color: i < Math.round(course.rating) ? "#f59e0b" : "#94a3b8" }} aria-hidden="true">★</span>
+                  <StarIcon key={i} size={17} filled={i < Math.round(course.rating)} color={i < Math.round(course.rating) ? "#f59e0b" : "#94a3b8"} />
                 ))}
                 <span className="text-text-muted text-[0.9rem] ml-2">{course.rating?.toFixed(1)}</span>
               </div>
@@ -205,10 +209,7 @@ export default function CourseDetails() {
         </header>
 
         {/* Body */}
-        <div
-          className="max-w-[1200px] mx-auto px-5 py-8 grid gap-8 items-start"
-          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))" }}
-        >
+        <div className="max-w-[1200px] mx-auto px-4 md:px-5 py-6 md:py-8 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 md:gap-8 items-start">
           {/* Left column */}
           <div>
             {/* About */}
@@ -272,14 +273,14 @@ export default function CourseDetails() {
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
                           key={star}
-                          className="bg-transparent border-none cursor-pointer px-[3px] text-[1.8rem] leading-none transition-transform hover:scale-110"
+                          className="bg-transparent border-none cursor-pointer px-[3px] transition-transform hover:scale-110"
                           onClick={() => setSelectedRating(star)}
                           onMouseEnter={() => setHoveredStar(star)}
                           onMouseLeave={() => setHoveredStar(0)}
                           aria-label={`Rate ${star} stars`}
                           aria-pressed={selectedRating === star}
                         >
-                          <span style={{ color: star <= (hoveredStar || selectedRating) ? "#f59e0b" : "#374151", transition: "color 0.12s" }}>★</span>
+                          <StarIcon size={28} filled={star <= (hoveredStar || selectedRating)} color={star <= (hoveredStar || selectedRating) ? "#f59e0b" : "#374151"} />
                         </button>
                       ))}
                       {selectedRating > 0 && (
@@ -339,14 +340,14 @@ export default function CourseDetails() {
                         </span>
                         <span className="flex-1 font-medium text-[0.95rem]">{mod.title}</span>
                         <span className="text-[0.78rem] text-[#6b7280]">{mod.lessons?.length || 0} lessons</span>
-                        <span className="text-[0.65rem] text-[#6b7280]" aria-hidden="true">{expandedModule === mod.id ? "▲" : "▼"}</span>
+                        <span className="text-[#6b7280]" aria-hidden="true">{expandedModule === mod.id ? <ChevronUpIcon size={14} /> : <ChevronDownIcon size={14} />}</span>
                       </button>
                       {expandedModule === mod.id && (
                         <div id={`module-${mod.id}`} className="border-t border-[rgba(255,255,255,0.05)] px-5 pt-3 pb-5">
                           <ul className="list-none p-0 m-0" aria-label={`Lessons in ${mod.title}`}>
                             {mod.lessons?.map((lesson) => (
                               <li key={lesson.id} className="flex items-center gap-3 py-2 border-b border-[rgba(255,255,255,0.04)]">
-                                <span className="text-[#d97706] text-[0.65rem]" aria-hidden="true">▶</span>
+                                <span className="text-[#d97706]" aria-hidden="true"><PlayIcon size={9} /></span>
                                 <span className="flex-1 text-[0.88rem] text-[#d1cfc8]">{lesson.title}</span>
                                 <span className="text-[0.78rem] text-[#6b7280]">{lesson.duration}</span>
                               </li>
@@ -355,9 +356,9 @@ export default function CourseDetails() {
                           {canAccessContent ? (
                             <Link
                               to={`/courses/${course.id}/modules/${mod.id}`}
-                              className="inline-block mt-4 text-[#d97706] no-underline text-[0.85rem] font-semibold"
+                              className="inline-flex items-center gap-1.5 mt-4 text-[#d97706] no-underline text-[0.85rem] font-semibold"
                             >
-                              Open Module →
+                              Open Module <ArrowRightIcon size={14} />
                             </Link>
                           ) : currentUser ? (
                             <p className="mt-4 text-[0.83rem] text-[#4b5563] italic inline-flex items-center gap-2">
@@ -439,34 +440,34 @@ export default function CourseDetails() {
               {isCompleted ? (
                 <button
                   disabled
-                  className="w-full py-[0.85rem] bg-[rgba(34,197,94,0.1)] text-[#22c55e] border border-[rgba(34,197,94,0.3)] rounded-lg font-bold text-[0.9rem] cursor-default mb-3"
+                  className="w-full py-[0.85rem] bg-[rgba(34,197,94,0.1)] text-[#22c55e] border border-[rgba(34,197,94,0.3)] rounded-lg font-bold text-[0.9rem] cursor-default mb-3 inline-flex items-center justify-center gap-2"
                 >
-                  ✓ Completed
+                  <CheckIcon size={16} /> Completed
                 </button>
               ) : (
                 <button
                   onClick={enrolled ? () => setUnenrollModal(true) : handleEnroll}
                   aria-pressed={enrolled}
-                  className={`w-full py-[0.85rem] rounded-lg font-bold text-[0.9rem] cursor-pointer mb-3 border-none ${
+                  className={`w-full py-[0.85rem] rounded-lg font-bold text-[0.9rem] cursor-pointer mb-3 border-none inline-flex items-center justify-center gap-2 ${
                     enrolled
                       ? "bg-[#1f2937] text-[#22c55e] border border-[rgba(34,197,94,0.25)]"
                       : "bg-[#d97706] text-[#0c0c0e]"
                   }`}
                 >
-                  {enrolled ? "✓ Enrolled" : isPaidCourse && !owned ? "Buy Course" : "Enroll Now"}
+                  {enrolled ? <><CheckIcon size={16} /> Enrolled</> : isPaidCourse && !owned ? "Buy Course" : "Enroll Now"}
                 </button>
               )}
 
               <button
                 onClick={handleSaveToggle}
                 aria-pressed={saved}
-                className={`w-full py-3 bg-transparent rounded-lg font-medium text-[0.88rem] cursor-pointer border ${
+                className={`w-full py-3 bg-transparent rounded-lg font-medium text-[0.88rem] cursor-pointer border inline-flex items-center justify-center gap-2 ${
                   saved
                     ? "border-[rgba(239,68,68,0.3)] text-[#ef4444]"
                     : "border-[rgba(255,255,255,0.1)] text-[#9ca3af]"
                 }`}
               >
-                {saved ? "♥ Saved" : "♡ Save Course"}
+                <HeartIcon size={15} filled={saved} /> {saved ? "Saved" : "Save Course"}
               </button>
 
               <hr className="border-none h-px bg-[rgba(255,255,255,0.06)] my-5" />

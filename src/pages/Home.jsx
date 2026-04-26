@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import CourseCard from "../components/CourseCard";
+import { ArrowRightIcon } from "../components/Icons";
 
 function AppIcon({ name, className = "w-6 h-6", strokeWidth = 1.9 }) {
   const base = {
@@ -315,14 +316,14 @@ export default function Home() {
               className="hero-cta inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3.5 md:py-4 rounded-lg font-bold no-underline text-base bg-gradient-to-r from-[#d97706] to-[#ea580c] text-[#0c0c0e] shadow-lg"
             >
               Explore All Courses
-              <span aria-hidden="true">→</span>
+              <ArrowRightIcon size={16} />
             </Link>
             <Link
               to="/register"
               className="split-cta inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3.5 md:py-4 rounded-lg font-bold no-underline text-base border-2 border-[rgba(217,119,6,0.55)] bg-gradient-to-r from-[#f8c471] to-[#f59e0b] text-[#0c0c0e] hover:brightness-105"
             >
               Start Free Trial
-              <span aria-hidden="true">→</span>
+              <ArrowRightIcon size={16} />
             </Link>
           </div>
 
@@ -477,13 +478,13 @@ export default function Home() {
             </div>
             <Link to="/courses" className="no-underline text-[0.95rem] font-semibold text-[#d97706] hover:text-[#f59e0b] transition-colors flex items-center gap-2">
               Explore All
-              <span aria-hidden="true">→</span>
+              <ArrowRightIcon size={16} />
             </Link>
           </div>
         </div>
         <ul
           className="grid gap-6 list-none p-0 m-0"
-          style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}
+          style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))" }}
           aria-label="Featured courses"
         >
           {featured.map((course) => (
@@ -508,7 +509,7 @@ export default function Home() {
           </div>
           <ul
             className="grid gap-4 list-none p-0 m-0"
-            style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}
+            style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 160px), 1fr))" }}
             aria-label="Course categories"
           >
             {categories.map((cat, idx) => {
@@ -529,7 +530,7 @@ export default function Home() {
                       </span>
                     </div>
                     <span className="font-bold text-[1.05rem] text-text-primary group-hover:text-[#fbbf24] transition-colors">{cat}</span>
-                    <p className="text-[0.85rem] text-text-dim">Explore this category <span aria-hidden="true">→</span></p>
+                    <p className="text-[0.85rem] text-text-dim flex items-center gap-1.5">Explore this category <ArrowRightIcon size={14} /></p>
                   </Link>
                 </li>
               );
@@ -624,14 +625,14 @@ export default function Home() {
               className="hero-cta inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-bold no-underline text-base bg-gradient-to-r from-[#d97706] to-[#ea580c] text-[#0c0c0e]"
             >
               Create Free Account
-              <span aria-hidden="true">→</span>
+              <ArrowRightIcon size={16} />
             </Link>
             <Link
               to="/courses"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-bold no-underline text-base border-2 border-[rgba(217,119,6,0.3)] text-text-secondary hover:border-[rgba(217,119,6,0.6)] hover:bg-[rgba(217,119,6,0.05)] transition-all"
             >
               Browse Courses
-              <span aria-hidden="true">→</span>
+              <ArrowRightIcon size={16} />
             </Link>
           </div>
 

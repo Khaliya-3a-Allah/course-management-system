@@ -4,6 +4,7 @@ import { jsPDF } from "jspdf";
 import { useAppContext } from "../context/AppContext";
 import { apiPost } from "../utils/api";
 import { readToken } from "../utils/authStorage";
+import { CheckIcon, CopyIcon, LinkedInIcon, TwitterXIcon, MailIcon, LinkIcon } from "../components/Icons";
 
 function formatDate(value) {
   return new Intl.DateTimeFormat("en-US", {
@@ -119,8 +120,8 @@ function ShareModal({ isOpen, certId, courseName, onClose }) {
             onClick={handleCopyLink}
             className="w-full px-4 py-3 rounded-lg border border-[rgba(255,255,255,0.12)] text-text-secondary hover:bg-surface-hover transition-colors text-sm flex items-center justify-between"
           >
-            <span>📋 {copied ? "Copied!" : "Copy Verification Link"}</span>
-            {copied && <span className="text-[#f59e0b]">✓</span>}
+            <span className="flex items-center gap-2"><CopyIcon size={15} /> {copied ? "Copied!" : "Copy Verification Link"}</span>
+            {copied && <span className="text-[#f59e0b]"><CheckIcon size={15} /></span>}
           </button>
 
           {/* LinkedIn Share Button */}
@@ -128,9 +129,9 @@ function ShareModal({ isOpen, certId, courseName, onClose }) {
             href={linkedInShareUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full px-4 py-3 rounded-lg bg-[#0A66C2] text-white hover:bg-[#084699] transition-colors text-sm font-semibold text-center no-underline block"
+            className="w-full px-4 py-3 rounded-lg bg-[#0A66C2] text-white hover:bg-[#084699] transition-colors text-sm font-semibold text-center no-underline flex items-center justify-center gap-2"
           >
-            🔗 Share on LinkedIn
+            <LinkedInIcon size={15} /> Share on LinkedIn
           </a>
 
           {/* Twitter Share Button */}
@@ -138,9 +139,9 @@ function ShareModal({ isOpen, certId, courseName, onClose }) {
             href={`https://twitter.com/intent/tweet?text=I%20just%20completed%20the%20"${encodeURIComponent(courseName)}"%20course%20on%20Courseware!%20%F0%9F%8E%93%20Verify%20my%20certificate:%20${encodeURIComponent(verificationUrl)}&hashtags=Learning,CourseCompletion,Courseware`}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full px-4 py-3 rounded-lg bg-[#1DA1F2] text-white hover:bg-[#1a8cd8] transition-colors text-sm font-semibold text-center no-underline block"
+            className="w-full px-4 py-3 rounded-lg bg-[#1DA1F2] text-white hover:bg-[#1a8cd8] transition-colors text-sm font-semibold text-center no-underline flex items-center justify-center gap-2"
           >
-            𝕏 Share on X
+            <TwitterXIcon size={15} /> Share on X
           </a>
 
           {/* Email Share Button */}
@@ -148,7 +149,7 @@ function ShareModal({ isOpen, certId, courseName, onClose }) {
             href={`mailto:?subject=Check%20Out%20My%20Course%20Certificate!&body=I%20just%20completed%20the%20${encodeURIComponent(courseName)}%20course%20on%20Courseware!%20You%20can%20verify%20my%20certificate%20here:%20${encodeURIComponent(verificationUrl)}`}
             className="w-full px-4 py-3 rounded-lg border border-[rgba(255,255,255,0.12)] text-text-secondary hover:bg-surface-hover transition-colors text-sm flex items-center justify-center gap-2"
           >
-            ✉️ Share via Email
+            <MailIcon size={15} /> Share via Email
           </a>
         </div>
 
