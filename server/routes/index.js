@@ -13,6 +13,7 @@ import { dashboardRouter } from "./dashboard.routes.js";
 import { certificatesRouter } from "./certificates.routes.js";
 import { supportTicketsRouter } from "./supportTickets.routes.js";
 import { communityRouter } from "./community.routes.js";
+import { aiRouter } from "./ai.routes.js";
 
 const router = Router();
 
@@ -43,5 +44,6 @@ router.use("/dashboard", dashboardRouter);
 router.use("/certificates", certificatesRouter);
 router.use("/support-tickets", supportTicketsRouter);
 router.use("/community", communityRouter);
+router.use("/ai", aiRouter);
 
 export const apiRouter = router;

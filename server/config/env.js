@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import crypto from "crypto";
 
 dotenv.config();
+dotenv.config({ path: ".env.local", override: false });
 
 function parseNumber(value, fallback) {
   const parsed = Number(value);
@@ -28,4 +29,6 @@ export const env = {
   GMAIL_USER: process.env.GMAIL_USER || "",
   GMAIL_PASS: process.env.GMAIL_PASS || "",
   CERTIFICATE_SIGNING_SECRET: process.env.CERTIFICATE_SIGNING_SECRET || crypto.randomBytes(32).toString("hex"),
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",
+  GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-1.5-flash",
 };

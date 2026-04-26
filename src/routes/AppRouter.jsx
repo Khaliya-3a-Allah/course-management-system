@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 import ToastContainer from "../components/Toast";
 import ColdStartBanner from "../components/ColdStartBanner";
 import ProtectedRoute from "../components/ProtectedRoute";
+import AiCourseChat from "../components/AiCourseChat";
 import Home from "../pages/Home";
 import Courses from "../pages/Courses";
 import CourseDetails from "../pages/CourseDetails";
@@ -26,6 +27,7 @@ export default function AppRouter() {
         <ColdStartBanner />
         <Navbar />
         <ToastContainer />
+        <AiCourseChat />
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<Home />} />
