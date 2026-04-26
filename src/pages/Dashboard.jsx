@@ -38,7 +38,7 @@ function formatCountdown(daysRemaining) {
 }
 
 export default function Dashboard() {
-  const { currentUser, unenrollCourse, updateProfile, addToast } = useAppContext();
+  const { currentUser, unenrollCourse, updateProfile, addToast, deleteCourse } = useAppContext();
   const navigate = useNavigate();
 
   const [dashboardData, setDashboardData] = useState(null);
@@ -46,6 +46,7 @@ export default function Dashboard() {
   const [dashboardError, setDashboardError] = useState("");
   const [visible, setVisible] = useState(false);
   const [unenrollTarget, setUnenrollTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileErrors, setProfileErrors] = useState({});
   const [profileForm, setProfileForm] = useState({
@@ -101,6 +102,13 @@ export default function Dashboard() {
   const deadlineReminders = dashboardData?.deadlineReminders || [];
   const completionForecast = dashboardData?.completionForecast || [];
   const recommendations = dashboardData?.recommendations || [];
+  const instructor = dashboardData?.instructor || {
+    createdCount: 0,
+    publishedCount: 0,
+    draftCount: 0,
+    createdCourses: [],
+  };
+  const isInstructor = currentUser?.role === "instructor";
   const isLoading = dashboardStatus === RESOURCE_STATUS.LOADING || dashboardStatus === RESOURCE_STATUS.IDLE;
   const hasError = dashboardStatus === RESOURCE_STATUS.ERROR;
 
@@ -202,6 +210,17 @@ export default function Dashboard() {
     }
   }
 
+  async function handleDeleteCourse(courseId) {
+    try {
+      await deleteCourse(courseId);
+      setDeleteTarget(null);
+      addToast("Course deleted successfully.", "success");
+      await loadDashboard();
+    } catch (error) {
+      addToast(error?.message || "Could not delete this course.", "error");
+    }
+  }
+
   if (!currentUser) return null;
 
   return (
@@ -280,6 +299,14 @@ export default function Dashboard() {
                 >
                   Browse courses
                 </Link>
+                {isInstructor && (
+                  <Link
+                    to="/course-form"
+                    className="dash-pill px-4 py-2.5 rounded-xl no-underline font-bold text-[0.83rem] border border-[rgba(255,255,255,0.14)] text-[#e8e6e0] hover:border-[rgba(217,119,6,0.4)]"
+                  >
+                    + Add course
+                  </Link>
+                )}
               </div>
             </div>
 
@@ -518,6 +545,66 @@ export default function Dashboard() {
                 </div>
               )}
             </section>
+
+            {isInstructor && (
+              <section>
+                <div className="flex items-end justify-between gap-3 mb-4">
+                  <div>
+                    <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#f6c56b] mb-1">Instructor studio</p>
+                    <h2 className="font-['Playfair_Display',serif] text-[1.3rem] text-[#f5f2ec]">Your created courses</h2>
+                  </div>
+                  <Link to="/course-form" className="text-[0.88rem] font-semibold text-[#f6c56b] no-underline">
+                    + Add new course
+                  </Link>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-3 mb-4">
+                  <div className="dash-surface rounded-xl border border-[rgba(255,255,255,0.08)] p-3">
+                    <p className="text-[0.75rem] text-[#8b8f98] uppercase tracking-widest mb-1">Created</p>
+                    <p className="font-['Playfair_Display',serif] text-[1.4rem] text-[#f5f2ec]">{instructor.createdCount}</p>
+                  </div>
+                  <div className="dash-surface rounded-xl border border-[rgba(255,255,255,0.08)] p-3">
+                    <p className="text-[0.75rem] text-[#8b8f98] uppercase tracking-widest mb-1">Published</p>
+                    <p className="font-['Playfair_Display',serif] text-[1.4rem] text-[#f5f2ec]">{instructor.publishedCount}</p>
+                  </div>
+                  <div className="dash-surface rounded-xl border border-[rgba(255,255,255,0.08)] p-3">
+                    <p className="text-[0.75rem] text-[#8b8f98] uppercase tracking-widest mb-1">Drafts</p>
+                    <p className="font-['Playfair_Display',serif] text-[1.4rem] text-[#f5f2ec]">{instructor.draftCount}</p>
+                  </div>
+                </div>
+
+                {instructor.createdCourses.length === 0 ? (
+                  <div className="dash-surface rounded-2xl border border-[rgba(255,255,255,0.08)] p-6 text-[#9ca3af]">
+                    You have not created any courses yet.
+                  </div>
+                ) : (
+                  <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                    {instructor.createdCourses.map((course) => (
+                      <div key={course.id} className="space-y-3">
+                        <CourseCard course={course} />
+                        <div className="dash-surface rounded-xl border border-[rgba(255,255,255,0.08)] p-3 flex items-center gap-2">
+                          <Link
+                            to={`/course-form/${course.id}`}
+                            className="px-3 py-1.5 rounded-lg no-underline text-[0.8rem] font-semibold border border-[rgba(255,255,255,0.12)] text-[#e8e6e0]"
+                          >
+                            Edit
+                          </Link>
+                          <button
+                            onClick={() => setDeleteTarget(course)}
+                            className="px-3 py-1.5 rounded-lg text-[0.8rem] font-semibold border border-[rgba(239,68,68,0.22)] bg-[rgba(239,68,68,0.08)] text-[#f87171]"
+                          >
+                            Delete
+                          </button>
+                          <span className="ml-auto text-[0.72rem] text-[#9ca3af]">
+                            {course.isPublished ? "Published" : "Draft"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
           </div>
         )}
       </main>
@@ -634,6 +721,27 @@ export default function Dashboard() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      <Modal isOpen={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)} title="Delete Course?">
+        <p className="text-[#9ca3af] mb-6 text-[0.95rem] leading-relaxed">
+          Are you sure you want to delete <strong className="text-[#f5f2ec]">{deleteTarget?.title}</strong>? This action cannot be undone.
+        </p>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => handleDeleteCourse(deleteTarget.id)}
+            className="flex-1 py-3 rounded-lg font-bold text-[0.9rem] cursor-pointer border-none text-white bg-[#ef4444]"
+          >
+            Yes, Delete
+          </button>
+          <button
+            onClick={() => setDeleteTarget(null)}
+            className="flex-1 py-3 rounded-lg font-medium text-[0.9rem] cursor-pointer text-[#e8e6e0] border border-[rgba(255,255,255,0.12)] bg-transparent"
+          >
+            Cancel
+          </button>
+        </div>
       </Modal>
     </div>
   );
