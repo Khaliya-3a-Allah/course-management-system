@@ -37,5 +37,27 @@ const courseSchema = new mongoose.Schema(
   }
 );
 
+courseSchema.index(
+  {
+    title: "text",
+    description: "text",
+    category: "text",
+    instructor: "text",
+    tags: "text",
+  },
+  {
+    weights: {
+      title: 10,
+      tags: 6,
+      category: 4,
+      description: 3,
+      instructor: 2,
+    },
+    name: "course_search_text_index",
+  }
+);
+
+courseSchema.index({ category: 1, level: 1, rating: -1, createdAt: -1 });
+
 const Course = mongoose.model("Course", courseSchema);
 export default Course;
