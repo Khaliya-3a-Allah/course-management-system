@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { BookIcon } from "./Icons";
 import { getActiveSale } from "../utils/pricing";
+import SaleCountdown from "./SaleCountdown";
 
 const levelColors = {
   Beginner: "#22c55e",
@@ -72,6 +73,12 @@ export default function CourseCard({ course }) {
                   {tag}
                 </span>
               ))}
+            </div>
+          )}
+
+          {sale.active && sale.saleEndsAt && (
+            <div className="mt-1">
+              <SaleCountdown endsAt={sale.saleEndsAt} compact />
             </div>
           )}
 

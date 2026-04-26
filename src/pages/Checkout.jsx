@@ -5,6 +5,7 @@ import { validateEmail } from "../utils/validators";
 import EmailAutocompleteInput from "../components/EmailAutocompleteInput";
 import paypalIcon from "../assets/PayPal.svg";
 import { getActiveSale, formatMoney } from "../utils/pricing";
+import SaleCountdown from "../components/SaleCountdown";
 
 function normalizeCardNumber(value) {
   return value.replace(/\D/g, "").slice(0, 19);
@@ -552,6 +553,12 @@ export default function Checkout() {
           <div className="mt-4 rounded-lg border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-3.5">
             <p className="m-0 text-[0.86rem] text-text-dim">Course</p>
             <p className="m-0 mt-1 font-semibold text-text-primary leading-snug">{course.title}</p>
+            {sale.active && sale.saleEndsAt && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="text-[0.76rem] text-[#9ca3af]">Sale ends in</span>
+                <SaleCountdown endsAt={sale.saleEndsAt} />
+              </div>
+            )}
           </div>
 
           <dl className="mt-4 space-y-2 text-[0.9rem]">

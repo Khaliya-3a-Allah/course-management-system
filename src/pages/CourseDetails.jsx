@@ -4,6 +4,7 @@ import { useAppContext } from "../context/AppContext";
 import Modal from "../components/Modal";
 import { BookIcon, CapIcon, LockIcon, TargetIcon } from "../components/Icons";
 import { getActiveSale, formatMoney } from "../utils/pricing";
+import SaleCountdown from "../components/SaleCountdown";
 
 export default function CourseDetails() {
   const { courseId } = useParams();
@@ -422,9 +423,15 @@ export default function CourseDetails() {
                     )}
                   </p>
                   {sale.active && (
-                    <p className="mt-1 text-[0.78rem] text-[#fca5a5]">
-                      {sale.discountPercent}% off{sale.saleEndsAt ? ` until ${sale.saleEndsAt.toLocaleDateString()}` : ""}
-                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[0.78rem] text-[#fca5a5]">
+                      <span>{sale.discountPercent}% off</span>
+                      {sale.saleEndsAt && (
+                        <>
+                          <span className="text-[#9ca3af]">Ends in</span>
+                          <SaleCountdown endsAt={sale.saleEndsAt} />
+                        </>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
