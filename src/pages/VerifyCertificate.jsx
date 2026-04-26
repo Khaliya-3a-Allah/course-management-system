@@ -8,6 +8,7 @@ function VerifyCertificate() {
   const [certificate, setCertificate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [availability, setAvailability] = useState(null);
   const [qrUrl, setQrUrl] = useState(null);
 
   useEffect(() => {
@@ -15,6 +16,7 @@ function VerifyCertificate() {
       try {
         setLoading(true);
         const response = await apiGet(`/certificates/verify/${certId}`);
+        setAvailability(response.available === false ? "not_available" : "available");
 
         if (response.valid) {
           setCertificate(response.certificate);
@@ -27,6 +29,7 @@ function VerifyCertificate() {
           setError(response.message || "Certificate verification failed");
         }
       } catch (err) {
+        setAvailability("not_available");
         setError(err.message || "Failed to verify certificate");
       } finally {
         setLoading(false);
@@ -60,6 +63,9 @@ function VerifyCertificate() {
           // Error State
           <section className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-surface p-8 text-center">
             <div className="text-4xl mb-4 flex justify-center text-amber-400"><AlertIcon size={40} /></div>
+            <p className="text-[0.85rem] uppercase tracking-[0.15em] text-amber-400 mb-2">
+              {availability === "not_available" ? "Not Available" : "Unavailable"}
+            </p>
             <h1 className="font-heading text-2xl text-text-primary mb-2">
               Certificate Not Valid
             </h1>
@@ -88,7 +94,7 @@ function VerifyCertificate() {
                 <CheckIcon size={32} />
               </div>
               <p className="text-[0.85rem] uppercase tracking-[0.15em] text-green-400 mb-2">
-                Verified
+                Available
               </p>
               <h1 className="font-heading text-3xl text-text-primary mb-2">
                 Certificate Verified

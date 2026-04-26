@@ -5,23 +5,32 @@ import Course from "../models/Course.js";
 import {
   generateSignedCertificateId,
   generateVerificationToken,
-  verifyCertificateSignature,
   generateLinkedInShareText,
 } from "../utils/certificateSigning.js";
 import { generateQRCodeData } from "../utils/qrCode.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { env } from "../config/env.js";
 
 const certificatesController = buildCrudControllers("certificates");
 
-export const getAllCertificates = certificatesController.getAll;
+export const getAllCertificates = asyncHandler(async (req, res) => {
+  const filter = req.user?.role === "admin" ? {} : { userId: req.user.id };
+  const certificates = await Certificate.find(filter)
+    .populate("userId", "name email")
+    .populate("courseId", "title description instructorName")
+    .sort({ issuedAt: -1 })
+    .lean({ virtuals: true });
+
+  res.status(200).json({
+    success: true,
+    count: certificates.length,
+    data: certificates,
+  });
+});
 export const getCertificateById = certificatesController.getById;
 export const createCertificate = asyncHandler(async (req, res) => {
   const { userId, courseId } = req.body;
-
-  // Generate signed certificate ID
-  const signedCertificateId = generateSignedCertificateId(userId, courseId);
-  const verificationToken = generateVerificationToken(signedCertificateId);
 
   // Get user and course data for issuance log
   const [user, course] = await Promise.all([
@@ -33,8 +42,21 @@ export const createCertificate = asyncHandler(async (req, res) => {
     throw new ApiError(400, "User or Course not found");
   }
 
+  const existingCertificate = await Certificate.findOne({ userId, courseId });
+  if (existingCertificate) {
+    res.status(200).json({
+      success: true,
+      data: existingCertificate,
+    });
+    return;
+  }
+
+  // Generate signed certificate ID
+  const signedCertificateId = generateSignedCertificateId(userId, courseId);
+  const verificationToken = generateVerificationToken(signedCertificateId);
+
   // Generate QR code data
-  const qrData = generateQRCodeData(signedCertificateId);
+  const qrData = generateQRCodeData(signedCertificateId, env.CLIENT_ORIGIN);
 
   // Create certificate with verification fields
   const certificate = await Certificate.create({
@@ -76,7 +98,13 @@ export const verifyCertificate = asyncHandler(async (req, res) => {
     .populate("courseId", "title description instructorName");
 
   if (!certificate) {
-    throw new ApiError(404, "Certificate not found");
+    res.status(200).json({
+      success: true,
+      valid: false,
+      available: false,
+      message: "Certificate is not available in the database",
+    });
+    return;
   }
 
   // Check if revoked
@@ -84,6 +112,7 @@ export const verifyCertificate = asyncHandler(async (req, res) => {
     res.status(200).json({
       success: true,
       valid: false,
+      available: true,
       message: "Certificate has been revoked",
       revocationReason: certificate.revocationReason,
       revokedAt: certificate.revokedAt,
@@ -106,6 +135,7 @@ export const verifyCertificate = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     valid: true,
+    available: true,
     certificate: {
       id: certificate.signedCertificateId,
       recipientName: certificate.userId.name,

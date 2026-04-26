@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { jsPDF } from "jspdf";
 import { useAppContext } from "../context/AppContext";
 import { apiPost } from "../utils/api";
 import { readToken } from "../utils/authStorage";
+import { buildCertificateVerificationUrl } from "../utils/certificateUtils";
 import { CheckIcon, CopyIcon, LinkedInIcon, TwitterXIcon, MailIcon, LinkIcon } from "../components/Icons";
 
 function formatDate(value) {
@@ -12,11 +13,6 @@ function formatDate(value) {
     month: "long",
     day: "numeric",
   }).format(value);
-}
-
-function buildCertificateId(userId, courseId) {
-  const compactDate = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  return `CERT-${userId.toUpperCase()}-${courseId.toUpperCase()}-${compactDate}`;
 }
 
 function blobToDataUrl(blob) {
@@ -41,8 +37,7 @@ async function loadImageDataUrl(url) {
 function QRCodeModal({ isOpen, certId, onClose }) {
   if (!isOpen) return null;
 
-  // Use hash routing URL format
-  const verificationUrl = `${window.location.origin}/#/verify/${certId}`;
+  const verificationUrl = buildCertificateVerificationUrl(certId);
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
     verificationUrl
   )}`;
@@ -88,8 +83,7 @@ function QRCodeModal({ isOpen, certId, onClose }) {
 // Share Modal Component
 function ShareModal({ isOpen, certId, courseName, onClose }) {
   const [copied, setCopied] = useState(false);
-  // Use hash routing URL format
-  const verificationUrl = `${window.location.origin}/#/verify/${certId}`;
+  const verificationUrl = buildCertificateVerificationUrl(certId);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(verificationUrl);
@@ -172,7 +166,7 @@ function ShareModal({ isOpen, certId, courseName, onClose }) {
 }
 
 export default function Certificates() {
-  const { currentUser, courses, completedCourses, progress } = useAppContext();
+  const { currentUser, courses, completedCourses, progress, addToast } = useAppContext();
   const [selectedCertId, setSelectedCertId] = useState(null);
   const [showQRModal, setShowQRModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -196,16 +190,16 @@ export default function Certificates() {
     [courses, completedCourses, progress]
   );
 
-  async function ensureCertificateId(course) {
+  const ensureCertificateId = useCallback(async (course) => {
     const courseKey = String(course.id);
     if (issuedCertByCourse[courseKey]) {
       return issuedCertByCourse[courseKey];
     }
 
-    const fallbackId = buildCertificateId(currentUser.id, course.id);
     const token = readToken();
     if (!token || !currentUser?.id) {
-      return fallbackId;
+      addToast?.("Sign in again to sync this certificate with the database.", "error");
+      return "";
     }
 
     try {
@@ -222,12 +216,35 @@ export default function Certificates() {
         setIssuedCertByCourse((prev) => ({ ...prev, [courseKey]: signedId }));
         return signedId;
       }
-    } catch {
-      // Fall back to local deterministic ID if backend issuance fails.
+    } catch (error) {
+      addToast?.(error.message || "Could not sync this certificate with the database.", "error");
     }
 
-    return fallbackId;
-  }
+    return "";
+  }, [addToast, currentUser, issuedCertByCourse]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function syncCertificates() {
+      if (!currentUser?.id || completedCourseList.length === 0) return;
+
+      for (const course of completedCourseList) {
+        const courseKey = String(course.id);
+        if (cancelled || issuedCertByCourse[courseKey]) continue;
+        const certId = await ensureCertificateId(course);
+        if (!cancelled && certId) {
+          setIssuedCertByCourse((prev) => ({ ...prev, [courseKey]: certId }));
+        }
+      }
+    }
+
+    syncCertificates();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [completedCourseList, currentUser?.id, ensureCertificateId, issuedCertByCourse]);
 
   async function downloadCertificate(course) {
     if (!currentUser) return;
@@ -237,9 +254,9 @@ export default function Certificates() {
     const height = doc.internal.pageSize.getHeight();
     const issueDate = formatDate(new Date());
     const certId = await ensureCertificateId(course);
+    if (!certId) return;
     
-    // Generate verification URL with hash routing
-    const verificationUrl = `${window.location.origin}/#/verify/${certId}`;
+    const verificationUrl = buildCertificateVerificationUrl(certId);
 
     // Borders
     doc.setDrawColor(217, 119, 6);
@@ -404,7 +421,7 @@ export default function Certificates() {
             {completedCourseList.map((course) => {
               const certId =
                 issuedCertByCourse[String(course.id)] ||
-                buildCertificateId(currentUser.id, course.id);
+                "Syncing with database...";
               return (
                 <li key={course.id}>
                   <article className="h-full overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.1)] bg-[linear-gradient(170deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] shadow-[0_20px_40px_rgba(0,0,0,0.28)] flex flex-col">
@@ -470,6 +487,7 @@ export default function Certificates() {
                             type="button"
                             onClick={async () => {
                               const resolvedCertId = await ensureCertificateId(course);
+                              if (!resolvedCertId) return;
                               setSelectedCertId(resolvedCertId);
                               setShowQRModal(true);
                             }}
@@ -482,6 +500,7 @@ export default function Certificates() {
                             type="button"
                             onClick={async () => {
                               const resolvedCertId = await ensureCertificateId(course);
+                              if (!resolvedCertId) return;
                               setShareCertData({ certId: resolvedCertId, courseName: course.title });
                               setShowShareModal(true);
                             }}

@@ -3,6 +3,22 @@
  */
 
 /**
+ * Build the frontend URL used by HashRouter in local dev and GitHub Pages.
+ */
+export const getAppBaseUrl = () => {
+  const basePath = import.meta.env.BASE_URL || "/";
+  const normalizedBasePath = basePath.endsWith("/") ? basePath : `${basePath}/`;
+  return `${window.location.origin}${normalizedBasePath}`;
+};
+
+/**
+ * Build the public certificate verification URL for QR codes and sharing.
+ */
+export const buildCertificateVerificationUrl = (certificateId) => {
+  return `${getAppBaseUrl()}#/verify/${encodeURIComponent(certificateId)}`;
+};
+
+/**
  * Generate LinkedIn share URL for a certificate
  */
 export const generateLinkedInShareUrl = (verificationUrl) => {
@@ -65,6 +81,8 @@ export const formatCertificateVerification = (certData) => {
 };
 
 export default {
+  getAppBaseUrl,
+  buildCertificateVerificationUrl,
   generateLinkedInShareUrl,
   generateTwitterShareUrl,
   generateEmailShareLink,
