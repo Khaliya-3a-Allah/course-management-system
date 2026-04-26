@@ -12,6 +12,7 @@ import Certificate from "../models/Certificate.js";
 import SupportTicket from "../models/SupportTicket.js";
 import Thread from "../models/Thread.js";
 import Comment from "../models/Comment.js";
+import AssessmentAttempt from "../models/AssessmentAttempt.js";
 
 // Maps resource name strings to their Mongoose models
 const modelMap = {
@@ -27,6 +28,7 @@ const modelMap = {
   supportTickets: SupportTicket,
   threads: Thread,
   comments: Comment,
+  assessmentAttempts: AssessmentAttempt,
 };
 
 function getModel(resourceName) {

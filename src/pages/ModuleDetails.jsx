@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import Modal from "../components/Modal";
+import LessonQuiz from "../components/LessonQuiz";
 
 // ── SVG Icons ────────────────────────────────────────────────────────────────
 const IconPlay = () => (
@@ -678,9 +679,15 @@ export default function ModuleDetails() {
                 </p>
               </article>
 
+              <LessonQuiz lesson={activeLesson} onPassed={handleMarkComplete} addToast={addToast} />
+
               {effectiveCompleted[activeLesson.id] ? (
                 <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-[0.85rem] mb-6 border border-[rgba(34,197,94,0.35)] bg-[rgba(34,197,94,0.12)] text-[#22c55e]">
                   ✓ Completed
+                </div>
+              ) : activeLesson.quiz?.enabled ? (
+                <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-[0.85rem] mb-6 border border-[rgba(217,119,6,0.25)] bg-[rgba(217,119,6,0.08)] text-brand">
+                  Pass the quiz to complete this lesson
                 </div>
               ) : (
                 <button

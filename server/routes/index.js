@@ -14,6 +14,7 @@ import { certificatesRouter } from "./certificates.routes.js";
 import { supportTicketsRouter } from "./supportTickets.routes.js";
 import { communityRouter } from "./community.routes.js";
 import { aiRouter } from "./ai.routes.js";
+import { assessmentsRouter } from "./assessments.routes.js";
 
 const router = Router();
 
@@ -45,5 +46,6 @@ router.use("/certificates", certificatesRouter);
 router.use("/support-tickets", supportTicketsRouter);
 router.use("/community", communityRouter);
 router.use("/ai", aiRouter);
+router.use("/assessments", assessmentsRouter);
 
 export const apiRouter = router;

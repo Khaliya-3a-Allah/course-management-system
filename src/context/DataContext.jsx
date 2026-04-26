@@ -88,6 +88,21 @@ function toIdString(ref) {
   return String(ref?._id || ref?.id || ref || "");
 }
 
+function buildLessonPayload(lesson, moduleId, courseId, order) {
+  const payload = {
+    title: lesson.title,
+    content: lesson.contentPreview || lesson.content || "",
+    videoUrl: lesson.videoUrl || "",
+    duration: lesson.duration || "",
+    order,
+    quiz: lesson.quiz || { enabled: false, questions: [] },
+  };
+
+  if (moduleId) payload.moduleId = moduleId;
+  if (courseId) payload.courseId = courseId;
+  return payload;
+}
+
 export function DataProvider({ children }) {
   const { currentUser, setCurrentUser, authStatus } = useAuthContext();
   const { setIsBackendWaking } = useUiContext();
@@ -308,15 +323,11 @@ export function DataProvider({ children }) {
       const savedLessons = [];
       for (let j = 0; j < (mod.lessons || []).length; j++) {
         const les = mod.lessons[j];
-        const lesRes = await apiPost("/lessons", {
-          title: les.title,
-          content: les.contentPreview || les.content || "",
-          videoUrl: les.videoUrl || "",
-          duration: les.duration || "",
-          order: les.order ?? j,
-          moduleId: savedMod.id,
-          courseId: created.id,
-        }, { token });
+        const lesRes = await apiPost(
+          "/lessons",
+          buildLessonPayload(les, savedMod.id, created.id, les.order ?? j),
+          { token }
+        );
         savedLessons.push(lesRes?.data || lesRes);
       }
       savedModules.push({ ...savedMod, lessons: savedLessons });
@@ -387,24 +398,18 @@ export function DataProvider({ children }) {
         const les = newLessons[j];
         let savedLes;
         if (isMongoId(les.id)) {
-          const res = await apiPut(`/lessons/${les.id}`, {
-            title: les.title,
-            content: les.contentPreview || les.content || "",
-            videoUrl: les.videoUrl || "",
-            duration: les.duration || "",
-            order: les.order ?? j,
-          }, { token });
+          const res = await apiPut(
+            `/lessons/${les.id}`,
+            buildLessonPayload(les, null, null, les.order ?? j),
+            { token }
+          );
           savedLes = res?.data || res;
         } else {
-          const res = await apiPost("/lessons", {
-            title: les.title,
-            content: les.contentPreview || les.content || "",
-            videoUrl: les.videoUrl || "",
-            duration: les.duration || "",
-            order: les.order ?? j,
-            moduleId: savedMod.id,
-            courseId,
-          }, { token });
+          const res = await apiPost(
+            "/lessons",
+            buildLessonPayload(les, savedMod.id, courseId, les.order ?? j),
+            { token }
+          );
           savedLes = res?.data || res;
         }
         savedLessons.push(savedLes);
