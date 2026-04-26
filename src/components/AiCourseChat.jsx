@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { apiPost } from "../utils/api";
@@ -193,6 +193,7 @@ function buildPreviewMessage(currentUser) {
 export default function AiCourseChat() {
   const { courses, currentUser, getCourseProgress } = useAppContext();
   const [isOpen, setIsOpen] = useState(false);
+  const [showPreview, setShowPreview] = useState(true);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState(() => [
@@ -202,6 +203,18 @@ export default function AiCourseChat() {
     },
   ]);
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (!showPreview || isOpen) return undefined;
+    const timer = window.setTimeout(() => setShowPreview(false), 7000);
+    return () => window.clearTimeout(timer);
+  }, [isOpen, showPreview]);
+
+  const openChat = () => {
+    setShowPreview(false);
+    setIsOpen(true);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
 
   const learnerContext = useMemo(() => ({
     signedIn: Boolean(currentUser),
@@ -287,14 +300,45 @@ export default function AiCourseChat() {
 
   return (
     <div className="fixed bottom-3 right-3 z-50 flex items-end sm:bottom-5 sm:right-5">
+      <style>{`
+        @keyframes aiPanelIn {
+          from { opacity: 0; transform: translateY(14px) scale(0.97); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes aiPreviewIn {
+          0% { opacity: 0; transform: translateX(12px) scale(0.97); }
+          100% { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        @keyframes aiButtonPulse {
+          0%, 100% { box-shadow: 0 18px 44px rgba(217,119,6,0.32); }
+          50% { box-shadow: 0 18px 54px rgba(217,119,6,0.5); }
+        }
+        .ai-chat-panel {
+          animation: aiPanelIn 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+          transform-origin: bottom right;
+        }
+        .ai-chat-preview {
+          animation: aiPreviewIn 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .ai-chat-launcher {
+          animation: aiButtonPulse 2.8s ease-in-out infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .ai-chat-panel,
+          .ai-chat-preview,
+          .ai-chat-launcher {
+            animation: none;
+          }
+        }
+      `}</style>
       {isOpen && (
         <section
-          className="mb-3 flex h-[min(620px,calc(100dvh-6rem))] w-[calc(100vw-1.5rem)] max-w-[390px] flex-col overflow-hidden rounded-lg border border-[rgba(255,255,255,0.12)] bg-[#111114] shadow-[0_26px_70px_rgba(0,0,0,0.36)] sm:w-[390px]"
+          className="ai-chat-panel mb-3 flex h-[min(620px,calc(100dvh-6rem))] w-[calc(100vw-1.5rem)] max-w-[390px] flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.14)] bg-[#111114] shadow-[0_26px_80px_rgba(0,0,0,0.44)] ring-1 ring-brand/10 sm:w-[390px]"
           aria-label="AI course recommendation chat"
         >
           <header className="flex items-center justify-between border-b border-[rgba(255,255,255,0.08)] bg-[#16161a] px-4 py-3">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-brand text-white">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand text-white shadow-[0_10px_24px_rgba(217,119,6,0.28)]">
                 <SparkIcon size={18} />
               </span>
               <div className="min-w-0">
@@ -305,7 +349,7 @@ export default function AiCourseChat() {
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[rgba(255,255,255,0.1)] text-[#d1cfc8] transition hover:border-brand hover:text-brand"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-[#d1cfc8] transition hover:border-brand hover:text-brand"
               aria-label="Close AI chat"
               title="Close"
             >
@@ -320,7 +364,7 @@ export default function AiCourseChat() {
                 className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[86%] whitespace-pre-line rounded-lg px-3 py-2 text-sm leading-6 ${
+                  className={`max-w-[86%] whitespace-pre-line rounded-lg px-3 py-2 text-sm leading-6 shadow-sm ${
                     message.role === "user"
                       ? "bg-brand text-white"
                       : "border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-[#e8e6e0]"
@@ -378,17 +422,15 @@ export default function AiCourseChat() {
         </section>
       )}
 
-      {!isOpen && (
+      {!isOpen && showPreview && (
         <button
           type="button"
-          onClick={() => {
-            setIsOpen(true);
-            setTimeout(() => inputRef.current?.focus(), 0);
-          }}
-          className="mr-2 max-w-[250px] rounded-lg border border-[rgba(255,255,255,0.12)] bg-[#111114] px-3 py-2 text-left text-sm leading-5 text-[#f5f2ec] shadow-[0_18px_44px_rgba(0,0,0,0.28)] transition hover:border-brand sm:mr-3"
+          onClick={openChat}
+          className="ai-chat-preview mr-2 max-w-[250px] rounded-xl border border-[rgba(255,255,255,0.13)] bg-[#111114] px-3 py-2 text-left text-sm leading-5 text-[#f5f2ec] shadow-[0_18px_44px_rgba(0,0,0,0.3)] ring-1 ring-brand/10 transition hover:border-brand sm:mr-3"
           aria-label="Open AI assistant"
         >
-          <span className="mb-1 block text-[0.68rem] font-bold uppercase tracking-[0.16em] text-brand">
+          <span className="mb-1 flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.16em] text-brand">
+            <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden="true" />
             Course AI
           </span>
           {buildPreviewMessage(currentUser)}
@@ -398,10 +440,11 @@ export default function AiCourseChat() {
       <button
         type="button"
         onClick={() => {
+          setShowPreview(false);
           setIsOpen((value) => !value);
           setTimeout(() => inputRef.current?.focus(), 0);
         }}
-        className="grid h-12 w-12 place-items-center rounded-lg bg-brand text-white shadow-[0_18px_44px_rgba(217,119,6,0.32)] transition hover:bg-brand-light sm:h-14 sm:w-14"
+        className="ai-chat-launcher grid h-12 w-12 place-items-center rounded-xl bg-brand text-white transition hover:bg-brand-light sm:h-14 sm:w-14"
         aria-label={isOpen ? "Hide AI course chat" : "Open AI course chat"}
         title={isOpen ? "Hide Course AI" : "Open Course AI"}
       >
