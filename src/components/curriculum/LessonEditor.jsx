@@ -1,4 +1,7 @@
 import FormField, { INPUT_CLASS, buildInputBorder } from "../FormField";
+import { apiPost } from "../../utils/api";
+import { readToken } from "../../utils/authStorage";
+import { useState } from "react";
 
 function makeQuestion() {
   return {
@@ -29,6 +32,9 @@ function normalizeQuiz(quiz = {}) {
  * All updates are immutable — each change returns a new lesson object.
  */
 export default function LessonEditor({ lesson, lessonIndex, onUpdate, onRemove, errors = {} }) {
+  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
+  const [quizGenerationError, setQuizGenerationError] = useState("");
+
   const handleChange = (key, value) => {
     onUpdate({ ...lesson, [key]: value });
   };
@@ -52,6 +58,41 @@ export default function LessonEditor({ lesson, lessonIndex, onUpdate, onRemove, 
       index === optionIndex ? value : option
     );
     updateQuestion(questionIndex, { options });
+  };
+
+  const generateQuiz = async () => {
+    const token = readToken();
+    setQuizGenerationError("");
+
+    if (!lesson.title?.trim()) {
+      setQuizGenerationError("Add a lesson title first.");
+      return;
+    }
+
+    if (!token) {
+      setQuizGenerationError("Sign in again before generating a quiz.");
+      return;
+    }
+
+    setIsGeneratingQuiz(true);
+    try {
+      const response = await apiPost(
+        "/ai/generate-quiz",
+        {
+          lessonTitle: lesson.title,
+          lessonPreview: lesson.contentPreview || lesson.content || "",
+          difficulty: quiz.passingScore >= 80 ? "hard" : quiz.passingScore <= 60 ? "easy" : "medium",
+        },
+        { token }
+      );
+      const generatedQuiz = response?.data?.quiz;
+      if (!generatedQuiz) throw new Error("AI did not return a quiz.");
+      onUpdate({ ...lesson, quiz: generatedQuiz });
+    } catch (error) {
+      setQuizGenerationError(error.message || "Quiz generation failed.");
+    } finally {
+      setIsGeneratingQuiz(false);
+    }
   };
 
   const label = `Lesson ${lessonIndex + 1}`;
@@ -139,14 +180,29 @@ export default function LessonEditor({ lesson, lessonIndex, onUpdate, onRemove, 
       <div className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.025)] p-4 flex flex-col gap-3">
         <label className="flex items-center justify-between gap-3 text-[0.82rem] font-semibold text-text-secondary">
           <span>Lesson Quiz</span>
-          <input
-            type="checkbox"
-            checked={quiz.enabled}
-            onChange={(e) => updateQuiz({ enabled: e.target.checked })}
-            className="h-5 w-5 accent-amber-600"
-            aria-label={`Enable quiz for ${lesson.title || label}`}
-          />
+          <span className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={generateQuiz}
+              disabled={isGeneratingQuiz}
+              className="text-[0.76rem] font-bold cursor-pointer rounded-md px-3 py-1.5 text-brand border border-[rgba(217,119,6,0.3)] bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isGeneratingQuiz ? "Generating..." : "AI Generate"}
+            </button>
+            <input
+              type="checkbox"
+              checked={quiz.enabled}
+              onChange={(e) => updateQuiz({ enabled: e.target.checked })}
+              className="h-5 w-5 accent-amber-600"
+              aria-label={`Enable quiz for ${lesson.title || label}`}
+            />
+          </span>
         </label>
+        {quizGenerationError && (
+          <p className="m-0 text-[0.8rem] text-red-400" role="alert">
+            {quizGenerationError}
+          </p>
+        )}
 
         {quiz.enabled && (
           <div className="flex flex-col gap-3">

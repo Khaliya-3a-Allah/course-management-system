@@ -181,6 +181,15 @@ function buildStarterMessage(currentUser) {
   return "Tell me what you like and whether you want easy, medium, or hard.";
 }
 
+function buildPreviewMessage(currentUser) {
+  const firstName = String(currentUser?.name || currentUser?.email || "")
+    .trim()
+    .split(/\s+/)[0];
+  return firstName
+    ? `Hello ${firstName}, I am your AI assistant.`
+    : "Hello, I am your AI assistant.";
+}
+
 export default function AiCourseChat() {
   const { courses, currentUser, getCourseProgress } = useAppContext();
   const [isOpen, setIsOpen] = useState(false);
@@ -367,6 +376,23 @@ export default function AiCourseChat() {
             </div>
           </div>
         </section>
+      )}
+
+      {!isOpen && (
+        <button
+          type="button"
+          onClick={() => {
+            setIsOpen(true);
+            setTimeout(() => inputRef.current?.focus(), 0);
+          }}
+          className="mr-2 max-w-[250px] rounded-lg border border-[rgba(255,255,255,0.12)] bg-[#111114] px-3 py-2 text-left text-sm leading-5 text-[#f5f2ec] shadow-[0_18px_44px_rgba(0,0,0,0.28)] transition hover:border-brand sm:mr-3"
+          aria-label="Open AI assistant"
+        >
+          <span className="mb-1 block text-[0.68rem] font-bold uppercase tracking-[0.16em] text-brand">
+            Course AI
+          </span>
+          {buildPreviewMessage(currentUser)}
+        </button>
       )}
 
       <button
