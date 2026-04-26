@@ -29,6 +29,24 @@ A full-stack online learning platform where students can browse and enroll in co
 6. **Purchase** - checkout record with payment method, discount, and final amount
 7. **Certificate** - completion-based records shown in the certificates view
 8. **Support Ticket** - support request payload submitted from the support page
+9. **Community Thread / Comment** - course-specific Q&A discussions, answers, upvotes, and moderation state
+10. **Assessment Attempt** - quiz submissions, scoring, attempt limits, and anti-cheat metadata
+
+---
+
+## Feature Overview
+
+- **Course discovery** - browse the catalog, filter by category/level, view sale pricing, and open detailed course pages.
+- **Enrollment and checkout** - enroll in free courses or buy paid courses with card/PayPal-style flows, promo codes, referral discounts, and printable receipts.
+- **Instructor course builder** - create and edit courses, modules, lessons, and embedded lesson quizzes.
+- **Learning progress** - track completed lessons, course completion percentages, dashboard statistics, and completed courses.
+- **Assessments** - take timed multiple-choice lesson quizzes with pass thresholds, attempt limits, scoring feedback, and saved attempts.
+- **Certificates** - issue course completion certificates, download/share them, and verify certificates publicly by certificate ID/QR link.
+- **Community Q&A** - authenticated learners can create course threads, answer questions, upvote useful posts, and accept best answers.
+- **Moderation tools** - instructors/admins can review pending community threads and comments.
+- **Course AI assistant** - floating AI chat recommends next courses using learner progress and the available course catalog.
+- **Authentication security** - email verification, JWT sessions, bcrypt password hashing, optional authenticator-app 2FA, and rate limits.
+- **Support tickets** - submit support requests from the support page and store them through the backend API.
 
 ---
 
@@ -647,10 +665,14 @@ Send `challengeToken` as the `Authorization: Bearer <challengeToken>` header.
 
 ### 1. Home / Courses listing
 
+Browse the course catalog, inspect featured content, and filter courses before opening a detail page.
+
 <img width="1917" height="912" alt="image" src="https://github.com/user-attachments/assets/56a3500c-4f50-4b40-be21-6e826339a36a" />
 <img width="1919" height="910" alt="image" src="https://github.com/user-attachments/assets/37524afd-9c46-4ba0-bd50-268d1cd0bb77" />
 
 ### 2. Course details and module navigation
+
+Course pages show pricing, enrollment state, modules, lessons, and learner progress through the curriculum.
 
 <img width="1910" height="912" alt="image" src="https://github.com/user-attachments/assets/ad5847fd-608a-4695-b269-46f2be8befd6" />
 <img width="1915" height="908" alt="image" src="https://github.com/user-attachments/assets/9fbf1df8-5d03-4c83-8db5-466b3777a4dc" />
@@ -660,6 +682,8 @@ Send `challengeToken` as the `Authorization: Bearer <challengeToken>` header.
 
 ### 3. Dashboard progress tracking
 
+The dashboard summarizes active courses, completion progress, profile information, and learner achievements.
+
 <img width="1915" height="858" alt="image" src="https://github.com/user-attachments/assets/e61a3fa5-2e27-4077-bda0-cde806af8631" />
 <img width="1919" height="660" alt="image" src="https://github.com/user-attachments/assets/f638457a-3d51-4cc2-a819-4da61acbf968" />
 <img width="1347" height="723" alt="image" src="https://github.com/user-attachments/assets/cee75e9d-fb6d-413b-97a4-832a3a945c5f" />
@@ -668,10 +692,14 @@ Send `challengeToken` as the `Authorization: Bearer <challengeToken>` header.
 
 ### 4. Certificate page
 
+Completed courses generate certificates that learners can view, print, and share.
+
 <img width="1919" height="909" alt="image" src="https://github.com/user-attachments/assets/a0cfbce7-d1ea-444e-9652-43421478c994" />
 <img width="1299" height="913" alt="image" src="https://github.com/user-attachments/assets/2f563368-dc78-4d7a-a8a1-6cde1fb5276e" />
 
 ### 5. Instructor course creation / edit flow
+
+Instructors can create courses, update course metadata, and build module/lesson curriculum content.
 
 <img width="1917" height="917" alt="image" src="https://github.com/user-attachments/assets/191a2a39-1b27-45cd-b3cf-4ee61dde236e" />
 <img width="1915" height="910" alt="image" src="https://github.com/user-attachments/assets/3ce69a68-8382-40d0-b712-f39ea59d28af" />
@@ -680,14 +708,48 @@ Send `challengeToken` as the `Authorization: Bearer <challengeToken>` header.
 
 ### 6. Support page ticket submission
 
+Users can submit support tickets through a backend-backed support form.
+
 <img width="1736" height="736" alt="image" src="https://github.com/user-attachments/assets/bd97b97a-4c02-48df-bfd5-7bf2a21cb79f" />
 
 ### 7. Login / Sign up / Sign out
+
+Authentication includes registration, login, email verification, protected routes, sign out, and optional authenticator-app 2FA.
 
 <img width="1918" height="910" alt="image" src="https://github.com/user-attachments/assets/cb04fdfc-ae29-42a1-901f-ba6e9a3b3176" />
 <img width="1913" height="910" alt="image" src="https://github.com/user-attachments/assets/271fc131-a75a-4955-adf1-acf7c6484fe1" />
 <img width="608" height="642" alt="image" src="https://github.com/user-attachments/assets/cc0865ba-8d3b-4f65-94c2-cbb8f942e142" />
 <img width="360" height="318" alt="image" src="https://github.com/user-attachments/assets/b0a7ee84-bf17-41ab-8fbf-32faff9c9785" />
+
+### 8. Checkout, discounts, and receipts
+
+Paid courses support card or PayPal-style checkout, promo/referral discounts, sale pricing, validation, purchase records, and printable receipts.
+
+<!-- Add checkout screenshots here: payment form, order summary, and printed receipt window. -->
+
+### 9. Lesson quizzes and assessment attempts
+
+Lessons can include timed multiple-choice quizzes with pass scores, attempt limits, automatic grading, answer review, and anti-cheat metadata.
+
+<!-- Add lesson quiz screenshots here: before starting, active quiz, and score result. -->
+
+### 10. Community Q&A and moderation
+
+Authenticated users can ask course questions, answer threads, upvote helpful posts, accept answers, and instructors/admins can moderate pending content.
+
+<!-- Add community screenshots here: thread list/detail view and moderation queue. -->
+
+### 11. Course AI assistant
+
+The floating Course AI chat recommends courses from the catalog using the learner's enrolled, saved, and completed courses.
+
+<!-- Add AI assistant screenshots here: launcher preview and open chat recommendation. -->
+
+### 12. Public certificate verification
+
+Certificates can be verified from a public `/verify/:certId` route with certificate details, QR code verification, print action, and LinkedIn sharing.
+
+<!-- Add certificate verification screenshots here: valid certificate page and invalid certificate state. -->
 
 
 ---
