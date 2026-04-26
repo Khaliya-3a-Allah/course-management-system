@@ -30,5 +30,5 @@ export const env = {
   GMAIL_PASS: process.env.GMAIL_PASS || "",
   CERTIFICATE_SIGNING_SECRET: process.env.CERTIFICATE_SIGNING_SECRET || crypto.randomBytes(32).toString("hex"),
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",
-  GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-1.5-flash",
+  GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-2.5-flash",
 };

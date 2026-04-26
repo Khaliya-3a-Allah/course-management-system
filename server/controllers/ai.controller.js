@@ -6,6 +6,10 @@ const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models
 const MAX_MESSAGES = 8;
 const MAX_COURSES = 24;
 
+function normalizeModelName(modelName) {
+  return String(modelName || "gemini-2.5-flash").replace(/^models\//, "");
+}
+
 function compactText(value, limit = 500) {
   return String(value || "").replace(/\s+/g, " ").trim().slice(0, limit);
 }
@@ -91,7 +95,8 @@ export const getCourseSuggestion = asyncHandler(async (req, res) => {
     catalog,
   });
 
-  const url = `${GEMINI_API_BASE}/${encodeURIComponent(env.GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(env.GEMINI_API_KEY)}`;
+  const model = normalizeModelName(env.GEMINI_MODEL);
+  const url = `${GEMINI_API_BASE}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(env.GEMINI_API_KEY)}`;
   const geminiResponse = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
