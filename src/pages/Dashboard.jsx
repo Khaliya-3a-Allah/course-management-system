@@ -38,7 +38,7 @@ function formatCountdown(daysRemaining) {
 }
 
 export default function Dashboard() {
-  const { currentUser, unenrollCourse, updateProfile, addToast, deleteCourse } = useAppContext();
+  const { currentUser, courses, unenrollCourse, updateProfile, addToast, deleteCourse, unsaveCourse } = useAppContext();
   const navigate = useNavigate();
 
   const [dashboardData, setDashboardData] = useState(null);
@@ -112,6 +112,8 @@ export default function Dashboard() {
   const canManageCreatedCourses = isInstructor || (instructor.createdCourses?.length || 0) > 0;
   const isLoading = dashboardStatus === RESOURCE_STATUS.LOADING || dashboardStatus === RESOURCE_STATUS.IDLE;
   const hasError = dashboardStatus === RESOURCE_STATUS.ERROR;
+  const savedCourseIds = currentUser?.savedCourseIds || [];
+  const savedCourses = courses.filter((course) => savedCourseIds.includes(course.id));
 
   const summaryCards = [
     {
@@ -219,6 +221,15 @@ export default function Dashboard() {
       await loadDashboard();
     } catch (error) {
       addToast(error?.message || "Could not delete this course.", "error");
+    }
+  }
+
+  async function handleUnsaveCourse(courseId) {
+    try {
+      await unsaveCourse(courseId);
+      addToast("Course removed from saved courses.", "success");
+    } catch (error) {
+      addToast(error?.message || "Could not update saved courses.", "error");
     }
   }
 
@@ -427,6 +438,50 @@ export default function Dashboard() {
                       </article>
                     );
                   })}
+                </div>
+              )}
+            </section>
+
+            <section>
+              <div className="flex items-end justify-between gap-3 mb-4">
+                <div>
+                  <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#f6c56b] mb-1">Saved courses</p>
+                  <h2 className="font-['Playfair_Display',serif] text-[1.3rem] text-[#f5f2ec]">Courses you liked</h2>
+                </div>
+                <Link to="/courses" className="text-[0.88rem] font-semibold text-[#f6c56b] no-underline">
+                  Find more
+                </Link>
+              </div>
+
+              {savedCourses.length === 0 ? (
+                <div className="dash-surface rounded-2xl border border-[rgba(255,255,255,0.08)] p-6 text-[#9ca3af]">
+                  Save courses from their detail pages and they will appear here.
+                </div>
+              ) : (
+                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  {savedCourses.map((course) => (
+                    <div key={course.id} className="space-y-3">
+                      <CourseCard course={course} />
+                      <div className="dash-surface rounded-xl border border-[rgba(255,255,255,0.08)] p-3 flex items-center gap-2">
+                        <Link
+                          to={`/courses/${course.id}`}
+                          className="px-3 py-1.5 rounded-lg no-underline text-[0.8rem] font-semibold bg-[#d97706] text-[#0c0c0e]"
+                        >
+                          View Course
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleUnsaveCourse(course.id)}
+                          className="px-3 py-1.5 rounded-lg text-[0.8rem] font-semibold border border-[rgba(255,255,255,0.12)] text-[#e8e6e0]"
+                        >
+                          Remove
+                        </button>
+                        <span className="ml-auto text-[0.72rem] text-[#9ca3af]">
+                          {course.level}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </section>
