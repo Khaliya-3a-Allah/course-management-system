@@ -13,12 +13,19 @@ function getQuestionId(question) {
   return String(question.id || question._id || "");
 }
 
+function isMongoId(value) {
+  return typeof value === "string" && /^[0-9a-f]{24}$/i.test(value);
+}
+
 export default function LessonQuiz({ lesson, onPassed, addToast }) {
   const quiz = lesson?.quiz;
+  const lessonId = String(lesson?.id || lesson?._id || "");
+  const canUseAssessmentApi = isMongoId(lessonId);
   const questions = useMemo(() => quiz?.questions || [], [quiz?.questions]);
   const token = readToken();
   const startedAtRef = useRef(new Date().toISOString());
   const submittedRef = useRef(false);
+  const [hasStarted, setHasStarted] = useState(false);
   const [answers, setAnswers] = useState({});
   const [attempts, setAttempts] = useState([]);
   const [result, setResult] = useState(null);
@@ -35,17 +42,18 @@ export default function LessonQuiz({ lesson, onPassed, addToast }) {
   useEffect(() => {
     setAnswers({});
     setResult(null);
+    setHasStarted(false);
     submittedRef.current = false;
     startedAtRef.current = new Date().toISOString();
     setRemainingSeconds(Math.max(60, Number(quiz?.timeLimitMinutes || 10) * 60));
   }, [lesson?.id, quiz?.timeLimitMinutes]);
 
   useEffect(() => {
-    if (!token || !lesson?.id || !quiz?.enabled) return;
-    apiGet(`/assessments/lessons/${lesson.id}/attempts`, { token })
+    if (!token || !canUseAssessmentApi || !quiz?.enabled) return;
+    apiGet(`/assessments/lessons/${lessonId}/attempts`, { token })
       .then((response) => setAttempts(response?.data || response || []))
       .catch(() => {});
-  }, [lesson?.id, quiz?.enabled, token]);
+  }, [canUseAssessmentApi, lessonId, quiz?.enabled, token]);
 
   useEffect(() => {
     const onBlur = () => setAntiCheat((prev) => ({ ...prev, blurCount: prev.blurCount + 1 }));
@@ -68,14 +76,32 @@ export default function LessonQuiz({ lesson, onPassed, addToast }) {
     };
   }, []);
 
+  const startQuiz = () => {
+    setAnswers({});
+    setResult(null);
+    setHasStarted(true);
+    submittedRef.current = false;
+    startedAtRef.current = new Date().toISOString();
+    setRemainingSeconds(Math.max(60, Number(quiz?.timeLimitMinutes || 10) * 60));
+    setAntiCheat({
+      blurCount: 0,
+      pasteCount: 0,
+      visibilityHiddenCount: 0,
+    });
+  };
+
   const submitQuiz = useCallback(async () => {
     if (submittedRef.current || loading) return;
+    if (!canUseAssessmentApi) {
+      addToast?.("This quiz is not ready yet. Save or refresh the course and try again.", "error");
+      return;
+    }
     submittedRef.current = true;
     setLoading(true);
 
     try {
       const response = await apiPost(
-        `/assessments/lessons/${lesson.id}/attempts`,
+        `/assessments/lessons/${lessonId}/attempts`,
         {
           startedAt: startedAtRef.current,
           durationSeconds: Math.round(
@@ -96,7 +122,7 @@ export default function LessonQuiz({ lesson, onPassed, addToast }) {
       setResult(data);
       setAttempts((prev) => [data, ...prev]);
       if (data?.passed) {
-        onPassed?.(lesson.id);
+        onPassed?.(lessonId);
       }
     } catch (error) {
       submittedRef.current = false;
@@ -104,10 +130,10 @@ export default function LessonQuiz({ lesson, onPassed, addToast }) {
     } finally {
       setLoading(false);
     }
-  }, [addToast, answers, antiCheat, lesson.id, loading, onPassed, questions, token]);
+  }, [addToast, answers, antiCheat, canUseAssessmentApi, lessonId, loading, onPassed, questions, token]);
 
   useEffect(() => {
-    if (!quiz?.enabled || result) return undefined;
+    if (!quiz?.enabled || !hasStarted || result) return undefined;
     const timer = window.setInterval(() => {
       setRemainingSeconds((prev) => {
         if (prev <= 1) {
@@ -119,7 +145,7 @@ export default function LessonQuiz({ lesson, onPassed, addToast }) {
       });
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [quiz?.enabled, result, submitQuiz]);
+  }, [hasStarted, quiz?.enabled, result, submitQuiz]);
 
   if (!quiz?.enabled || questions.length === 0) return null;
 
@@ -146,6 +172,27 @@ export default function LessonQuiz({ lesson, onPassed, addToast }) {
         <div className="rounded-lg border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] p-4 text-[0.9rem] text-red-300">
           You have used all attempts for this quiz.
         </div>
+      ) : !hasStarted && !result ? (
+        <div className="flex flex-col gap-4">
+          <div className="rounded-lg border border-[rgba(255,255,255,0.07)] bg-surface p-4">
+            <p className="text-[0.9rem] text-text-muted leading-relaxed m-0">
+              This quiz has {questions.length} question{questions.length === 1 ? "" : "s"}. The timer starts after you click Start Quiz.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="self-start px-5 py-2.5 rounded-lg font-bold text-[0.9rem] cursor-pointer border-none bg-brand text-base disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={startQuiz}
+            disabled={!canUseAssessmentApi}
+          >
+            Start Quiz
+          </button>
+          {!canUseAssessmentApi && (
+            <p className="m-0 text-[0.82rem] text-text-dim">
+              Save or refresh this course before taking the quiz.
+            </p>
+          )}
+        </div>
       ) : (
         <div className="flex flex-col gap-4">
           {questions.map((question, index) => {
@@ -171,7 +218,7 @@ export default function LessonQuiz({ lesson, onPassed, addToast }) {
                       >
                         <input
                           type="radio"
-                          name={`quiz-${lesson.id}-${questionId}`}
+                          name={`quiz-${lessonId}-${questionId}`}
                           checked={selected}
                           disabled={!!result || loading}
                           onChange={() => setAnswers((prev) => ({ ...prev, [questionId]: optionIndex }))}
