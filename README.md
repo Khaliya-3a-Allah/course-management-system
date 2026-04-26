@@ -731,25 +731,32 @@ Paid courses support card or PayPal-style checkout, promo/referral discounts, sa
 
 Lessons can include timed multiple-choice quizzes with pass scores, attempt limits, automatic grading, answer review, and anti-cheat metadata.
 
-<!-- Add lesson quiz screenshots here: before starting, active quiz, and score result. -->
+<img width="1403" height="486" alt="image" src="https://github.com/user-attachments/assets/87f68776-795c-4fa2-b624-d8104af0436d" />
+
+<img width="1349" height="659" alt="image" src="https://github.com/user-attachments/assets/94b22267-6b00-4a68-9d65-fc660f8a6d60" />
+
+<img width="1414" height="404" alt="image" src="https://github.com/user-attachments/assets/963459c6-b839-4e68-bb3e-72faddbb5e0f" />
+
 
 ### 10. Community Q&A and moderation
 
 Authenticated users can ask course questions, answer threads, upvote helpful posts, accept answers, and instructors/admins can moderate pending content.
 
-<!-- Add community screenshots here: thread list/detail view and moderation queue. -->
+<img width="1883" height="868" alt="image" src="https://github.com/user-attachments/assets/fe2c924e-0a07-4b81-b795-929f0df55aa3" />
+
 
 ### 11. Course AI assistant
 
 The floating Course AI chat recommends courses from the catalog using the learner's enrolled, saved, and completed courses.
 
-<!-- Add AI assistant screenshots here: launcher preview and open chat recommendation. -->
+<img width="802" height="878" alt="image" src="https://github.com/user-attachments/assets/de9878b4-e261-43ee-a623-082117475805" />
+
 
 ### 12. Public certificate verification
 
 Certificates can be verified from a public `/verify/:certId` route with certificate details, QR code verification, print action, and LinkedIn sharing.
 
-<!-- Add certificate verification screenshots here: valid certificate page and invalid certificate state. -->
+<img width="1308" height="874" alt="image" src="https://github.com/user-attachments/assets/53e1a752-ca46-4f94-adfc-c4d249255ad5" />
 
 
 ---
