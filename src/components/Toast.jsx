@@ -57,12 +57,7 @@ function ToastItem({ id, message, variant, durationMs, onDismiss }) {
   return (
     <div
       role="status"
-      className={`pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-lg min-w-0 sm:min-w-[280px] sm:max-w-[420px] border shadow-[0_12px_28px_rgba(0,0,0,0.38)] backdrop-blur-md ${variantStyle}`}
-      style={{
-        animation: isExiting
-          ? `toastSlideOut ${EXIT_ANIMATION_MS}ms ease forwards`
-          : "toastSlideIn 0.3s ease forwards",
-      }}
+      className={`pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-lg min-w-0 sm:min-w-[280px] sm:max-w-[420px] border shadow-[0_12px_28px_rgba(0,0,0,0.38)] backdrop-blur-md ${variantStyle} ${isExiting ? "toast-exit" : "toast-enter"}`}
     >
       <span className="text-base font-bold shrink-0">{variantIcons[variant] || variantIcons.info}</span>
       <span className="flex-1 text-[0.9rem] leading-snug">{message}</span>
@@ -72,24 +67,11 @@ function ToastItem({ id, message, variant, durationMs, onDismiss }) {
         className="bg-transparent border-none text-inherit opacity-70 hover:opacity-100 cursor-pointer text-[1.15rem] leading-none px-1 shrink-0"
         aria-label="Dismiss notification"
       >
-        ×
+        {"\u00D7"}
       </button>
-
-      <style>{keyframes}</style>
     </div>
   );
 }
-
-const keyframes = `
-  @keyframes toastSlideIn {
-    from { opacity: 0; transform: translateX(100%); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-  @keyframes toastSlideOut {
-    from { opacity: 1; transform: translateX(0); }
-    to   { opacity: 0; transform: translateX(100%); }
-  }
-`;
 
 const variantIcons = {
   success: "\u2713",
@@ -102,3 +84,4 @@ const variantStyles = {
   error: "bg-[rgba(239,68,68,0.2)] border-[rgba(239,68,68,0.55)] text-[#fee2e2]",
   info: "bg-[rgba(59,130,246,0.2)] border-[rgba(59,130,246,0.55)] text-[#dbeafe]",
 };
+

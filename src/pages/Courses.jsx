@@ -183,8 +183,7 @@ export default function Courses() {
 
   return (
     <main
-      className="min-h-screen bg-base text-[#e8e6e0]"
-      style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(12px)", transition: "opacity 0.5s ease, transform 0.5s ease" }}
+      className={`min-h-screen bg-base text-[#e8e6e0] transition-[opacity,transform] duration-500 ease-in-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-[12px]"}`}
     >
       {/* Header */}
       <header className="relative overflow-hidden bg-sidebar border-b border-[rgba(255,255,255,0.06)] px-6 md:px-8 pt-12 pb-10">

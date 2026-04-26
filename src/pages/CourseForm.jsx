@@ -73,7 +73,7 @@ export default function CourseForm() {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center bg-base gap-4">
         <h2 className="font-heading text-[1.5rem] text-text-primary">Course Not Found</h2>
-        <Link to="/dashboard" className="no-underline font-semibold" style={{ color: "#d97706" }}>
+        <Link to="/dashboard" className="no-underline font-semibold text-[#d97706]">
           <span className="inline-flex items-center gap-1.5"><ArrowLeftIcon size={14} /> Back to Dashboard</span>
         </Link>
       </div>
@@ -188,19 +188,13 @@ export default function CourseForm() {
 
   return (
     <main
-      className="min-h-screen bg-base text-[#e8e6e0] font-body pb-16"
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(14px)",
-        transition: "opacity 0.5s ease, transform 0.5s ease",
-      }}
+      className={`min-h-screen bg-base text-[#e8e6e0] font-body pb-16 transition-[opacity,transform] duration-500 ease-in-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-[14px]"}`}
     >
       <div className="max-w-[680px] mx-auto px-6 pt-10">
         {/* Back link */}
         <Link
           to="/dashboard"
-          className="no-underline text-[0.85rem] font-semibold inline-block mb-6"
-          style={{ color: "#d97706" }}
+          className="no-underline text-[0.85rem] font-semibold inline-block mb-6 text-[#d97706]"
         >
           <span className="inline-flex items-center gap-1.5"><ArrowLeftIcon size={14} /> Back to Dashboard</span>
         </Link>
@@ -217,12 +211,7 @@ export default function CourseForm() {
           <div
             role="status"
             aria-live="polite"
-            className="rounded-lg px-5 py-3.5 text-[0.9rem] mb-6 border"
-            style={{
-              backgroundColor: "rgba(34,197,94,0.1)",
-              borderColor: "rgba(34,197,94,0.3)",
-              color: "#22c55e",
-            }}
+            className="rounded-lg px-5 py-3.5 text-[0.9rem] mb-6 border bg-[rgba(34,197,94,0.1)] border-[rgba(34,197,94,0.3)] text-[#22c55e]"
           >
             <span className="inline-flex items-center gap-1.5"><CheckIcon size={15} /> Course {isEdit ? "updated" : "created"} successfully! Redirecting…</span>
           </div>
@@ -241,8 +230,7 @@ export default function CourseForm() {
               aria-required="true"
               aria-invalid={!!errors.title}
               aria-describedby={errors.title ? "f-title-error" : undefined}
-              className={INPUT_CLASS}
-              style={buildInputBorder(errors.title)}
+              className={`${INPUT_CLASS} ${buildInputBorder(errors.title)}`}
             />
           </FormField>
 
@@ -268,8 +256,7 @@ export default function CourseForm() {
               aria-required="true"
               aria-invalid={!!errors.level}
               aria-describedby={errors.level ? "f-level-error" : undefined}
-              className={`${INPUT_CLASS} cursor-pointer`}
-              style={buildInputBorder(errors.level)}
+              className={`${INPUT_CLASS} cursor-pointer ${buildInputBorder(errors.level)}`}
             >
               <option value="">Select level</option>
               {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
@@ -287,8 +274,7 @@ export default function CourseForm() {
               aria-invalid={!!errors.description}
               aria-describedby={errors.description ? "f-desc-error" : undefined}
               rows={5}
-              className={`${INPUT_CLASS} resize-y`}
-              style={{ ...buildInputBorder(errors.description), minHeight: "120px" }}
+              className={`${INPUT_CLASS} resize-y min-h-[120px] ${buildInputBorder(errors.description)}`}
             />
           </FormField>
 
@@ -301,8 +287,7 @@ export default function CourseForm() {
               placeholder="https://example.com/image.jpg"
               aria-invalid={!!errors.thumbnail}
               aria-describedby={errors.thumbnail ? "f-thumb-error" : "f-thumb-hint"}
-              className={INPUT_CLASS}
-              style={buildInputBorder(errors.thumbnail)}
+              className={`${INPUT_CLASS} ${buildInputBorder(errors.thumbnail)}`}
             />
           </FormField>
 
@@ -314,8 +299,7 @@ export default function CourseForm() {
               onChange={(e) => set("tags", e.target.value)}
               placeholder="React, JavaScript, Frontend"
               aria-describedby="f-tags-hint"
-              className={INPUT_CLASS}
-              style={buildInputBorder(false)}
+              className={`${INPUT_CLASS} ${buildInputBorder(false)}`}
             />
           </FormField>
 
@@ -330,8 +314,7 @@ export default function CourseForm() {
               onChange={(e) => set("price", e.target.value)}
               placeholder="0"
               aria-describedby="f-price-hint"
-              className={INPUT_CLASS}
-              style={buildInputBorder(false)}
+              className={`${INPUT_CLASS} ${buildInputBorder(false)}`}
             />
           </FormField>
 
@@ -348,8 +331,7 @@ export default function CourseForm() {
                   value={form.salePrice}
                   onChange={(e) => set("salePrice", e.target.value)}
                   placeholder="29.99"
-                  className={INPUT_CLASS}
-                  style={buildInputBorder(errors.salePrice)}
+                  className={`${INPUT_CLASS} ${buildInputBorder(errors.salePrice)}`}
                 />
               </FormField>
               <FormField label="Sale Ends" htmlFor="f-sale-ends" hint="Optional" error={errors.saleEndsAt}>
@@ -358,8 +340,7 @@ export default function CourseForm() {
                   type="date"
                   value={form.saleEndsAt}
                   onChange={(e) => set("saleEndsAt", e.target.value)}
-                  className={INPUT_CLASS}
-                  style={buildInputBorder(errors.saleEndsAt)}
+                  className={`${INPUT_CLASS} ${buildInputBorder(errors.saleEndsAt)}`}
                 />
               </FormField>
             </div>
@@ -377,8 +358,7 @@ export default function CourseForm() {
             <button
               type="submit"
               disabled={submitted}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-lg font-bold text-[0.92rem] cursor-pointer border-none transition-opacity disabled:opacity-50"
-              style={{ backgroundColor: "#d97706", color: "#0c0c0e" }}
+              className="w-full sm:w-auto px-8 py-3.5 rounded-lg font-bold text-[0.92rem] cursor-pointer border-none transition-opacity disabled:opacity-50 bg-[#d97706] text-[#0c0c0e]"
             >
               {submitted ? "Saving…" : isEdit ? "Save Changes" : "Publish Course"}
             </button>
@@ -386,8 +366,7 @@ export default function CourseForm() {
               <button
                 type="button"
                 onClick={() => setShowDeleteModal(true)}
-                className="w-full sm:w-auto px-6 py-3.5 rounded-lg text-[0.92rem] cursor-pointer border border-[rgba(239,68,68,0.3)] text-[#ef4444]"
-                style={{ backgroundColor: "rgba(239,68,68,0.08)" }}
+                className="w-full sm:w-auto px-6 py-3.5 rounded-lg text-[0.92rem] cursor-pointer border border-[rgba(239,68,68,0.3)] text-[#ef4444] bg-[rgba(239,68,68,0.08)]"
               >
                 Delete Course
               </button>
@@ -395,8 +374,7 @@ export default function CourseForm() {
             <button
               type="button"
               onClick={() => navigate("/dashboard")}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-lg text-[0.92rem] cursor-pointer border text-text-muted"
-              style={{ backgroundColor: "transparent", borderColor: "rgba(255,255,255,0.1)" }}
+              className="w-full sm:w-auto px-6 py-3.5 rounded-lg text-[0.92rem] cursor-pointer border text-text-muted bg-transparent border-[rgba(255,255,255,0.1)]"
             >
               Cancel
             </button>

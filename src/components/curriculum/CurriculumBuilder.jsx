@@ -28,8 +28,7 @@ export default function CurriculumBuilder({ modules, onModulesChange, errors = {
     <section className="flex flex-col gap-4" aria-labelledby="curriculum-heading">
       {/* Section divider */}
       <hr
-        className="border-none h-px my-2"
-        style={{ backgroundColor: "rgba(255,255,255,0.06)" }}
+        className="border-none h-px my-2 bg-[rgba(255,255,255,0.06)]"
       />
 
       {/* Header */}
@@ -43,11 +42,7 @@ export default function CurriculumBuilder({ modules, onModulesChange, errors = {
         <button
           type="button"
           onClick={handleAddModule}
-          className="text-[0.85rem] font-bold cursor-pointer bg-transparent rounded-lg px-4 py-2 transition-colors focus-visible:ring-2 focus-visible:ring-amber-600/50 focus-visible:outline-none"
-          style={{
-            color: "#d97706",
-            border: "1px solid rgba(217,119,6,0.3)",
-          }}
+          className="text-[0.85rem] font-bold cursor-pointer bg-transparent rounded-lg px-4 py-2 transition-colors focus-visible:ring-2 focus-visible:ring-amber-600/50 focus-visible:outline-none text-[#d97706] border border-[rgba(217,119,6,0.3)]"
         >
           + Add Module
         </button>

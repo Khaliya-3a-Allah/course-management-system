@@ -130,8 +130,7 @@ export default function AutocompleteInput({
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className={INPUT_CLASS}
-        style={buildInputBorder(error)}
+        className={`${INPUT_CLASS} ${buildInputBorder(error)}`}
         role="combobox"
         aria-expanded={isOpen}
         aria-controls="ac-input-listbox"
@@ -145,8 +144,7 @@ export default function AutocompleteInput({
         <ul
           role="listbox"
           id="ac-input-listbox"
-          className="absolute top-full left-0 right-0 z-50 rounded-lg mt-1 max-h-[220px] overflow-y-auto list-none p-1"
-          style={{ backgroundColor: "#1a1a1f", border: "1px solid rgba(255,255,255,0.09)" }}
+          className="absolute top-full left-0 right-0 z-50 rounded-lg mt-1 max-h-[220px] overflow-y-auto list-none p-1 bg-[#1a1a1f] border border-[rgba(255,255,255,0.09)]"
         >
           {filteredOptions.map((option, index) => (
             <li
@@ -155,9 +153,8 @@ export default function AutocompleteInput({
               id={`ac-input-option-${index}`}
               aria-selected={index === highlightedIndex}
               className={`flex justify-between items-center px-3 py-2 cursor-pointer text-[0.88rem] font-body rounded transition-colors ${
-                index === highlightedIndex ? "text-brand" : "text-text-secondary"
+                index === highlightedIndex ? "text-brand bg-[rgba(217,119,6,0.08)]" : "text-text-secondary"
               }`}
-              style={index === highlightedIndex ? { backgroundColor: "rgba(217,119,6,0.08)" } : undefined}
               onMouseEnter={() => setHighlightedIndex(index)}
               onMouseDown={(e) => {
                 e.preventDefault();
@@ -173,8 +170,7 @@ export default function AutocompleteInput({
       {/* No results */}
       {isOpen && searchTerm.length > 0 && filteredOptions.length === 0 && (
         <div
-          className="absolute top-full left-0 right-0 z-50 rounded-lg mt-1 p-1"
-          style={{ backgroundColor: "#1a1a1f", border: "1px solid rgba(255,255,255,0.09)" }}
+          className="absolute top-full left-0 right-0 z-50 rounded-lg mt-1 p-1 bg-[#1a1a1f] border border-[rgba(255,255,255,0.09)]"
         >
           <p className="px-3 py-2 text-text-dim text-[0.85rem] m-0 font-body">
             No matching options found.

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import Modal from "../components/Modal";
@@ -9,7 +9,7 @@ import {
   TrophyIcon, ClockIcon,
 } from "../components/Icons";
 
-// ── SVG Icons ────────────────────────────────────────────────────────────────
+// â”€â”€ SVG Icons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const IconPlay = () => (
   <svg width="18" height="18" viewBox="0 0 16 16" fill="#e8e6e0" aria-hidden="true" focusable="false"><polygon points="3,1 15,8 3,15"/></svg>
 );
@@ -45,7 +45,7 @@ const IconFullscreen = () => (
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
-// ── Custom Video Player ──────────────────────────────────────────────────────
+// â”€â”€ Custom Video Player â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function VideoPlayer({ src, title, moduleName, duration }) {
   const videoRef = useRef(null);
   const wrapRef = useRef(null);
@@ -139,14 +139,14 @@ function VideoPlayer({ src, title, moduleName, duration }) {
 
   if (!src) {
     return (
-      <div className="vp-wrap" ref={wrapRef} style={vStyles.wrap}>
-        <div className="vp-overlay" style={vStyles.overlay}>
-          <span style={vStyles.overlayBadge}>{moduleName}</span>
-          <span style={vStyles.overlayTitle}>{title}</span>
+      <div className="vp-wrap" ref={wrapRef}>
+        <div className="vp-overlay">
+          <span className="vp-overlay-badge">{moduleName}</span>
+          <span className="vp-overlay-title">{title}</span>
         </div>
-        <div style={vStyles.noVideo}>
+        <div className="vp-no-video">
           <IconPlay />
-          <p style={{ fontSize: "1rem", color: "#4b5563", margin: 0 }}>No video available</p>
+          <p className="m-0 text-[1rem] text-[#4b5563]">No video available</p>
         </div>
       </div>
     );
@@ -156,58 +156,15 @@ function VideoPlayer({ src, title, moduleName, duration }) {
     <div
       ref={wrapRef}
       className="vp-wrap"
-      style={vStyles.wrap}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => playing && setShowControls(false)}
       onTouchStart={handleTouchStart}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <style>{`
-        /* Seek bar */
-        .vp-seek-bar { width: 100%; height: 20px; display: flex; align-items: center; cursor: pointer; margin-bottom: 0.5rem; }
-        .vp-seek-bar:hover .vp-track { height: 7px !important; }
-        /* Volume slider */
-        .vp-vol { accent-color: #d97706; width: 70px; cursor: pointer; -webkit-appearance: none; height: 4px; background: rgba(255,255,255,0.2); border-radius: 999px; outline: none; }
-        .vp-vol::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #d97706; cursor: pointer; }
-        .vp-vol::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #d97706; cursor: pointer; border: none; }
-        /* Control buttons */
-        .vp-btn { background: none !important; border: none !important; cursor: pointer; color: #e8e6e0; padding: 0.4rem; line-height: 1; display: flex; align-items: center; justify-content: center; min-width: 36px; min-height: 36px; }
-        /* Speed button */
-        .vp-speed-btn {
-          background: none !important;
-          border: 1px solid rgba(255,255,255,0.15) !important;
-          border-radius: 6px;
-          color: #d97706;
-          padding: 0.22rem 0.55rem;
-          font-size: 0.8rem;
-          font-weight: 700;
-          cursor: pointer;
-          font-family: 'DM Sans', sans-serif;
-          min-width: 42px;
-          line-height: 1.4;
-        }
-        .vp-speed-item {
-          display: block; width: 100%; padding: 0.45rem 1rem;
-          background: none; border: none;
-          font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
-          cursor: pointer; text-align: center;
-          border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .vp-speed-item:last-child { border-bottom: none; }
-        .vp-speed-item:hover { background: rgba(255,255,255,0.05) !important; }
-        /* Mobile: native controls, hide custom */
-        @media (max-width: 640px) {
-          .vp-wrap { border-radius: 0 !important; margin-left: -0.75rem !important; margin-right: -0.75rem !important; width: calc(100% + 1.5rem) !important; }
-          .vp-overlay { display: none !important; }
-          .vp-big-play { display: none !important; }
-          .vp-custom-controls { display: none !important; }
-        }
-      `}</style>
-
-      {/* Video — native controls on mobile, hidden on desktop (custom controls used) */}
+      {/* Video â€” native controls on mobile, hidden on desktop (custom controls used) */}
       <video
         ref={videoRef}
-        style={vStyles.video}
+        className="vp-video"
         src={src}
         controls
         controlsList="nodownload noremoteplayback"
@@ -219,24 +176,24 @@ function VideoPlayer({ src, title, moduleName, duration }) {
         onEnded={() => setPlaying(false)}
       />
 
-      {/* ── Desktop only below ── */}
+      {/* â”€â”€ Desktop only below â”€â”€ */}
 
       {/* Title overlay */}
-      <div className="vp-overlay" style={vStyles.overlay}>
-        <span style={vStyles.overlayBadge}>{moduleName}</span>
-        <span style={vStyles.overlayTitle}>{title}</span>
+      <div className="vp-overlay">
+        <span className="vp-overlay-badge">{moduleName}</span>
+        <span className="vp-overlay-title">{title}</span>
       </div>
 
       {/* Big play button */}
-      <button className="vp-big-play" onClick={togglePlay} style={vStyles.bigPlay} aria-label={playing ? "Pause" : "Play"}>
+      <button className="vp-big-play" onClick={togglePlay} aria-label={playing ? "Pause" : "Play"}>
         {playing
           ? <IconPause />
-          : <svg width="28" height="28" viewBox="0 0 16 16" fill="#d97706" style={{ marginLeft: "4px" }}><polygon points="3,1 15,8 3,15"/></svg>
+          : <svg width="28" height="28" viewBox="0 0 16 16" fill="#d97706" className="ml-1"><polygon points="3,1 15,8 3,15"/></svg>
         }
       </button>
 
       {/* Custom controls bar */}
-      <div className="vp-custom-controls" style={{ ...vStyles.controls, opacity: showControls ? 1 : 0, transition: "opacity 0.3s" }}>
+      <div className={`vp-custom-controls ${showControls ? "opacity-100" : "opacity-0"}`}>
         {/* Seek bar */}
         <div
           className="vp-seek-bar"
@@ -256,20 +213,20 @@ function VideoPlayer({ src, title, moduleName, duration }) {
             if (e.key === "ArrowLeft") { videoRef.current.currentTime = Math.max(0, currentTime - step); e.preventDefault(); }
           }}
         >
-          <div className="vp-track" style={vStyles.seekBg}>
-            <div style={{ ...vStyles.seekFill, width: `${pct}%` }} />
-            <div style={{ ...vStyles.seekThumb, left: `calc(${pct}% - 8px)` }} />
+          <div className="vp-track">
+            <div className="vp-seek-fill" style={{ width: `${pct}%` }} />
+            <div className="vp-seek-thumb" style={{ left: `calc(${pct}% - 8px)` }} />
           </div>
         </div>
 
         {/* Controls row */}
-        <div style={vStyles.ctrlRow}>
+        <div className="vp-ctrl-row">
           {/* Left: play, time, volume */}
-          <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+          <div className="flex items-center gap-1">
             <button className="vp-btn" onClick={togglePlay} aria-label={playing ? "Pause" : "Play"}>
               {playing ? <IconPause /> : <IconPlay />}
             </button>
-            <span style={vStyles.time}>{fmt(currentTime)} / {fmt(totalDuration)}</span>
+            <span className="vp-time">{fmt(currentTime)} / {fmt(totalDuration)}</span>
             <button className="vp-btn" onClick={toggleMute} aria-label={muted || volume === 0 ? "Unmute" : "Mute"}>
               {muted || volume === 0 ? <IconMute /> : volume < 0.5 ? <IconVolumeLow /> : <IconVolume />}
             </button>
@@ -277,9 +234,9 @@ function VideoPlayer({ src, title, moduleName, duration }) {
           </div>
 
           {/* Right: speed, duration, fullscreen */}
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <div className="flex items-center gap-2">
             {/* Speed selector */}
-            <div style={{ position: "relative" }} onClick={(e) => e.stopPropagation()}>
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
               <button
                 className="vp-speed-btn"
                 onClick={() => setShowSpeed((v) => !v)}
@@ -290,13 +247,12 @@ function VideoPlayer({ src, title, moduleName, duration }) {
                 {speed}x
               </button>
               {showSpeed && (
-                <div style={vStyles.speedDropdown}>
+                <div className="vp-speed-dropdown">
                   {SPEEDS.map((s) => (
                     <button
                       key={s}
-                      className="vp-speed-item"
+                      className={`vp-speed-item ${s === speed ? "vp-speed-item-active" : "vp-speed-item-idle"}`}
                       onClick={() => changeSpeed(s)}
-                      style={{ color: s === speed ? "#d97706" : "#9ca3af", fontWeight: s === speed ? 700 : 400, backgroundColor: s === speed ? "rgba(217,119,6,0.07)" : "transparent" }}
                     >
                       {s}x
                     </button>
@@ -305,7 +261,7 @@ function VideoPlayer({ src, title, moduleName, duration }) {
               )}
             </div>
 
-            <span style={vStyles.durBadge} className="inline-flex items-center gap-1"><ClockIcon size={12} /> {duration}</span>
+            <span className="vp-duration inline-flex items-center gap-1"><ClockIcon size={12} /> {duration}</span>
             <button className="vp-btn" onClick={toggleFS} aria-label="Fullscreen">
               <IconFullscreen />
             </button>
@@ -316,25 +272,7 @@ function VideoPlayer({ src, title, moduleName, duration }) {
   );
 }
 
-const vStyles = {
-  wrap: { position: "relative", width: "100%", aspectRatio: "16/9", backgroundColor: "#0a0a0c", borderRadius: "12px", overflow: "hidden", marginBottom: "1.25rem", userSelect: "none" },
-  video: { width: "100%", height: "100%", objectFit: "contain", display: "block", backgroundColor: "#0a0a0c" },
-  overlay: { position: "absolute", top: 0, left: 0, right: 0, padding: "1rem 1.25rem", background: "linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%)", display: "flex", flexDirection: "column", gap: "0.25rem", pointerEvents: "none" },
-  overlayBadge: { fontSize: "0.72rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#d97706", fontWeight: 700 },
-  overlayTitle: { fontSize: "clamp(0.85rem, 2vw, 1.2rem)", fontFamily: "'Playfair Display', serif", color: "#f5f2ec", fontWeight: 700, lineHeight: 1.3 },
-  bigPlay: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "clamp(56px, 8vw, 80px)", height: "clamp(56px, 8vw, 80px)", borderRadius: "50%", background: "rgba(0,0,0,0.35)", border: "2px solid rgba(217,119,6,0.5)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" },
-  controls: { position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 100%)", padding: "1.5rem 0.75rem 0.75rem" },
-  seekBg: { width: "100%", height: "5px", backgroundColor: "rgba(255,255,255,0.2)", borderRadius: "999px", position: "relative", transition: "height 0.15s" },
-  seekFill: { height: "100%", backgroundColor: "#d97706", borderRadius: "999px", transition: "width 0.1s linear" },
-  seekThumb: { position: "absolute", top: "50%", transform: "translateY(-50%)", width: "16px", height: "16px", borderRadius: "50%", backgroundColor: "#d97706", boxShadow: "0 0 6px rgba(217,119,6,0.7)" },
-  ctrlRow: { display: "flex", alignItems: "center", justifyContent: "space-between" },
-  time: { fontSize: "0.92rem", color: "#9ca3af", fontFamily: "monospace", letterSpacing: "0.04em", whiteSpace: "nowrap" },
-  durBadge: { fontSize: "0.82rem", color: "#9ca3af", backgroundColor: "rgba(255,255,255,0.08)", padding: "0.2rem 0.6rem", borderRadius: "999px", whiteSpace: "nowrap" },
-  speedDropdown: { position: "absolute", bottom: "2.4rem", right: 0, backgroundColor: "#1a1a1e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", overflow: "hidden", minWidth: "72px", zIndex: 10 },
-  noVideo: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem" },
-};
-
-// ── Main Page ────────────────────────────────────────────────────────────────
+// â”€â”€ Main Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function ModuleDetails() {
   const { courseId, moduleId } = useParams();
   const navigate = useNavigate();
@@ -498,39 +436,8 @@ export default function ModuleDetails() {
 
   return (
     <div
-      className="min-h-screen bg-base text-text-secondary font-body"
-      style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(16px)", transition: "opacity 0.55s ease, transform 0.55s ease" }}
+      className={`min-h-screen bg-base text-text-secondary font-body transition-[opacity,transform] duration-[550ms] ease-in-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
     >
-      <style>{`
-        @keyframes fadeSlide { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        @media (max-width: 640px) {
-          .module-layout { grid-template-columns: 1fr !important; }
-          .module-sidebar { border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.06); max-height: 280px; overflow-y: auto; }
-          .module-main { padding: 0.75rem !important; }
-        }
-        @media (min-width: 641px) {
-          .vp-wrap video { pointer-events: none; }
-          .vp-wrap video::-webkit-media-controls { display: none !important; }
-          .vp-wrap video { -webkit-appearance: none; }
-          .vp-big-play { display: flex !important; }
-          .vp-custom-controls { display: block !important; }
-          .vp-wrap { cursor: pointer; }
-        }
-        .module-sidebar button { background-color: var(--color-sidebar) !important; }
-        .lesson-btn { background-color: var(--color-surface-muted) !important; }
-        .lesson-btn:hover { background-color: rgba(217,119,6,0.05) !important; }
-        .lesson-btn.active { background-color: rgba(217,119,6,0.07) !important; }
-        .module-btn-active { background-color: rgba(217,119,6,0.06) !important; border-left: 3px solid #d97706 !important; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, #d97706, #f59e0b); border-radius: 999px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
-        .mark-complete-btn:hover { background-color: rgba(34,197,94,0.15) !important; }
-        .star-btn { background: none !important; border: none !important; cursor: pointer; padding: 0 3px; font-size: 2.2rem; line-height: 1; transition: transform 0.1s; }
-        .star-btn:hover { transform: scale(1.25); }
-        .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .review-textarea { width: 100%; background: var(--color-surface); border: 1px solid var(--color-input-border); border-radius: 8px; color: var(--color-text-secondary); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; padding: 0.75rem 1rem; resize: vertical; min-height: 90px; box-sizing: border-box; outline: none; transition: border-color 0.2s; }
-        .review-textarea:focus { border-color: rgba(217,119,6,0.4); }
-        .review-textarea::placeholder { color: var(--color-text-dim); }
-      `}</style>
-
       {/* Top Bar */}
       <header className="sticky top-0 z-10 border-b border-[rgba(255,255,255,0.06)] px-6 bg-sidebar">
         <div className="max-w-[1280px] mx-auto min-h-[53px] flex items-center gap-2 sm:gap-3 text-[0.8rem] sm:text-[0.85rem] flex-wrap py-2">
@@ -547,10 +454,7 @@ export default function ModuleDetails() {
       </header>
 
       {/* Layout */}
-      <div
-        className="module-layout max-w-[1280px] mx-auto grid"
-        style={{ gridTemplateColumns: "300px 1fr", minHeight: "calc(100vh - 53px)" }}
-      >
+      <div className="module-layout max-w-[1280px] mx-auto grid min-h-[calc(100vh-53px)] grid-cols-[300px_1fr]">
         {/* Sidebar */}
         <aside
           className="module-sidebar border-r border-[rgba(255,255,255,0.06)] overflow-y-auto bg-sidebar"
@@ -585,8 +489,9 @@ export default function ModuleDetails() {
                     aria-controls={`mod-lessons-${mod.id}`}
                   >
                     <span
-                      className="font-heading text-[1rem] min-w-[1.75rem] font-bold"
-                      style={{ color: modComplete ? "#22c55e" : isCurrentModule ? "#d97706" : "rgba(217,119,6,0.3)" }}
+                      className={`font-heading text-[1rem] min-w-[1.75rem] font-bold ${
+                        modComplete ? "text-[#22c55e]" : isCurrentModule ? "text-[#d97706]" : "text-[rgba(217,119,6,0.3)]"
+                      }`}
                     >
                       {modComplete ? <CheckIcon size={16} /> : String(modIdx + 1).padStart(2, "0")}
                     </span>
@@ -595,8 +500,8 @@ export default function ModuleDetails() {
                       <span className="flex items-center gap-2">
                         <span className="flex-1 h-[3px] bg-[rgba(255,255,255,0.07)] rounded-full overflow-hidden">
                           <span
-                            className="block h-full rounded-full transition-[width] duration-500"
-                            style={{ width: `${modPct}%`, backgroundColor: modComplete ? "#22c55e" : "#d97706" }}
+                            className={`block h-full rounded-full transition-[width] duration-500 ${modComplete ? "bg-[#22c55e]" : "bg-[#d97706]"}`}
+                            style={{ width: `${modPct}%` }}
                           />
                         </span>
                         <span className="text-[0.65rem] text-text-faint shrink-0">{modDone}/{modTotal}</span>
@@ -618,19 +523,23 @@ export default function ModuleDetails() {
                             aria-pressed={isActiveLesson}
                           >
                             <span
-                              className="w-2.5 h-2.5 rounded-full shrink-0 transition-all duration-300"
-                              style={{
-                                backgroundColor: isDone ? "#22c55e" : isActiveLesson ? "#d97706" : "rgba(255,255,255,0.1)",
-                                boxShadow: isActiveLesson && !isDone ? "0 0 0 2px rgba(217,119,6,0.3)" : "none",
-                              }}
+                              className={`w-2.5 h-2.5 rounded-full shrink-0 transition-all duration-300 ${
+                                isDone
+                                  ? "bg-[#22c55e]"
+                                  : isActiveLesson
+                                    ? "bg-[#d97706] shadow-[0_0_0_2px_rgba(217,119,6,0.3)]"
+                                    : "bg-[rgba(255,255,255,0.1)]"
+                              }`}
                             />
                             <span className="flex-1 flex flex-col gap-px">
                               <span
-                                className="text-[0.82rem] font-medium"
-                                style={{
-                                  color: isDone ? "var(--color-text-dim)" : isActiveLesson ? "var(--color-text-primary)" : "var(--color-text-muted)",
-                                  textDecoration: isDone ? "line-through" : "none",
-                                }}
+                                className={`text-[0.82rem] font-medium ${
+                                  isDone
+                                    ? "text-text-dim line-through"
+                                    : isActiveLesson
+                                      ? "text-text-primary"
+                                      : "text-text-muted"
+                                }`}
                               >
                                 {lesson.title}
                               </span>
@@ -652,7 +561,7 @@ export default function ModuleDetails() {
         {/* Main */}
         <main className="module-main bg-base overflow-y-auto px-10 py-8">
           {activeLesson ? (
-            <div key={activeLesson.id} style={{ animation: "fadeSlide 0.4s ease forwards" }}>
+            <div key={activeLesson.id} className="animate-fade-slide">
               <VideoPlayer
                 src={activeLesson.videoUrl}
                 title={activeLesson.title}
@@ -673,7 +582,7 @@ export default function ModuleDetails() {
                 )}
               </div>
 
-              <h1 className="font-heading text-text-primary mb-6 leading-snug" style={{ fontSize: "clamp(1.2rem, 3vw, 1.6rem)" }}>
+              <h1 className="font-heading text-text-primary mb-6 leading-snug text-[clamp(1.2rem,3vw,1.6rem)]">
                 {activeLesson.title}
               </h1>
 
@@ -766,7 +675,6 @@ export default function ModuleDetails() {
                 className="submit-btn w-full py-3.5 rounded-lg font-bold text-[0.92rem] border-none cursor-pointer bg-brand text-base disabled:opacity-40 disabled:cursor-not-allowed"
                 onClick={handleSubmitReview}
                 disabled={selectedRating === 0}
-                style={{ opacity: selectedRating === 0 ? 0.4 : 1, cursor: selectedRating === 0 ? "not-allowed" : "pointer" }}
               >
                 Submit Review
               </button>
@@ -799,3 +707,4 @@ export default function ModuleDetails() {
     </div>
   );
 }
+

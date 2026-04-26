@@ -32,11 +32,10 @@ export default function TwoFactorForm({
 
   return (
     <article
-      className="w-full max-w-[420px] bg-surface rounded-2xl overflow-hidden"
-      style={{ border: "1px solid rgba(255,255,255,0.07)" }}
+      className="w-full max-w-[420px] bg-surface rounded-2xl overflow-hidden border border-[rgba(255,255,255,0.07)]"
       aria-label="Two-factor verification"
     >
-      <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, #d97706, #f59e0b)" }} aria-hidden="true" />
+      <div className="h-1 w-full bg-[linear-gradient(90deg,#d97706,#f59e0b)]" aria-hidden="true" />
 
       <div className="p-9">
         <h1 className="font-heading text-[1.75rem] text-text-primary mb-1">Verify your identity.</h1>
@@ -64,8 +63,7 @@ export default function TwoFactorForm({
                 if (error) setError("");
               }}
               placeholder="000000"
-              className="w-full p-4 rounded-lg text-text-primary bg-base outline-none transition-colors font-body text-2xl tracking-[0.6em] text-center"
-              style={{ border: "1px solid rgba(255,255,255,0.09)" }}
+              className="w-full p-4 rounded-lg text-text-primary bg-base outline-none transition-colors font-body text-2xl tracking-[0.6em] text-center border border-[rgba(255,255,255,0.09)]"
               aria-invalid={!!error}
               aria-describedby={error ? "two-factor-error" : undefined}
               autoFocus

@@ -13,11 +13,10 @@ export default function LoginForm({ form, onFieldChange, onSubmit, onForgotPassw
 
   return (
     <article
-      className="w-full max-w-[420px] bg-surface rounded-2xl overflow-hidden"
-      style={{ border: "1px solid rgba(255,255,255,0.07)" }}
+      className="w-full max-w-[420px] bg-surface rounded-2xl overflow-hidden border border-[rgba(255,255,255,0.07)]"
       aria-label="Login form"
     >
-      <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, #d97706, #f59e0b)" }} aria-hidden="true" />
+      <div className="h-1 w-full bg-[linear-gradient(90deg,#d97706,#f59e0b)]" aria-hidden="true" />
 
       <div className="p-9">
         <h1 className="font-heading text-[1.75rem] text-text-primary mb-1">Welcome back.</h1>
@@ -27,8 +26,7 @@ export default function LoginForm({ form, onFieldChange, onSubmit, onForgotPassw
           <div
             role="alert"
             aria-live="assertive"
-            className="rounded-lg px-4 py-3 text-sm mb-5"
-            style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#f87171" }}
+            className="rounded-lg px-4 py-3 text-sm mb-5 bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.25)] text-[#f87171]"
           >
             {authError}
           </div>
@@ -41,8 +39,7 @@ export default function LoginForm({ form, onFieldChange, onSubmit, onForgotPassw
               value={form.email}
               onChange={(e) => onFieldChange("email", e.target.value)}
               placeholder="you@example.com"
-              className={INPUT_CLASS}
-              style={buildInputBorder(errors.email)}
+              className={`${INPUT_CLASS} ${buildInputBorder(errors.email)}`}
               autoComplete="email"
               ariaRequired="true"
               ariaInvalid={!!errors.email}
@@ -58,8 +55,7 @@ export default function LoginForm({ form, onFieldChange, onSubmit, onForgotPassw
                 value={form.password}
                 onChange={(e) => onFieldChange("password", e.target.value)}
                 placeholder="Enter your password"
-                className={`${INPUT_CLASS} pr-12`}
-                style={buildInputBorder(errors.password)}
+                className={`${INPUT_CLASS} pr-12 ${buildInputBorder(errors.password)}`}
                 autoComplete="current-password"
                 aria-required="true"
                 aria-invalid={!!errors.password}
@@ -80,11 +76,7 @@ export default function LoginForm({ form, onFieldChange, onSubmit, onForgotPassw
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-1 w-full py-3.5 rounded-lg font-bold text-[0.93rem] font-body transition-opacity hover:opacity-90 active:opacity-80 border-none bg-brand text-base"
-            style={{
-              opacity: isSubmitting ? 0.6 : 1,
-              cursor: isSubmitting ? "not-allowed" : "pointer",
-            }}
+            className="mt-1 w-full py-3.5 rounded-lg font-bold text-[0.93rem] font-body transition-opacity hover:opacity-90 active:opacity-80 border-none bg-brand text-base cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isSubmitting ? "Signing in..." : "Sign In"}
           </button>
@@ -104,15 +96,14 @@ export default function LoginForm({ form, onFieldChange, onSubmit, onForgotPassw
         </p>
 
         <aside
-          className="mt-5 px-3 py-3 rounded-lg text-center"
-          style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}
+          className="mt-5 px-3 py-3 rounded-lg text-center bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)]"
           aria-label="Demo credentials"
         >
           <p className="text-[0.75rem] text-text-faint m-0">
             Demo:{" "}
-            <code className="rounded px-1.5 py-0.5 font-mono text-text-muted" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>alex@example.com</code>
+            <code className="rounded px-1.5 py-0.5 font-mono text-text-muted bg-[rgba(255,255,255,0.06)]">alex@example.com</code>
             {" "}/{" "}
-            <code className="rounded px-1.5 py-0.5 font-mono text-text-muted" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>password123</code>
+            <code className="rounded px-1.5 py-0.5 font-mono text-text-muted bg-[rgba(255,255,255,0.06)]">password123</code>
           </p>
         </aside>
       </div>

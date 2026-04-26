@@ -400,7 +400,7 @@ export default function Certificates() {
             </Link>
           </section>
         ) : (
-          <ul aria-label="Certificates" className="grid gap-4 sm:gap-6 list-none p-0 m-0" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 300px), 1fr))" }}>
+          <ul aria-label="Certificates" className="grid gap-4 sm:gap-6 list-none p-0 m-0 grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))]">
             {completedCourseList.map((course) => {
               const certId =
                 issuedCertByCourse[String(course.id)] ||

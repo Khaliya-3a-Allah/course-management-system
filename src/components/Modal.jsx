@@ -21,8 +21,7 @@ export default function Modal({ isOpen, onClose, title, children }) {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[1000] overflow-y-auto bg-[rgba(0,0,0,0.72)]"
-      style={{ backdropFilter: "blur(4px)" }}
+      className="fixed inset-0 z-[1000] overflow-y-auto bg-[rgba(0,0,0,0.72)] backdrop-blur-sm"
       onClick={onClose}
       role="presentation"
     >
@@ -31,8 +30,7 @@ export default function Modal({ isOpen, onClose, title, children }) {
           role="dialog"
           aria-modal="true"
           aria-labelledby={title ? "modal-title" : undefined}
-          className="relative w-full max-w-[420px] rounded-2xl border border-[rgba(255,255,255,0.09)] p-0 m-0 bg-surface text-[#e8e6e0]"
-          style={{ boxShadow: "0 25px 60px rgba(0,0,0,0.6)" }}
+          className="relative w-full max-w-[420px] rounded-2xl border border-[rgba(255,255,255,0.09)] p-0 m-0 bg-surface text-[#e8e6e0] shadow-[0_25px_60px_rgba(0,0,0,0.6)]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}

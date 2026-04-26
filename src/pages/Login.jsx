@@ -171,12 +171,7 @@ export default function Login() {
 
   return (
     <main
-      className="min-h-screen bg-base flex items-center justify-center p-8 font-body"
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(14px)",
-        transition: "opacity 0.5s ease, transform 0.5s ease",
-      }}
+      className={`min-h-screen bg-base flex items-center justify-center p-8 font-body transition-[opacity,transform] duration-500 ease-in-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-[14px]"}`}
     >
       {pendingChallenge ? (
         <TwoFactorForm

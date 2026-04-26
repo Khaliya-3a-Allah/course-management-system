@@ -43,11 +43,7 @@ export default function ModuleEditor({ module, moduleIndex, onUpdate, onRemove, 
 
   return (
     <div
-      className="rounded-xl p-5 flex flex-col gap-4"
-      style={{
-        backgroundColor: "#16161a",
-        border: "1px solid rgba(255,255,255,0.07)",
-      }}
+      className="rounded-xl p-5 flex flex-col gap-4 bg-[#16161a] border border-[rgba(255,255,255,0.07)]"
       aria-label={`${label}: ${module.title || "Untitled"}`}
     >
       {/* Header */}
@@ -62,8 +58,7 @@ export default function ModuleEditor({ module, moduleIndex, onUpdate, onRemove, 
             {isCollapsed ? "+" : "-"}
           </span>
           <span
-            className="font-heading text-[1.1rem] font-bold truncate"
-            style={{ color: "rgba(217,119,6,0.7)" }}
+            className="font-heading text-[1.1rem] font-bold truncate text-[rgba(217,119,6,0.7)]"
           >
             {label}{module.title ? `: ${module.title}` : ""}
           </span>
@@ -82,8 +77,7 @@ export default function ModuleEditor({ module, moduleIndex, onUpdate, onRemove, 
           <button
             type="button"
             onClick={onRemove}
-            className="text-[0.8rem] font-medium cursor-pointer bg-transparent border-none rounded focus-visible:ring-2 focus-visible:ring-amber-600/50 focus-visible:outline-none"
-            style={{ color: "#ef4444" }}
+            className="text-[0.8rem] font-medium cursor-pointer bg-transparent border-none rounded focus-visible:ring-2 focus-visible:ring-amber-600/50 focus-visible:outline-none text-[#ef4444]"
             aria-label={`Remove module ${moduleIndex + 1}`}
           >
             Remove Module
@@ -109,8 +103,7 @@ export default function ModuleEditor({ module, moduleIndex, onUpdate, onRemove, 
           placeholder="e.g. Getting Started"
           aria-required="true"
           aria-invalid={!!errors.title}
-          className={INPUT_CLASS}
-          style={buildInputBorder(errors.title)}
+          className={`${INPUT_CLASS} ${buildInputBorder(errors.title)}`}
         />
       </FormField>
 
@@ -123,11 +116,7 @@ export default function ModuleEditor({ module, moduleIndex, onUpdate, onRemove, 
           <button
             type="button"
             onClick={handleAddLesson}
-            className="text-[0.82rem] font-semibold cursor-pointer bg-transparent rounded-md px-3 py-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-amber-600/50 focus-visible:outline-none"
-            style={{
-              color: "#d97706",
-              border: "1px solid rgba(217,119,6,0.3)",
-            }}
+            className="text-[0.82rem] font-semibold cursor-pointer bg-transparent rounded-md px-3 py-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-amber-600/50 focus-visible:outline-none text-[#d97706] border border-[rgba(217,119,6,0.3)]"
           >
             + Add Lesson
           </button>

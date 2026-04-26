@@ -129,13 +129,12 @@ export default function CourseDetails() {
     }
   };
 
-  const levelColors = { Beginner: "#22c55e", Intermediate: "#f59e0b", Advanced: "#ef4444" };
+  const levelBg = { Beginner: "bg-[#22c55e]", Intermediate: "bg-[#f59e0b]", Advanced: "bg-[#ef4444]" };
 
   return (
     <>
       <main
-        className="min-h-screen bg-base text-text-secondary"
-        style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(20px)", transition: "opacity 0.6s ease, transform 0.6s ease" }}
+        className={`min-h-screen bg-base text-text-secondary transition-[opacity,transform] duration-[600ms] ease-in-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-[20px]"}`}
       >
 
         {/* Hero */}
@@ -148,8 +147,7 @@ export default function CourseDetails() {
               <Link to="/courses" className="text-[#d97706] no-underline text-[0.85rem] inline-flex items-center gap-1.5 mb-4"><ArrowLeftIcon size={14} /> All Courses</Link>
               <div className="flex gap-[0.6rem] mb-4 flex-wrap">
                 <span
-                  className="px-3 py-[0.2rem] rounded-full text-[0.72rem] font-bold text-[#0c0c0e] uppercase"
-                  style={{ backgroundColor: levelColors[course.level] || "#6b7280" }}
+                  className={`px-3 py-[0.2rem] rounded-full text-[0.72rem] font-bold text-[#0c0c0e] uppercase ${levelBg[course.level] || "bg-[#6b7280]"}`}
                 >
                   {course.level}
                 </span>
@@ -164,8 +162,7 @@ export default function CourseDetails() {
               </div>
 
               <h1
-                className="font-['Playfair_Display',serif] font-bold leading-[1.15] text-text-primary mb-[0.6rem]"
-                style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)" }}
+                className="font-['Playfair_Display',serif] font-bold leading-[1.15] text-text-primary mb-[0.6rem] text-[clamp(1.8rem,4vw,3rem)]"
               >
                 {course.title}
               </h1>
@@ -196,8 +193,7 @@ export default function CourseDetails() {
                 <img
                   src={course.thumbnail}
                   alt={`${course.title} thumbnail`}
-                  className="w-full h-[220px] md:h-[300px] object-cover rounded-xl mt-3"
-                  style={{ filter: "saturate(1.05) contrast(1.03)" }}
+                  className="w-full h-[220px] md:h-[300px] object-cover rounded-xl mt-3 [filter:saturate(1.05)_contrast(1.03)]"
                 />
               ) : (
                 <div className="w-full h-[220px] md:h-[300px] rounded-xl mt-3 bg-surface-muted flex items-center justify-center text-text-dim text-[0.85rem] font-semibold">
@@ -402,8 +398,8 @@ export default function CourseDetails() {
                 <div className="mb-4" aria-label={`${progress}% complete`}>
                   <div className="w-full h-[5px] bg-[rgba(255,255,255,0.07)] rounded-full overflow-hidden mb-[0.35rem]">
                     <div
-                      className="h-full rounded-full transition-[width] duration-500"
-                      style={{ width: `${progress}%`, background: "linear-gradient(90deg, #d97706, #f59e0b)" }}
+                      className="h-full rounded-full transition-[width] duration-500 bg-[linear-gradient(90deg,#d97706,#f59e0b)]"
+                      style={{ width: `${progress}%` }}
                     />
                   </div>
                   <span className="text-[0.72rem] text-[#d97706] font-semibold">{progress}% complete</span>

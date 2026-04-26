@@ -36,7 +36,8 @@ export default function Register() {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const formRootRef = useRef(null);
   const passwordStrength = getPasswordStrength(form.password);
-  const strengthColors = ["#7f1d1d", "#b91c1c", "#d97706", "#16a34a", "#22c55e"];
+  const strengthColorClasses = ["text-[#7f1d1d]", "text-[#b91c1c]", "text-[#d97706]", "text-[#16a34a]", "text-[#22c55e]"];
+  const strengthBgClasses = ["bg-[#7f1d1d]", "bg-[#b91c1c]", "bg-[#d97706]", "bg-[#16a34a]", "bg-[#22c55e]"];
 
   useEffect(() => {
     if (currentUser) {
@@ -139,20 +140,14 @@ export default function Register() {
 
   return (
     <main
-      className="min-h-screen bg-base flex items-center justify-center p-8 font-body"
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(14px)",
-        transition: "opacity 0.5s ease, transform 0.5s ease",
-      }}
+      className={`min-h-screen bg-base flex items-center justify-center p-8 font-body transition-[opacity,transform] duration-500 ease-in-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-[14px]"}`}
     >
       <article
         ref={formRootRef}
-        className="w-full max-w-[440px] bg-surface rounded-2xl overflow-hidden"
-        style={{ border: "1px solid rgba(255,255,255,0.07)" }}
+        className="w-full max-w-[440px] bg-surface rounded-2xl overflow-hidden border border-[rgba(255,255,255,0.07)]"
         aria-label="Registration form"
       >
-        <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, #d97706, #f59e0b)" }} aria-hidden="true" />
+        <div className="h-1 w-full bg-[linear-gradient(90deg,#d97706,#f59e0b)]" aria-hidden="true" />
 
         <div className="p-9">
           <h1 className="font-heading text-[1.75rem] text-text-primary mb-1">Create account.</h1>
@@ -162,8 +157,7 @@ export default function Register() {
             <div
               role="alert"
               aria-live="assertive"
-              className="rounded-lg px-4 py-3 text-sm mb-5"
-              style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#f87171" }}
+              className="rounded-lg px-4 py-3 text-sm mb-5 bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.25)] text-[#f87171]"
             >
               {authError}
             </div>
@@ -177,8 +171,7 @@ export default function Register() {
                 value={form.name}
                 onChange={(e) => updateField("name", e.target.value)}
                 placeholder="Alex Jordan"
-                className={INPUT_CLASS}
-                style={buildInputBorder(errors.name)}
+                className={`${INPUT_CLASS} ${buildInputBorder(errors.name)}`}
                 autoComplete="name"
                 maxLength={50}
                 aria-required="true"
@@ -193,8 +186,7 @@ export default function Register() {
                 value={form.email}
                 onChange={(e) => updateField("email", e.target.value)}
                 placeholder="you@example.com"
-                className={INPUT_CLASS}
-                style={buildInputBorder(errors.email)}
+                className={`${INPUT_CLASS} ${buildInputBorder(errors.email)}`}
                 autoComplete="email"
                 ariaRequired="true"
                 ariaInvalid={!!errors.email}
@@ -215,8 +207,7 @@ export default function Register() {
                   value={form.password}
                   onChange={(e) => updateField("password", e.target.value)}
                   placeholder="Enter your password"
-                  className={`${INPUT_CLASS} pr-12`}
-                  style={buildInputBorder(errors.password)}
+                  className={`${INPUT_CLASS} pr-12 ${buildInputBorder(errors.password)}`}
                   autoComplete="new-password"
                   aria-required="true"
                   aria-invalid={!!errors.password}
@@ -235,7 +226,7 @@ export default function Register() {
                 <div className="mt-2" aria-live="polite">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[0.74rem] text-text-dim">Password strength</span>
-                    <span className="text-[0.74rem] font-semibold" style={{ color: strengthColors[passwordStrength.score] }}>
+                    <span className={`text-[0.74rem] font-semibold ${strengthColorClasses[passwordStrength.score]}`}>
                       {passwordStrength.label}
                     </span>
                   </div>
@@ -243,12 +234,7 @@ export default function Register() {
                     {[0, 1, 2, 3, 4].map((segment) => (
                       <span
                         key={segment}
-                        className="h-1.5 rounded-full"
-                        style={{
-                          backgroundColor: segment <= passwordStrength.score - 1
-                            ? strengthColors[passwordStrength.score]
-                            : "rgba(255,255,255,0.12)",
-                        }}
+                        className={`h-1.5 rounded-full ${segment <= passwordStrength.score - 1 ? strengthBgClasses[passwordStrength.score] : "bg-[rgba(255,255,255,0.12)]"}`}
                       />
                     ))}
                   </div>
@@ -265,8 +251,7 @@ export default function Register() {
                   value={form.confirmPassword}
                   onChange={(e) => updateField("confirmPassword", e.target.value)}
                   placeholder="Re-enter your password"
-                  className={`${INPUT_CLASS} pr-12`}
-                  style={buildInputBorder(errors.confirmPassword)}
+                  className={`${INPUT_CLASS} pr-12 ${buildInputBorder(errors.confirmPassword)}`}
                   autoComplete="new-password"
                   aria-required="true"
                   aria-invalid={!!errors.confirmPassword}
@@ -295,12 +280,11 @@ export default function Register() {
                       type="button"
                       onClick={() => handleRoleChange(roleOption)}
                       aria-pressed={isSelected}
-                      className="flex-1 flex flex-col items-center gap-1.5 py-3.5 rounded-lg cursor-pointer font-body text-[0.85rem] transition-all"
-                      style={{
-                        backgroundColor: isSelected ? "rgba(217,119,6,0.08)" : "#0c0c0e",
-                        border: `1px solid ${isSelected ? "rgba(217,119,6,0.5)" : "rgba(255,255,255,0.08)"}`,
-                        color: isSelected ? "#d97706" : "#6b7280",
-                      }}
+                      className={`flex-1 flex flex-col items-center gap-1.5 py-3.5 rounded-lg cursor-pointer font-body text-[0.85rem] transition-all border ${
+                        isSelected
+                          ? "bg-[rgba(217,119,6,0.08)] border-[rgba(217,119,6,0.5)] text-[#d97706]"
+                          : "bg-[#0c0c0e] border-[rgba(255,255,255,0.08)] text-[#6b7280]"
+                      }`}
                     >
                       <span className="font-semibold text-[0.82rem]">{roleLabel}</span>
                     </button>
@@ -316,8 +300,7 @@ export default function Register() {
                 value={form.phone}
                 onChange={(e) => updateField("phone", e.target.value)}
                 placeholder="+961 71 123 456"
-                className={INPUT_CLASS}
-                style={buildInputBorder(errors.phone)}
+                className={`${INPUT_CLASS} ${buildInputBorder(errors.phone)}`}
                 autoComplete="tel"
                 aria-describedby="register-phone-hint"
               />
@@ -331,8 +314,7 @@ export default function Register() {
                 placeholder="Tell us a bit about yourself..."
                 rows={3}
                 maxLength={300}
-                className={INPUT_CLASS}
-                style={{ ...buildInputBorder(errors.bio), resize: "vertical", minHeight: "80px" }}
+                className={`${INPUT_CLASS} resize-y min-h-[80px] ${buildInputBorder(errors.bio)}`}
                 aria-describedby={errors.bio ? "register-bio-error" : "register-bio-hint"}
               />
             </FormField>
@@ -361,8 +343,7 @@ export default function Register() {
                     value={form.expertise}
                     onChange={(e) => updateField("expertise", e.target.value)}
                     placeholder="e.g., Full-Stack Development"
-                    className={INPUT_CLASS}
-                    style={buildInputBorder(errors.expertise)}
+                    className={`${INPUT_CLASS} ${buildInputBorder(errors.expertise)}`}
                     maxLength={100}
                     aria-describedby={errors.expertise ? "register-expertise-error" : "register-expertise-hint"}
                   />
@@ -374,8 +355,7 @@ export default function Register() {
                     value={form.website}
                     onChange={(e) => updateField("website", e.target.value)}
                     placeholder="https://yoursite.com"
-                    className={INPUT_CLASS}
-                    style={buildInputBorder(errors.website)}
+                    className={`${INPUT_CLASS} ${buildInputBorder(errors.website)}`}
                     autoComplete="url"
                     aria-describedby={errors.website ? "register-website-error" : "register-website-hint"}
                   />
@@ -390,8 +370,7 @@ export default function Register() {
                 type="checkbox"
                 checked={form.acceptTerms}
                 onChange={(e) => updateField("acceptTerms", e.target.checked)}
-                className="w-[18px] h-[18px] mt-0.5 cursor-pointer shrink-0"
-                style={{ accentColor: "#d97706" }}
+                className="w-[18px] h-[18px] mt-0.5 cursor-pointer shrink-0 accent-[#d97706]"
                 aria-required="true"
                 aria-describedby={errors.acceptTerms ? "register-terms-error" : undefined}
               />
@@ -413,11 +392,7 @@ export default function Register() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="mt-1 w-full py-3.5 rounded-lg font-bold text-[0.93rem] font-body transition-opacity hover:opacity-90 active:opacity-80 border-none bg-brand text-base"
-              style={{
-                opacity: isSubmitting ? 0.6 : 1,
-                cursor: isSubmitting ? "not-allowed" : "pointer",
-              }}
+              className="mt-1 w-full py-3.5 rounded-lg font-bold text-[0.93rem] font-body transition-opacity hover:opacity-90 active:opacity-80 border-none bg-brand text-base cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isSubmitting ? "Creating account..." : "Create Account"}
             </button>

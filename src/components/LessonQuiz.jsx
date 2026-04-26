@@ -209,12 +209,13 @@ export default function LessonQuiz({ lesson, onPassed, addToast }) {
                     return (
                       <label
                         key={optionIndex}
-                        className="flex items-center gap-3 rounded-lg px-3 py-2 border text-[0.9rem]"
-                        style={{
-                          borderColor: isCorrect ? "rgba(34,197,94,0.5)" : isWrongPick ? "rgba(239,68,68,0.5)" : "rgba(255,255,255,0.07)",
-                          backgroundColor: isCorrect ? "rgba(34,197,94,0.08)" : isWrongPick ? "rgba(239,68,68,0.08)" : "rgba(255,255,255,0.02)",
-                          color: "var(--color-text-secondary)",
-                        }}
+                        className={`flex items-center gap-3 rounded-lg px-3 py-2 border text-[0.9rem] text-text-secondary ${
+                          isCorrect
+                            ? "border-[rgba(34,197,94,0.5)] bg-[rgba(34,197,94,0.08)]"
+                            : isWrongPick
+                              ? "border-[rgba(239,68,68,0.5)] bg-[rgba(239,68,68,0.08)]"
+                              : "border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.02)]"
+                        }`}
                       >
                         <input
                           type="radio"

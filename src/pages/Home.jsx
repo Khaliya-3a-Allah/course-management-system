@@ -240,36 +240,8 @@ export default function Home() {
 
   return (
     <main
-      className="min-h-screen bg-base text-text-secondary font-['DM_Sans',sans-serif]"
-      style={{ opacity: visible ? 1 : 0, transition: "opacity 0.6s ease" }}
+      className={`min-h-screen bg-base text-text-secondary font-['DM_Sans',sans-serif] transition-opacity duration-[600ms] ease-in-out ${visible ? "opacity-100" : "opacity-0"}`}
     >
-      <style>{`
-        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 20px rgba(217,119,6,0.15), 0 0 40px rgba(217,119,6,0.08) } 50% { box-shadow: 0 0 30px rgba(217,119,6,0.25), 0 0 60px rgba(217,119,6,0.12) } }
-        @keyframes slide-up { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
-        @keyframes fade-in { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes reveal-up { from { opacity: 0; transform: translateY(26px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        @keyframes shimmer-x { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
-        @keyframes drift-x { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        @media (max-width: 640px) { .hero-float-badge { display: none !important; } }
-        @media (max-width: 1024px) { .hero-side-mini { display: none !important; } }
-        .hero-cta { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        .hero-cta:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(217,119,6,0.3); }
-        .split-cta:hover { background: rgba(217,119,6,0.1); border-color: rgba(217,119,6,0.6); }
-        .cat-card { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        .cat-card:hover { transform: translateY(-6px); border-color: rgba(217,119,6,0.5); background: rgba(217,119,6,0.08); box-shadow: 0 12px 32px rgba(217,119,6,0.15); }
-        .feature-card { transition: all 0.3s ease; }
-        .feature-card:hover { transform: translateY(-8px); }
-        .stat-item { animation: slide-up 0.6s ease forwards; }
-        .trust-card { animation: reveal-up 0.65s ease forwards; }
-        .pro-strip::before { content: ""; position: absolute; inset: 0; width: 35%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent); animation: shimmer-x 3.6s linear infinite; }
-        .logo-marquee { animation: drift-x 18s linear infinite; }
-        .hero-side-mini { animation: float 5.2s ease-in-out infinite; }
-        .stat-item:nth-child(1) { animation-delay: 0.1s; }
-        .stat-item:nth-child(2) { animation-delay: 0.2s; }
-        .stat-item:nth-child(3) { animation-delay: 0.3s; }
-        .stat-item:nth-child(4) { animation-delay: 0.4s; }
-      `}</style>
 
       {/* ── Hero ── */}
       <section
@@ -278,12 +250,12 @@ export default function Home() {
       >
         {/* Animated background gradients */}
         <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-[#d97706] to-transparent opacity-5 rounded-full blur-3xl" style={{ animation: "float 12s ease-in-out infinite" }} />
-          <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-gradient-to-tl from-[#d97706] to-transparent opacity-5 rounded-full blur-3xl" style={{ animation: "float 15s ease-in-out infinite reverse" }} />
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-[#d97706] to-transparent opacity-5 rounded-full blur-3xl animate-float" />
+          <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-gradient-to-tl from-[#d97706] to-transparent opacity-5 rounded-full blur-3xl animate-float-reverse" />
         </div>
 
-        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 100% 80% at 50% 30%, rgba(217,119,6,0.08) 0%, transparent 70%)" }} aria-hidden="true" />
-        <div className="absolute inset-0" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.01) 1px, transparent 1px)", backgroundSize: "80px 80px" }} aria-hidden="true" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_100%_80%_at_50%_30%,rgba(217,119,6,0.08)_0%,transparent_70%)]" aria-hidden="true" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] [background-size:80px_80px]" aria-hidden="true" />
 
         <div className="relative z-10 max-w-4xl rounded-3xl border border-[rgba(255,255,255,0.08)] bg-[rgba(12,12,14,0.38)] backdrop-blur-sm px-5 py-7 md:px-8 md:py-10 shadow-[0_26px_60px_rgba(0,0,0,0.35)]">
           <div className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#d97706] via-[#d97706] to-[#ea580c] bg-opacity-20 border border-[rgba(217,119,6,0.5)]">
@@ -295,8 +267,7 @@ export default function Home() {
 
           <h1
             id="hero-heading"
-            className="font-['Playfair_Display',serif] font-black leading-[1.1] text-text-primary mb-6"
-            style={{ fontSize: "clamp(2.8rem, 7vw, 5rem)" }}
+            className="font-['Playfair_Display',serif] font-black leading-[1.1] text-text-primary mb-6 text-[clamp(2.8rem,7vw,5rem)]"
           >
             <span className="block">Transform Your Career</span>
             <span className="inline bg-gradient-to-r from-[#d97706] via-[#f59e0b] to-[#fbbf24] bg-clip-text text-transparent">
@@ -362,8 +333,7 @@ export default function Home() {
 
         {/* Hero visualization badge */}
         <div
-          className="hero-float-badge absolute right-12 top-[27%] flex flex-col items-center gap-3 rounded-3xl p-7 border border-[rgba(217,119,6,0.3)] bg-gradient-to-br from-surface to-surface min-w-[235px]"
-          style={{ animation: "float 4s ease-in-out infinite", boxShadow: "0 0 30px rgba(217,119,6,0.1)" }}
+          className="hero-float-badge absolute right-12 top-[27%] flex flex-col items-center gap-3 rounded-3xl p-7 border border-[rgba(217,119,6,0.3)] bg-gradient-to-br from-surface to-surface min-w-[235px] animate-float-fast shadow-[0_0_30px_rgba(217,119,6,0.1)]"
           aria-hidden="true"
         >
           <div className="w-14 h-14 rounded-2xl border border-[rgba(217,119,6,0.4)] bg-[rgba(217,119,6,0.12)] flex items-center justify-center text-[#fbbf24]">
@@ -388,8 +358,7 @@ export default function Home() {
         </div>
 
         <div
-          className="hero-side-mini absolute right-8 top-[20%] rounded-2xl border border-[rgba(255,255,255,0.1)] bg-[rgba(22,22,26,0.9)] px-4 py-3"
-          style={{ boxShadow: "0 10px 24px rgba(0,0,0,0.3)", animationDelay: "0.2s" }}
+          className="hero-side-mini absolute right-8 top-[20%] rounded-2xl border border-[rgba(255,255,255,0.1)] bg-[rgba(22,22,26,0.9)] px-4 py-3 shadow-[0_10px_24px_rgba(0,0,0,0.3)] [animation-delay:0.2s]"
           aria-hidden="true"
         >
           <p className="text-[0.68rem] tracking-[0.16em] uppercase text-[#f6c56b] mb-1">Live Cohort</p>
@@ -398,8 +367,7 @@ export default function Home() {
         </div>
 
         <div
-          className="hero-side-mini absolute right-4 bottom-[18%] rounded-2xl border border-[rgba(255,255,255,0.1)] bg-[rgba(22,22,26,0.92)] px-4 py-3"
-          style={{ boxShadow: "0 10px 24px rgba(0,0,0,0.3)", animationDelay: "0.6s" }}
+          className="hero-side-mini absolute right-4 bottom-[18%] rounded-2xl border border-[rgba(255,255,255,0.1)] bg-[rgba(22,22,26,0.92)] px-4 py-3 shadow-[0_10px_24px_rgba(0,0,0,0.3)] [animation-delay:0.6s]"
           aria-hidden="true"
         >
           <p className="text-[0.68rem] tracking-[0.16em] uppercase text-[#f6c56b] mb-1">Certificate Path</p>
@@ -483,12 +451,11 @@ export default function Home() {
           </div>
         </div>
         <ul
-          className="grid gap-6 list-none p-0 m-0"
-          style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))" }}
+          className="grid gap-6 list-none p-0 m-0 grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))]"
           aria-label="Featured courses"
         >
           {featured.map((course) => (
-            <li key={course.id} className="transition-all duration-300" style={{ animation: "slide-up 0.6s ease forwards" }}>
+            <li key={course.id} className="transition-all duration-300 animate-slide-up">
               <CourseCard course={course} />
             </li>
           ))}
@@ -508,15 +475,14 @@ export default function Home() {
             <p className="text-text-muted">Explore courses across different specializations and find your next learning path</p>
           </div>
           <ul
-            className="grid gap-4 list-none p-0 m-0"
-            style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 160px), 1fr))" }}
+            className="grid gap-4 list-none p-0 m-0 grid-cols-[repeat(auto-fill,minmax(min(100%,160px),1fr))]"
             aria-label="Course categories"
           >
             {categories.map((cat, idx) => {
               const count = courses.filter((c) => c.category === cat).length;
               const iconName = categoryIcons[cat] || "book";
               return (
-                <li key={cat} style={{ animation: `slide-up 0.6s ease forwards`, animationDelay: `${idx * 0.05}s` }}>
+                <li key={cat} className="animate-slide-up" style={{ animationDelay: `${idx * 0.05}s` }}>
                   <Link
                     to={`/courses?category=${encodeURIComponent(cat)}`}
                     className="cat-card flex flex-col gap-3 p-6 rounded-2xl no-underline border border-[rgba(255,255,255,0.08)] bg-surface group"
@@ -588,8 +554,8 @@ export default function Home() {
             {testimonials.map((item, idx) => (
               <article
                 key={item.name}
-                className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-surface p-6 relative overflow-hidden"
-                style={{ animation: "reveal-up 0.7s ease forwards", animationDelay: `${idx * 0.08}s` }}
+                className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-surface p-6 relative overflow-hidden animate-reveal-up"
+                style={{ animationDelay: `${idx * 0.08}s` }}
               >
                 <div className="pro-strip absolute inset-0 opacity-20 pointer-events-none" aria-hidden="true" />
                 <p className="text-[1.55rem] leading-none text-[#f6c56b] mb-3" aria-hidden="true">“</p>
@@ -607,7 +573,7 @@ export default function Home() {
         className="relative py-16 md:py-24 px-4 md:px-8 overflow-hidden"
         aria-labelledby="cta-heading"
       >
-        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at center, rgba(217,119,6,0.1) 0%, transparent 70%)" }} aria-hidden="true" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(217,119,6,0.1)_0%,transparent_70%)]" aria-hidden="true" />
         <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-[#d97706] to-transparent opacity-5 rounded-full blur-3xl" aria-hidden="true" />
         <div className="absolute bottom-0 right-0 w-80 h-80 bg-gradient-to-tl from-[#d97706] to-transparent opacity-5 rounded-full blur-3xl" aria-hidden="true" />
 

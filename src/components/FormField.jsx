@@ -23,9 +23,7 @@ export default function FormField({ label, htmlFor, error, hint, children }) {
 export const INPUT_CLASS =
   "w-full px-4 py-3 rounded-lg text-[0.93rem] text-text-primary bg-base outline-none transition-colors font-body";
 
-/** Returns an inline style object with a conditional error border. */
+/** Returns a Tailwind class string for a conditional error border. */
 export function buildInputBorder(hasError) {
-  return {
-    border: `1px solid ${hasError ? "#ef4444" : "rgba(255,255,255,0.09)"}`,
-  };
+  return hasError ? "border border-[#ef4444]" : "border border-[rgba(255,255,255,0.09)]";
 }

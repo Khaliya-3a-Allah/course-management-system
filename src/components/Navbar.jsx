@@ -33,8 +33,7 @@ export default function Navbar() {
   return (
     <>
       <header
-        className="sticky top-0 z-[100] border-b border-[rgba(255,255,255,0.07)] bg-sidebar/95"
-        style={{ backdropFilter: "blur(12px)" }}
+        className="sticky top-0 z-[100] border-b border-[rgba(255,255,255,0.07)] bg-sidebar/95 backdrop-blur-md"
       >
         <nav
           className="max-w-[1200px] mx-auto px-4 sm:px-5 h-[62px] flex items-center gap-4 sm:gap-8"

@@ -126,12 +126,11 @@ export default function TwoFactorEnroll() {
           </p>
         </div>
         <span
-          className="px-3 py-1 rounded-full text-[0.72rem] font-bold uppercase tracking-wider"
-          style={{
-            backgroundColor: isEnabled ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.05)",
-            color: isEnabled ? "#22c55e" : "#9ca3af",
-            border: `1px solid ${isEnabled ? "rgba(34,197,94,0.3)" : "rgba(255,255,255,0.1)"}`,
-          }}
+          className={`px-3 py-1 rounded-full text-[0.72rem] font-bold uppercase tracking-wider border ${
+            isEnabled
+              ? "bg-[rgba(34,197,94,0.12)] text-[#22c55e] border-[rgba(34,197,94,0.3)]"
+              : "bg-[rgba(255,255,255,0.05)] text-[#9ca3af] border-[rgba(255,255,255,0.1)]"
+          }`}
         >
           {isEnabled ? "Enabled" : "Disabled"}
         </span>

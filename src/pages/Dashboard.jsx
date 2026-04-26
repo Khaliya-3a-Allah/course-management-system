@@ -309,20 +309,12 @@ export default function Dashboard() {
 
   return (
     <div
-      className="relative min-h-screen overflow-hidden bg-[#0c0c0e] text-[#e8e6e0] font-['DM_Sans',sans-serif]"
-      style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(14px)", transition: "opacity 0.5s ease, transform 0.5s ease" }}
+      className={`relative min-h-screen overflow-hidden bg-[#0c0c0e] text-[#e8e6e0] font-['DM_Sans',sans-serif] transition-[opacity,transform] duration-500 ease-in-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-[14px]"}`}
     >
-      <style>{`
-        .dash-surface { background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015)); }
-        .dash-card { transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease; }
-        .dash-card:hover { transform: translateY(-3px); border-color: rgba(217,119,6,0.35); box-shadow: 0 14px 30px rgba(0,0,0,0.25); }
-        .dash-pill { transition: all 220ms ease; }
-      `}</style>
-
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
         <div className="absolute -top-24 left-[12%] h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(217,119,6,0.2)_0%,rgba(217,119,6,0)_72%)] blur-3xl" />
         <div className="absolute bottom-[-90px] right-[8%] h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(245,158,11,0.16)_0%,rgba(245,158,11,0)_72%)] blur-3xl" />
-        <div className="absolute inset-0 opacity-[0.14]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "56px 56px" }} />
+        <div className="absolute inset-0 opacity-[0.14] bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:56px_56px]" />
       </div>
 
       <header className="relative z-10 bg-[#111114]/85 border-b border-[rgba(255,255,255,0.06)] px-4 md:px-8 py-6 md:py-8 backdrop-blur-sm">

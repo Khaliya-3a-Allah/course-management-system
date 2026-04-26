@@ -319,47 +319,6 @@ export default function AiCourseChat() {
 
   return (
     <div className="fixed bottom-3 right-3 z-50 flex items-end sm:bottom-5 sm:right-5">
-      <style>{`
-        @keyframes aiPanelIn {
-          from { opacity: 0; transform: translateY(14px) scale(0.97); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        @keyframes aiPreviewIn {
-          0% { opacity: 0; transform: translateX(12px) scale(0.97); }
-          100% { opacity: 1; transform: translateX(0) scale(1); }
-        }
-        @keyframes aiPreviewOut {
-          0% { opacity: 1; transform: translateX(0) scale(1); }
-          100% { opacity: 0; transform: translateX(14px) scale(0.96); }
-        }
-        @keyframes aiButtonPulse {
-          0%, 100% { box-shadow: 0 18px 44px rgba(217,119,6,0.32); }
-          50% { box-shadow: 0 18px 54px rgba(217,119,6,0.5); }
-        }
-        .ai-chat-panel {
-          animation: aiPanelIn 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
-          transform-origin: bottom right;
-        }
-        .ai-chat-preview {
-          animation: aiPreviewIn 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
-          transform-origin: center right;
-        }
-        .ai-chat-preview-leaving {
-          animation: aiPreviewOut 240ms ease forwards;
-          pointer-events: none;
-        }
-        .ai-chat-launcher {
-          animation: aiButtonPulse 2.8s ease-in-out infinite;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .ai-chat-panel,
-          .ai-chat-preview,
-          .ai-chat-preview-leaving,
-          .ai-chat-launcher {
-            animation: none;
-          }
-        }
-      `}</style>
       {isOpen && (
         <section
           className="ai-chat-panel mb-3 flex h-[min(620px,calc(100dvh-6rem))] w-[calc(100vw-1.5rem)] max-w-[390px] flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.14)] bg-[#111114] shadow-[0_26px_80px_rgba(0,0,0,0.44)] ring-1 ring-brand/10 sm:w-[390px]"

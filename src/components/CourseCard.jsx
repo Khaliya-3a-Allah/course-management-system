@@ -3,10 +3,10 @@ import { BookIcon, StarIcon } from "./Icons";
 import { getActiveSale } from "../utils/pricing";
 import SaleCountdown from "./SaleCountdown";
 
-const levelColors = {
-  Beginner: "#22c55e",
-  Intermediate: "#f59e0b",
-  Advanced: "#ef4444",
+const levelBg = {
+  Beginner: "bg-[#22c55e]",
+  Intermediate: "bg-[#f59e0b]",
+  Advanced: "bg-[#ef4444]",
 };
 
 export default function CourseCard({ course }) {
@@ -35,15 +35,15 @@ export default function CourseCard({ course }) {
             </div>
           )}
           <span
-            className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[0.65rem] font-bold tracking-wider uppercase text-[#0c0c0e] shadow-[0_2px_10px_rgba(0,0,0,0.25)]"
-            style={{ backgroundColor: levelColors[course.level] || "#6b7280" }}
+            className={`absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[0.65rem] font-bold tracking-wider uppercase text-[#0c0c0e] shadow-[0_2px_10px_rgba(0,0,0,0.25)] ${levelBg[course.level] || "bg-[#6b7280]"}`}
             aria-label={`Level: ${course.level}`}
           >
             {course.level}
           </span>
           <span
-            className="absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-full text-[0.65rem] font-bold tracking-wider uppercase text-[#0c0c0e] shadow-[0_2px_10px_rgba(0,0,0,0.25)]"
-            style={{ backgroundColor: price > 0 ? (sale.active ? "#ef4444" : "#f59e0b") : "#22c55e" }}
+            className={`absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-full text-[0.65rem] font-bold tracking-wider uppercase text-[#0c0c0e] shadow-[0_2px_10px_rgba(0,0,0,0.25)] ${
+              price > 0 ? (sale.active ? "bg-[#ef4444]" : "bg-[#f59e0b]") : "bg-[#22c55e]"
+            }`}
           >
             {price > 0 ? (sale.active ? `${sale.discountPercent}% Off` : `$${price}`) : "Free"}
           </span>

@@ -143,8 +143,7 @@ export default function AutocompleteSelect({
           onFocus={handleFocus}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className={INPUT_CLASS}
-          style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+          className={`${INPUT_CLASS} border border-[rgba(255,255,255,0.12)]`}
           role="combobox"
           aria-expanded={isOpen}
           aria-controls="autocomplete-listbox"
@@ -168,9 +167,8 @@ export default function AutocompleteSelect({
               id={`autocomplete-option-${index}`}
               aria-selected={index === highlightedIndex}
               className={`flex justify-between items-center px-3 py-2 cursor-pointer text-[0.88rem] font-body rounded transition-colors ${
-                index === highlightedIndex ? "text-brand" : "text-text-secondary"
+                index === highlightedIndex ? "text-brand bg-[rgba(217,119,6,0.12)]" : "text-text-secondary"
               }`}
-              style={index === highlightedIndex ? { backgroundColor: "rgba(217,119,6,0.12)" } : undefined}
               onMouseEnter={() => setHighlightedIndex(index)}
               onClick={() => addItem(option)}
             >

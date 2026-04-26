@@ -17,7 +17,6 @@ export default function EmailAutocompleteInput({
   value,
   onChange,
   className,
-  style,
   placeholder = "you@example.com",
   autoComplete = "email",
   required,
@@ -58,7 +57,6 @@ export default function EmailAutocompleteInput({
         onChange={onChange}
         placeholder={placeholder}
         className={className}
-        style={style}
         autoComplete={autoComplete}
         required={required}
         inputMode={inputMode}
