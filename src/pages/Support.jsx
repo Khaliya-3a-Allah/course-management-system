@@ -47,6 +47,7 @@ export default function Support() {
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [supportMode, setSupportMode] = useState("email");
   const [activeTicket, setActiveTicket] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
@@ -114,9 +115,19 @@ export default function Support() {
       });
       const ticket = response?.data;
       setSubmitting(false);
-      addToast("Message sent successfully. Admin support can now review it.", "success");
-      setActiveTicket(ticket);
-      setChatMessages(ticket?.messages || []);
+      addToast(
+        supportMode === "live"
+          ? "Live chat started. Admin support can now reply here."
+          : "Email support request sent. Admin support will reply to your email.",
+        "success"
+      );
+      if (supportMode === "live") {
+        setActiveTicket(ticket);
+        setChatMessages(ticket?.messages || []);
+      } else {
+        setActiveTicket(null);
+        setChatMessages([]);
+      }
       setForm((prev) => ({ ...prev, message: "" }));
     } catch (error) {
       setSubmitting(false);
@@ -131,6 +142,9 @@ export default function Support() {
         `/support-tickets/${activeTicket.id}/messages?email=${encodeURIComponent(activeTicket.requesterEmail)}`
       );
       setChatMessages(response?.data?.messages || []);
+      if (response?.data?.ticket) {
+        setActiveTicket((prev) => (prev ? { ...prev, ...response.data.ticket } : prev));
+      }
     } catch {
       // Polling should stay quiet unless the user actively sends.
     }
@@ -227,8 +241,37 @@ export default function Support() {
             aria-busy={submitting}
           >
             <p id={formHelpId} className="text-[0.82rem] text-text-dim">
-              All fields are required. We usually respond within 24 hours on business days.
+              Choose email support for a reply by email, or live chat to open a chat box after submitting.
             </p>
+            <fieldset className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-surface-muted p-2">
+              <legend className="sr-only">Support reply method</legend>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {[
+                  { value: "email", label: "Email Reply", helper: "Admin replies to your inbox" },
+                  { value: "live", label: "Live Chat", helper: "Opens a chat box here" },
+                ].map((option) => (
+                  <label
+                    key={option.value}
+                    className={`cursor-pointer rounded-lg border px-3 py-3 transition ${
+                      supportMode === option.value
+                        ? "border-brand bg-[rgba(217,119,6,0.12)]"
+                        : "border-[rgba(255,255,255,0.08)] bg-transparent"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="supportMode"
+                      value={option.value}
+                      checked={supportMode === option.value}
+                      onChange={() => setSupportMode(option.value)}
+                      className="sr-only"
+                    />
+                    <span className="block text-[0.9rem] font-bold text-text-primary">{option.label}</span>
+                    <span className="mt-1 block text-[0.78rem] leading-5 text-text-dim">{option.helper}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <label htmlFor={nameInputId} className="flex flex-col gap-1.5">
                 <span className="text-[0.8rem] text-text-muted font-semibold">Name</span>
@@ -328,7 +371,7 @@ export default function Support() {
               aria-live="polite"
               className="self-start mt-1 px-6 h-11 rounded-lg bg-brand text-base font-bold disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? "Sending..." : "Send Request"}
+              {submitting ? "Sending..." : supportMode === "live" ? "Start Live Chat" : "Send Email Request"}
             </button>
           </form>
         </article>

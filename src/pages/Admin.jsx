@@ -87,8 +87,8 @@ export default function Admin() {
   const [auditLogs, setAuditLogs] = useState([]);
   const [query, setQuery] = useState("");
 
-  async function loadAdminData() {
-    setLoading(true);
+  async function loadAdminData({ silent = false } = {}) {
+    if (!silent) setLoading(true);
     try {
       const [overviewRes, usersRes, coursesRes, reportsRes, supportRes, auditRes] = await Promise.all([
         apiGet("/admin/overview", { token }),
@@ -105,9 +105,9 @@ export default function Admin() {
       setSupportTickets(supportRes?.data || []);
       setAuditLogs(auditRes?.data || []);
     } catch (error) {
-      addToast(error.message || "Could not load admin data", "error");
+      if (!silent) addToast(error.message || "Could not load admin data", "error");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }
 
@@ -119,7 +119,7 @@ export default function Admin() {
   useEffect(() => {
     if (activeTab !== "support") return undefined;
     const timer = window.setInterval(() => {
-      loadAdminData();
+      loadAdminData({ silent: true });
     }, 5000);
     return () => window.clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
