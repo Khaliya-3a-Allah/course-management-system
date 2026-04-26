@@ -5,6 +5,7 @@ import { RESOURCE_STATUS } from "../utils/status";
 import { readToken } from "../utils/authStorage";
 import { useAuthContext, AUTH_STATUS, normalizeUserCollections } from "./AuthContext";
 import { useUiContext } from "./UiContext";
+import { getActiveSale } from "../utils/pricing";
 
 const DataContext = createContext(null);
 
@@ -54,6 +55,8 @@ function normalizeCourse(raw) {
     instructorName: course.instructorName || course.instructor || "",
     tags: Array.isArray(course.tags) ? course.tags : [],
     price: Number(course.price || 0),
+    salePrice: Number(course.salePrice || 0),
+    saleEndsAt: course.saleEndsAt || null,
     rating: Number(course.rating || 0),
   };
 }
@@ -65,7 +68,7 @@ function extractList(response) {
 }
 
 const COURSE_WRITE_FIELDS = [
-  "title", "description", "instructor", "price", "category",
+  "title", "description", "instructor", "price", "salePrice", "saleEndsAt", "category",
   "level", "thumbnail", "tags", "language", "duration", "isPublished",
 ];
 
@@ -561,17 +564,16 @@ export function DataProvider({ children }) {
     if (!token) throw new Error("Missing auth token. Please sign in again.");
 
     const idempotencyKey = paymentDetails.idempotencyKey || makeIdempotencyKey();
+    const selectedCourse = courses.find((course) => course.id === courseId);
+    const sale = getActiveSale(selectedCourse);
+    const optimisticFinalAmount = Math.max(0, Number((sale.finalPrice - Number(paymentDetails.discount || 0)).toFixed(2)));
     const optimisticPurchase = {
       id: `optimistic-${idempotencyKey}`,
       idempotencyKey,
       userId: currentUser.id,
       courseId,
-      amount: Number(
-        courses.find((course) => course.id === courseId)?.price || 0
-      ),
-      finalAmount: Number(
-        courses.find((course) => course.id === courseId)?.price || 0
-      ),
+      amount: Number(selectedCourse?.price || 0),
+      finalAmount: optimisticFinalAmount,
       status: "paid",
       paymentMethod: paymentDetails.paymentMethod || "card",
       purchasedAt: new Date().toISOString(),

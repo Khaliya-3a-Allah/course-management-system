@@ -6,6 +6,18 @@ import Purchase from "../models/Purchase.js";
 
 const base = buildCrudControllers("purchases");
 
+function getActiveSale(course) {
+  const price = Number(course?.price || 0);
+  const salePrice = Number(course?.salePrice || 0);
+  const saleEndsAt = course?.saleEndsAt ? new Date(course.saleEndsAt) : null;
+  const active = price > 0 && salePrice > 0 && salePrice < price && (!saleEndsAt || saleEndsAt > new Date());
+  return {
+    price,
+    finalPrice: active ? salePrice : price,
+    saleDiscount: active ? Number((price - salePrice).toFixed(2)) : 0,
+  };
+}
+
 export async function getAllPurchases(req, res) {
   const isAdmin = req.user.role === "admin";
   const userId = isAdmin && req.query.userId ? req.query.userId : req.user.id;
@@ -43,8 +55,10 @@ export async function createPurchase(req, res) {
   if (!course) throw new ApiError(404, "Course not found");
 
   const userId = req.user.id;
-  const amount = Number(course.price || 0);
-  const finalAmount = Math.max(0, Number((amount - discount).toFixed(2)));
+  const sale = getActiveSale(course);
+  const amount = sale.price;
+  const totalDiscount = Math.max(0, Number(discount) || 0) + sale.saleDiscount;
+  const finalAmount = Math.max(0, Number((amount - totalDiscount).toFixed(2)));
 
   const existingByCourse = await Purchase.findOne({
     userId,
@@ -70,7 +84,7 @@ export async function createPurchase(req, res) {
     userId,
     courseId,
     amount,
-    discount: Number(discount) || 0,
+    discount: totalDiscount,
     finalAmount,
     status: "paid",
     paymentMethod,

@@ -59,8 +59,8 @@ function getLocalHelpReply(content, currentUser) {
 
   if (/\b(password|reset|forgot|change password)\b/.test(text)) {
     return currentUser
-      ? "Password changes are not available in the profile editor yet. Please open [Support](#/support) and send your account email so support can help."
-      : "Go to [Login](#/login) first. If you cannot sign in, open [Support](#/support) and send your account email.";
+      ? "To change your password: open [Dashboard](#/dashboard), choose Edit Profile, click Change Password, enter the email code, then set your new password."
+      : "To reset a forgotten password: open [Login](#/login), click Forgot password?, enter your email, then use the email code to set a new password.";
   }
 
   if (/\b(certificate|certificates)\b/.test(text)) {
@@ -223,6 +223,8 @@ export default function AiCourseChat() {
         duration: course.duration,
         rating: course.rating,
         price: course.price,
+        salePrice: course.salePrice,
+        saleEndsAt: course.saleEndsAt,
         tags: course.tags,
         status,
         progress: currentUser ? getCourseProgress(course.id) : 0,

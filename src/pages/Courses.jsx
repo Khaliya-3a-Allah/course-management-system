@@ -18,6 +18,8 @@ function normalizeCourse(raw) {
     tags: Array.isArray(raw.tags) ? raw.tags : [],
     rating: Number(raw.rating || 0),
     price: Number(raw.price || 0),
+    salePrice: Number(raw.salePrice || 0),
+    saleEndsAt: raw.saleEndsAt || null,
   };
 }
 

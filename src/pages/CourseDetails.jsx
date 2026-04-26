@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import Modal from "../components/Modal";
 import { BookIcon, CapIcon, LockIcon, TargetIcon } from "../components/Icons";
+import { getActiveSale, formatMoney } from "../utils/pricing";
 
 export default function CourseDetails() {
   const { courseId } = useParams();
@@ -64,7 +65,8 @@ export default function CourseDetails() {
     );
   }
 
-  const price = Number(course.price || 0);
+  const sale = getActiveSale(course);
+  const price = sale.finalPrice;
   const isPaidCourse = price > 0;
   const isCreator = currentUser && (
     String(course.instructorId?._id || course.instructorId || "") === String(currentUser.id || "") ||
@@ -408,8 +410,22 @@ export default function CourseDetails() {
 
               {isPaidCourse && !owned && (
                 <div className="mb-4 rounded-lg border border-[rgba(245,158,11,0.28)] bg-[rgba(245,158,11,0.1)] px-4 py-3">
-                  <p className="m-0 text-[0.72rem] tracking-[0.18em] uppercase text-[#f6c56b]">Course Price</p>
-                  <p className="m-0 mt-1 text-[1.35rem] font-bold text-[#f5f2ec]">${price}</p>
+                  <p className="m-0 text-[0.72rem] tracking-[0.18em] uppercase text-[#f6c56b]">
+                    {sale.active ? "Sale Price" : "Course Price"}
+                  </p>
+                  <p className="m-0 mt-1 text-[1.35rem] font-bold text-[#f5f2ec]">
+                    {formatMoney(price)}
+                    {sale.active && (
+                      <span className="ml-2 text-[0.86rem] font-semibold text-[#9ca3af] line-through">
+                        {formatMoney(sale.price)}
+                      </span>
+                    )}
+                  </p>
+                  {sale.active && (
+                    <p className="mt-1 text-[0.78rem] text-[#fca5a5]">
+                      {sale.discountPercent}% off{sale.saleEndsAt ? ` until ${sale.saleEndsAt.toLocaleDateString()}` : ""}
+                    </p>
+                  )}
                 </div>
               )}
 

@@ -33,6 +33,8 @@ function sanitizeCatalog(catalog = []) {
     duration: compactText(course.duration, 40),
     rating: Number(course.rating || 0),
     price: Number(course.price || 0),
+    salePrice: Number(course.salePrice || 0),
+    saleEndsAt: compactText(course.saleEndsAt, 40),
     progress: Number(course.progress || 0),
     status: compactText(course.status, 40),
     tags: Array.isArray(course.tags)

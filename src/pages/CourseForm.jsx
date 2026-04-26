@@ -10,7 +10,7 @@ import Modal from "../components/Modal";
 
 const emptyForm = {
   title: "", category: "", level: "",
-  description: "", thumbnail: "", tags: "", price: "",
+  description: "", thumbnail: "", tags: "", price: "", salePrice: "", saleEndsAt: "",
 };
 
 export default function CourseForm() {
@@ -40,6 +40,7 @@ export default function CourseForm() {
 
   useEffect(() => {
     if (isEdit && existing) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- edit form must hydrate when async course data arrives
       setForm({
         title: existing.title || "",
         category: existing.category || "",
@@ -48,6 +49,8 @@ export default function CourseForm() {
         thumbnail: existing.thumbnail || "",
         tags: existing.tags?.join(", ") || "",
         price: existing.price != null ? String(existing.price) : "",
+        salePrice: existing.salePrice ? String(existing.salePrice) : "",
+        saleEndsAt: existing.saleEndsAt ? String(existing.saleEndsAt).slice(0, 10) : "",
       });
       setModules(
         (existing.modules || []).map((mod) => ({
@@ -98,12 +101,25 @@ export default function CourseForm() {
     const { errors: modErrs, isValid: modsValid } = validateModules(modules);
 
     const allErrors = { ...formErrs };
+    const price = form.price === "" ? 0 : Math.max(0, Number(form.price) || 0);
+    const salePrice = form.salePrice === "" ? 0 : Math.max(0, Number(form.salePrice) || 0);
+    if (salePrice > 0 && price <= 0) {
+      allErrors.salePrice = "A sale price requires a regular price.";
+    } else if (salePrice > 0 && salePrice >= price) {
+      allErrors.salePrice = "Sale price must be lower than the regular price.";
+    }
+    if (salePrice > 0 && form.saleEndsAt) {
+      const endDate = new Date(`${form.saleEndsAt}T23:59:59`);
+      if (Number.isNaN(endDate.getTime())) {
+        allErrors.saleEndsAt = "Enter a valid sale end date.";
+      }
+    }
     if (Object.keys(modErrs).length > 0) {
       allErrors.modules = modErrs;
     }
 
     setErrors(allErrors);
-    if (!formValid || !modsValid) return;
+    if (!formValid || !modsValid || allErrors.salePrice || allErrors.saleEndsAt) return;
 
     const sanitizedForm = {
       title: sanitizeInput(form.title),
@@ -112,7 +128,9 @@ export default function CourseForm() {
       description: sanitizeInput(form.description),
       thumbnail: form.thumbnail.trim(),
       tags: form.tags,
-      price: form.price === "" ? 0 : Math.max(0, Number(form.price) || 0),
+      price,
+      salePrice,
+      saleEndsAt: salePrice > 0 && form.saleEndsAt ? new Date(`${form.saleEndsAt}T23:59:59`).toISOString() : null,
     };
     const tagsArr = sanitizedForm.tags.split(",").map((t) => sanitizeInput(t)).filter(Boolean);
     const newCourseId = isEdit ? existing.id : `c-${Date.now()}`;
@@ -315,6 +333,36 @@ export default function CourseForm() {
               style={buildInputBorder(false)}
             />
           </FormField>
+
+          <div className="rounded-xl border border-[rgba(245,158,11,0.16)] bg-[rgba(245,158,11,0.06)] p-4">
+            <p className="text-[0.86rem] font-semibold text-[#f5f2ec] mb-1">Sale Option</p>
+            <p className="text-[0.78rem] text-text-dim mb-4">Set a lower sale price for a limited offer. Leave empty for no sale.</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField label="Sale Price ($)" htmlFor="f-sale-price" error={errors.salePrice}>
+                <input
+                  id="f-sale-price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.salePrice}
+                  onChange={(e) => set("salePrice", e.target.value)}
+                  placeholder="29.99"
+                  className={INPUT_CLASS}
+                  style={buildInputBorder(errors.salePrice)}
+                />
+              </FormField>
+              <FormField label="Sale Ends" htmlFor="f-sale-ends" hint="Optional" error={errors.saleEndsAt}>
+                <input
+                  id="f-sale-ends"
+                  type="date"
+                  value={form.saleEndsAt}
+                  onChange={(e) => set("saleEndsAt", e.target.value)}
+                  className={INPUT_CLASS}
+                  style={buildInputBorder(errors.saleEndsAt)}
+                />
+              </FormField>
+            </div>
+          </div>
 
           {/* Curriculum */}
           <CurriculumBuilder

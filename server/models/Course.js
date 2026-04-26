@@ -9,6 +9,8 @@ const courseSchema = new mongoose.Schema(
     // reference to the User who created this course (ownership)
     instructorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     price: { type: Number, default: 0 },
+    salePrice: { type: Number, default: 0 },
+    saleEndsAt: { type: Date, default: null },
     category: { type: String, default: "" },
     level: {
       type: String,

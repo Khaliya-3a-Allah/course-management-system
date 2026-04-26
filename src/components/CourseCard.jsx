@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { BookIcon } from "./Icons";
+import { getActiveSale } from "../utils/pricing";
 
 const levelColors = {
   Beginner: "#22c55e",
@@ -8,7 +9,8 @@ const levelColors = {
 };
 
 export default function CourseCard({ course }) {
-  const price = Number(course.price || 0);
+  const sale = getActiveSale(course);
+  const price = sale.finalPrice;
 
   return (
     <article className="group relative flex flex-col rounded-xl overflow-hidden border border-[rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-1 bg-surface hover:border-[rgba(245,158,11,0.28)] hover:shadow-[0_14px_30px_rgba(0,0,0,0.38)]">
@@ -40,9 +42,9 @@ export default function CourseCard({ course }) {
           </span>
           <span
             className="absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-full text-[0.65rem] font-bold tracking-wider uppercase text-[#0c0c0e] shadow-[0_2px_10px_rgba(0,0,0,0.25)]"
-            style={{ backgroundColor: price > 0 ? "#f59e0b" : "#22c55e" }}
+            style={{ backgroundColor: price > 0 ? (sale.active ? "#ef4444" : "#f59e0b") : "#22c55e" }}
           >
-            {price > 0 ? `$${price}` : "Free"}
+            {price > 0 ? (sale.active ? `${sale.discountPercent}% Off` : `$${price}`) : "Free"}
           </span>
         </div>
 
@@ -93,7 +95,14 @@ export default function CourseCard({ course }) {
             </div>
 
             <span className="hidden sm:inline text-[0.72rem] text-text-faint">
-              {course.modules?.length || 0} modules
+              {sale.active ? (
+                <>
+                  <span className="line-through">${sale.price.toFixed(0)}</span>{" "}
+                  <span className="text-[#f59e0b]">${sale.salePrice.toFixed(0)}</span>
+                </>
+              ) : (
+                `${course.modules?.length || 0} modules`
+              )}
             </span>
           </footer>
         </div>

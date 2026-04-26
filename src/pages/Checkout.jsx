@@ -4,6 +4,7 @@ import { useAppContext } from "../context/AppContext";
 import { validateEmail } from "../utils/validators";
 import EmailAutocompleteInput from "../components/EmailAutocompleteInput";
 import paypalIcon from "../assets/PayPal.svg";
+import { getActiveSale, formatMoney } from "../utils/pricing";
 
 function normalizeCardNumber(value) {
   return value.replace(/\D/g, "").slice(0, 19);
@@ -117,7 +118,9 @@ export default function Checkout() {
 
   const course = courses.find((c) => c.id === courseId);
 
-  const price = Number(course?.price || 0);
+  const sale = getActiveSale(course);
+  const regularPrice = sale.price;
+  const price = sale.finalPrice;
   const isPaidCourse = price > 0;
   const alreadyOwned = currentUser?.purchasedCourseIds?.includes(courseId) ?? false;
 
@@ -554,8 +557,23 @@ export default function Checkout() {
           <dl className="mt-4 space-y-2 text-[0.9rem]">
             <div className="flex items-center justify-between text-text-dim">
               <dt>Price</dt>
-              <dd>${price.toFixed(2)}</dd>
+              <dd>
+                {sale.active ? (
+                  <span>
+                    <span className="line-through text-text-faint">{formatMoney(regularPrice)}</span>{" "}
+                    <span className="text-[#fca5a5]">{formatMoney(price)}</span>
+                  </span>
+                ) : (
+                  formatMoney(price)
+                )}
+              </dd>
             </div>
+            {sale.active && (
+              <div className="flex items-center justify-between text-[#fca5a5]">
+                <dt>Instructor Sale</dt>
+                <dd>- {formatMoney(sale.discountAmount)}</dd>
+              </div>
+            )}
             <div className="flex items-center justify-between text-[#22c55e]">
               <dt>Promo Discount</dt>
               <dd>- ${totals.promoDiscount.toFixed(2)}</dd>
