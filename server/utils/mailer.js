@@ -9,7 +9,14 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+function ensureMailerConfigured() {
+  if (!env.GMAIL_USER || !env.GMAIL_PASS) {
+    throw new Error("Email is not configured. Set GMAIL_USER and GMAIL_PASS in the backend environment.");
+  }
+}
+
 export async function sendVerificationEmail(toEmail, code) {
+  ensureMailerConfigured();
   await transporter.sendMail({
     from: `"Courseware" <${env.GMAIL_USER}>`,
     to: toEmail,
@@ -43,6 +50,7 @@ export async function sendVerificationEmail(toEmail, code) {
 }
 
 export async function sendPasswordCodeEmail(toEmail, code, purpose = "reset") {
+  ensureMailerConfigured();
   const isChange = purpose === "change";
   await transporter.sendMail({
     from: `"Courseware" <${env.GMAIL_USER}>`,
