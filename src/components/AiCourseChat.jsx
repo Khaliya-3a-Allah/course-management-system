@@ -193,7 +193,7 @@ function buildPreviewMessage(currentUser) {
 export default function AiCourseChat() {
   const { courses, currentUser, getCourseProgress } = useAppContext();
   const [isOpen, setIsOpen] = useState(false);
-  const [showPreview, setShowPreview] = useState(true);
+  const [showPreview, setShowPreview] = useState(false);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState(() => [
@@ -203,6 +203,12 @@ export default function AiCourseChat() {
     },
   ]);
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen) return undefined;
+    const timer = window.setTimeout(() => setShowPreview(true), 2500);
+    return () => window.clearTimeout(timer);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!showPreview || isOpen) return undefined;
