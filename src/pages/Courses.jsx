@@ -5,57 +5,179 @@ import CourseCard from "../components/CourseCard";
 import SearchBar from "../components/SearchBar";
 import FilterPanel from "../components/FilterPanel";
 import { SearchIcon } from "../components/Icons";
+import { apiGet } from "../utils/api";
+
+const PAGE_SIZE = 8;
+const SAVED_SEARCHES_KEY = "cms_saved_course_searches";
+
+function normalizeCourse(raw) {
+  return {
+    ...raw,
+    id: raw.id || raw._id,
+    instructorName: raw.instructorName || raw.instructor || "",
+    tags: Array.isArray(raw.tags) ? raw.tags : [],
+    rating: Number(raw.rating || 0),
+    price: Number(raw.price || 0),
+  };
+}
+
+function buildSearchParams({ q, filters, sortBy, page, pageSize }) {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (filters.category?.length) params.set("category", filters.category.join(","));
+  if (filters.level?.length) params.set("level", filters.level.join(","));
+  if (filters.tags?.length) params.set("tags", filters.tags.join(","));
+  if (sortBy) params.set("sortBy", sortBy);
+  params.set("page", String(page));
+  params.set("pageSize", String(pageSize));
+  return params.toString();
+}
+
+function loadSavedSearches() {
+  try {
+    const raw = localStorage.getItem(SAVED_SEARCHES_KEY);
+    const parsed = JSON.parse(raw || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
 
 export default function Courses() {
   const { courses } = useAppContext();
   const [searchParams] = useSearchParams();
 
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [filters, setFilters] = useState({
     category: searchParams.get("category") ? [searchParams.get("category")] : [],
     level: [],
+    tags: [],
   });
+  const [sortBy, setSortBy] = useState("relevance");
   const [showFilters, setShowFilters] = useState(false);
   const [visible, setVisible] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 8;
+  const [results, setResults] = useState([]);
+  const [typoSuggestions, setTypoSuggestions] = useState([]);
+  const [totalResults, setTotalResults] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [facets, setFacets] = useState({ category: [], level: [], tags: [] });
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [savedSearches, setSavedSearches] = useState(() => loadSavedSearches());
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 50);
     return () => clearTimeout(t);
   }, []);
 
-  const filtered = useMemo(() => {
-    return courses.filter((c) => {
-      const q = query.toLowerCase();
-      const matchesQuery = !q || c.title.toLowerCase().includes(q) || c.instructorName.toLowerCase().includes(q) || c.tags?.some((t) => t.toLowerCase().includes(q));
-      const matchesCategory = !filters.category.length || filters.category.includes(c.category);
-      const matchesLevel = !filters.level.length || filters.level.includes(c.level);
-      return matchesQuery && matchesCategory && matchesLevel;
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query.trim()), 180);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  useEffect(() => {
+    const searchString = buildSearchParams({
+      q: debouncedQuery,
+      filters,
+      sortBy,
+      page: currentPage,
+      pageSize: PAGE_SIZE,
     });
-  }, [courses, query, filters]);
+
+    const run = async () => {
+      setIsSearching(true);
+      setSearchError("");
+      try {
+        const [searchResponse, facetsResponse] = await Promise.all([
+          apiGet(`/courses/search?${searchString}`),
+          apiGet(`/courses/search/facets?${searchString}`),
+        ]);
+
+        const payload = searchResponse?.data || {};
+        const items = (payload.items || []).map(normalizeCourse);
+        const suggestions = (payload.typoSuggestions || []).map(normalizeCourse);
+
+        setResults(items);
+        setTypoSuggestions(suggestions);
+        setTotalResults(Number(payload.total || 0));
+        setTotalPages(Math.max(1, Number(payload.totalPages || 1)));
+        setFacets(facetsResponse?.data || { category: [], level: [], tags: [] });
+      } catch (error) {
+        setSearchError(error?.message || "Unable to load courses right now.");
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    run();
+  }, [debouncedQuery, filters, sortBy, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedQuery, filters, sortBy]);
+
+  useEffect(() => {
+    if (currentPage <= totalPages) return;
+    setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   const topCategories = useMemo(() => {
-    const counts = courses.reduce((acc, course) => {
-      acc[course.category] = (acc[course.category] || 0) + 1;
-      return acc;
-    }, {});
+    const source = facets.category?.length
+      ? facets.category.map((item) => ({ name: item.value, count: item.count }))
+      : Object.entries(
+        courses.reduce((acc, course) => {
+          acc[course.category] = (acc[course.category] || 0) + 1;
+          return acc;
+        }, {})
+      ).map(([name, count]) => ({ name, count }));
 
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 6)
-      .map(([name, count]) => ({ name, count }));
-  }, [courses]);
+    return source
+      .filter((item) => item.name)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+  }, [courses, facets.category]);
 
-  const hasActiveFilters = filters.category.length > 0 || filters.level.length > 0;
-  const activeFilterCount = filters.category.length + filters.level.length;
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const effectivePage = Math.min(currentPage, totalPages);
-  const pageStart = (effectivePage - 1) * pageSize;
-  const paginatedCourses = filtered.slice(pageStart, pageStart + pageSize);
+  const hasActiveFilters =
+    filters.category.length > 0 || filters.level.length > 0 || filters.tags.length > 0;
+  const activeFilterCount = filters.category.length + filters.level.length + filters.tags.length;
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
 
-  function handleQueryChange(q) { setQuery(q); setCurrentPage(1); }
-  function handleFiltersChange(f) { setFilters(f); setCurrentPage(1); }
+  function handleQueryChange(q) {
+    setQuery(q);
+  }
+
+  function handleFiltersChange(nextFilters) {
+    setFilters(nextFilters);
+  }
+
+  function saveCurrentSearch() {
+    const entry = {
+      id: `${Date.now()}`,
+      query,
+      filters,
+      sortBy,
+      createdAt: new Date().toISOString(),
+    };
+
+    const next = [entry, ...savedSearches]
+      .slice(0, 8)
+      .filter((item, idx, arr) => {
+        const signature = JSON.stringify({ q: item.query, f: item.filters, s: item.sortBy });
+        return arr.findIndex((candidate) => JSON.stringify({ q: candidate.query, f: candidate.filters, s: candidate.sortBy }) === signature) === idx;
+      });
+
+    setSavedSearches(next);
+    localStorage.setItem(SAVED_SEARCHES_KEY, JSON.stringify(next));
+  }
+
+  function applySavedSearch(saved) {
+    setQuery(saved.query || "");
+    setFilters(saved.filters || { category: [], level: [], tags: [] });
+    setSortBy(saved.sortBy || "relevance");
+    setCurrentPage(1);
+  }
 
   return (
     <main
@@ -76,12 +198,12 @@ export default function Courses() {
                 Find your next learning path
               </h1>
               <p className="text-text-dim text-[0.95rem] max-w-[600px]">
-                Browse {courses.length} courses across development, design, data science, and career tracks.
+                Browse {totalResults || courses.length} courses across development, design, data science, and career tracks.
               </p>
 
               <div className="mt-4 flex flex-wrap gap-2.5">
                 <span className="px-3 py-1.5 rounded-full text-[0.72rem] border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.1)] text-[#f6c56b]">
-                  {courses.length} courses
+                  {totalResults} results
                 </span>
                 <span className="px-3 py-1.5 rounded-full text-[0.72rem] border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.04)] text-[#d1cfc8]">
                   {topCategories.length} popular categories
@@ -154,7 +276,7 @@ export default function Courses() {
             aria-label="Course filters"
           >
             <div className="rounded-xl border border-[rgba(255,255,255,0.07)] bg-sidebar p-4 md:p-4 md:sticky md:top-24">
-              <FilterPanel courses={courses} filters={filters} onChange={handleFiltersChange} />
+              <FilterPanel courses={courses} filters={filters} onChange={handleFiltersChange} facets={facets} />
             </div>
           </aside>
 
@@ -167,20 +289,40 @@ export default function Courses() {
                   aria-live="polite"
                   aria-atomic="true"
                 >
-                  {filtered.length} result{filtered.length !== 1 ? "s" : ""}
-                  {query && <> for "<strong className="text-[#d1cfc8]">{query}</strong>"</>}
+                  {totalResults} result{totalResults !== 1 ? "s" : ""}
+                  {debouncedQuery && <> for "<strong className="text-[#d1cfc8]">{debouncedQuery}</strong>"</>}
                 </p>
 
-                {filtered.length > 0 && (
+                {totalResults > 0 && (
                   <span className="text-[0.78rem] text-text-dim">
-                    Showing {pageStart + 1}-{Math.min(pageStart + pageSize, filtered.length)}
+                    Showing {pageStart + 1}-{Math.min(pageStart + PAGE_SIZE, totalResults)}
                   </span>
                 )}
 
+                <label className="ml-auto text-[0.78rem] text-text-dim flex items-center gap-2">
+                  Sort
+                  <select
+                    value={sortBy}
+                    onChange={(event) => setSortBy(event.target.value)}
+                    className="px-2.5 py-1.5 rounded-md text-[0.78rem] border border-[rgba(255,255,255,0.14)] bg-sidebar text-text-primary"
+                  >
+                    <option value="relevance">Relevance</option>
+                    <option value="rating">Rating</option>
+                    <option value="time">Newest</option>
+                  </select>
+                </label>
+
+                <button
+                  onClick={saveCurrentSearch}
+                  className="px-3 py-1.5 rounded-lg text-[0.75rem] font-semibold text-[#f5c27a] border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.1)]"
+                >
+                  Save search
+                </button>
+
                 {hasActiveFilters && (
                   <button
-                    onClick={() => handleFiltersChange({ category: [], level: [] })}
-                    className="ml-auto px-3 py-1.5 rounded-lg text-[0.75rem] font-semibold text-[#f5c27a] border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.1)]"
+                    onClick={() => handleFiltersChange({ category: [], level: [], tags: [] })}
+                    className="px-3 py-1.5 rounded-lg text-[0.75rem] font-semibold text-[#f5c27a] border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.1)]"
                   >
                     Clear filters
                   </button>
@@ -205,11 +347,49 @@ export default function Courses() {
                       {lvl}
                     </span>
                   ))}
+                  {filters.tags.map((tag) => (
+                    <span
+                      key={`tag-${tag}`}
+                      className="px-2.5 py-1 rounded-full text-[0.72rem] border border-[rgba(245,158,11,0.28)] bg-[rgba(245,158,11,0.08)] text-[#f6c56b]"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {savedSearches.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {savedSearches.map((saved) => (
+                    <button
+                      key={saved.id}
+                      onClick={() => applySavedSearch(saved)}
+                      className="px-2.5 py-1 rounded-full text-[0.72rem] border border-[rgba(255,255,255,0.15)] bg-[rgba(255,255,255,0.03)] text-text-secondary"
+                    >
+                      {saved.query || "Filtered search"}
+                    </button>
+                  ))}
                 </div>
               )}
             </section>
 
-            {filtered.length === 0 ? (
+            {searchError ? (
+              <section
+                className="flex flex-col items-center py-16 px-8 text-center rounded-xl border border-[rgba(255,255,255,0.07)] bg-surface"
+                aria-label="Search error"
+              >
+                <h2 className="font-['Playfair_Display',serif] text-[1.35rem] text-[#f5f2ec] mb-2">
+                  Search unavailable
+                </h2>
+                <p className="text-[#9ca3af] text-[0.9rem] max-w-[560px]">
+                  {searchError}
+                </p>
+              </section>
+            ) : isSearching ? (
+              <section className="flex items-center justify-center py-20 text-text-dim" aria-label="Loading search results">
+                Searching courses...
+              </section>
+            ) : results.length === 0 ? (
               <section
                 className="flex flex-col items-center py-20 px-8 text-center rounded-xl border border-[rgba(255,255,255,0.07)] bg-surface"
                 aria-label="No results"
@@ -224,11 +404,31 @@ export default function Courses() {
                   Try a different search term or clear your filters.
                 </p>
                 <button
-                  onClick={() => { handleQueryChange(""); handleFiltersChange({ category: [], level: [] }); }}
+                  onClick={() => { handleQueryChange(""); handleFiltersChange({ category: [], level: [], tags: [] }); }}
                   className="px-6 py-2.5 rounded-lg font-semibold text-[0.88rem] cursor-pointer border border-[rgba(217,119,6,0.3)] bg-[rgba(217,119,6,0.1)] text-[#d97706]"
                 >
                   Clear all filters
                 </button>
+
+                {typoSuggestions.length > 0 && (
+                  <div className="w-full mt-8">
+                    <p className="text-[0.78rem] tracking-[0.16em] uppercase text-text-faint mb-3">
+                      Did you mean
+                    </p>
+                    <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 list-none p-0 m-0">
+                      {typoSuggestions.slice(0, 4).map((course) => (
+                        <li key={course.id}>
+                          <button
+                            onClick={() => setQuery(course.title)}
+                            className="w-full text-left px-3 py-2 rounded-lg border border-[rgba(245,158,11,0.25)] bg-[rgba(245,158,11,0.06)] text-[#f6c56b]"
+                          >
+                            {course.title}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </section>
             ) : (
               <>
@@ -236,7 +436,7 @@ export default function Courses() {
                   className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 list-none p-0 m-0"
                   aria-label="Course results"
                 >
-                {paginatedCourses.map((course, index) => (
+                {results.map((course, index) => (
                   <li key={course.id} className="course-card-enter" style={{ animationDelay: `${index * 45}ms` }}>
                     <CourseCard course={course} />
                   </li>
@@ -246,8 +446,8 @@ export default function Courses() {
                 {totalPages > 1 && (
                   <nav className="mt-6 flex items-center justify-center gap-2" aria-label="Courses pagination">
                     <button
-                      onClick={() => setCurrentPage(Math.max(1, effectivePage - 1))}
-                      disabled={effectivePage === 1}
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
                       className="px-3 py-1.5 rounded-lg text-[0.82rem] border border-[rgba(255,255,255,0.1)] text-text-secondary disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       Prev
@@ -257,9 +457,9 @@ export default function Courses() {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        aria-current={effectivePage === page ? "page" : undefined}
+                        aria-current={currentPage === page ? "page" : undefined}
                         className={`min-w-8 h-8 rounded-lg text-[0.8rem] border ${
-                          effectivePage === page
+                          currentPage === page
                             ? "border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.14)] text-[#f6c56b]"
                             : "border-[rgba(255,255,255,0.1)] text-text-secondary"
                         }`}
@@ -269,8 +469,8 @@ export default function Courses() {
                     ))}
 
                     <button
-                      onClick={() => setCurrentPage(Math.min(totalPages, effectivePage + 1))}
-                      disabled={effectivePage === totalPages}
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
                       className="px-3 py-1.5 rounded-lg text-[0.82rem] border border-[rgba(255,255,255,0.1)] text-text-secondary disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       Next

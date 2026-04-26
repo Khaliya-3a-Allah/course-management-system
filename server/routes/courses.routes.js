@@ -4,10 +4,15 @@ import {
   createCourse,
   updateCourse,
   deleteCourse,
+  searchCourses,
+  getCourseSearchFacets,
+  getCourseSearchAnalytics,
 } from "../controllers/courses.controller.js";
+import { Router } from "express";
 import { createCrudRouter } from "../utils/createCrudRouter.js";
 import {
   authenticateRequest,
+  authorizeRoles,
   authorizeOwner,
 } from "../middleware/authPlaceholder.js";
 
@@ -16,7 +21,7 @@ import {
 // POST /courses       — authenticated (instructors/admins create courses)
 // PUT /courses/:id    — authenticated + must be the course owner (instructorId)
 // DELETE /courses/:id — authenticated + must be the course owner (instructorId)
-export const coursesRouter = createCrudRouter(
+const baseCrudRouter = createCrudRouter(
   {
     getAll: getAllCourses,
     getById: getCourseById,
@@ -29,3 +34,15 @@ export const coursesRouter = createCrudRouter(
     ownerMiddleware: [authorizeOwner("courses", "instructorId")],
   }
 );
+
+export const coursesRouter = Router();
+
+coursesRouter.get("/search", searchCourses);
+coursesRouter.get("/search/facets", getCourseSearchFacets);
+coursesRouter.get(
+  "/search/analytics",
+  authenticateRequest,
+  authorizeRoles("admin"),
+  getCourseSearchAnalytics
+);
+coursesRouter.use("/", baseCrudRouter);
