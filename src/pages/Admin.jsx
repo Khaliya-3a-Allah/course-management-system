@@ -83,6 +83,7 @@ export default function Admin() {
   const [reports, setReports] = useState([]);
   const [supportTickets, setSupportTickets] = useState([]);
   const [supportReplies, setSupportReplies] = useState({});
+  const [supportChatInputs, setSupportChatInputs] = useState({});
   const [auditLogs, setAuditLogs] = useState([]);
   const [query, setQuery] = useState("");
 
@@ -114,6 +115,15 @@ export default function Admin() {
     loadAdminData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== "support") return undefined;
+    const timer = window.setInterval(() => {
+      loadAdminData();
+    }, 5000);
+    return () => window.clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   async function runAction(action, successMessage) {
     try {
@@ -416,9 +426,66 @@ export default function Admin() {
                         </p>
                       ) : null}
                     </div>
-                    <div className="flex min-w-0 flex-col gap-2">
+                    <div className="flex min-w-0 flex-col gap-3">
+                      <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-base p-3">
+                        <p className="mb-2 text-[0.78rem] font-semibold uppercase tracking-[0.12em] text-text-faint">
+                          Live chat
+                        </p>
+                        <div className="mb-3 max-h-[240px] overflow-y-auto">
+                          {(ticket.messages || []).map((message, index) => {
+                            const isAdmin = message.senderRole === "admin";
+                            return (
+                              <div key={message.id || message._id || index} className={`mb-2 flex ${isAdmin ? "justify-end" : "justify-start"}`}>
+                                <div
+                                  className={`max-w-[86%] whitespace-pre-wrap break-words rounded-lg px-3 py-2 text-[0.82rem] leading-5 ${
+                                    isAdmin
+                                      ? "bg-brand text-base"
+                                      : "border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-text-secondary"
+                                  }`}
+                                >
+                                  <p className="mb-1 text-[0.65rem] font-bold uppercase tracking-[0.1em] opacity-70">
+                                    {isAdmin ? "Admin" : "User"}
+                                  </p>
+                                  {message.body}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <form
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            const body = (supportChatInputs[ticketId] || "").trim();
+                            if (!body) return;
+                            runAction(
+                              () => apiPost(`/admin/support-tickets/${ticketId}/messages`, { body }, { token }),
+                              "Chat message sent"
+                            );
+                            setSupportChatInputs((prev) => ({ ...prev, [ticketId]: "" }));
+                          }}
+                          className="flex items-end gap-2"
+                        >
+                          <textarea
+                            value={supportChatInputs[ticketId] || ""}
+                            onChange={(event) =>
+                              setSupportChatInputs((prev) => ({ ...prev, [ticketId]: event.target.value }))
+                            }
+                            rows={2}
+                            className="min-h-[48px] flex-1 resize-none rounded-md border border-[rgba(255,255,255,0.12)] bg-surface px-3 py-2 text-sm leading-5 text-text-primary outline-none placeholder:text-text-faint"
+                            placeholder="Send a live chat reply..."
+                          />
+                          <IconButton
+                            type="submit"
+                            icon={<ClockIcon size={14} />}
+                            disabled={!(supportChatInputs[ticketId] || "").trim()}
+                          >
+                            Chat
+                          </IconButton>
+                        </form>
+                      </div>
+
                       <label className="text-[0.78rem] font-semibold uppercase tracking-[0.12em] text-text-faint">
-                        Admin email reply
+                        Email reply
                       </label>
                       <textarea
                         value={replyBody}

@@ -23,6 +23,19 @@ const supportTicketSchema = new mongoose.Schema(
     repliedAt: { type: Date, default: null },
     repliedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     emailSentAt: { type: Date, default: null },
+    messages: [
+      {
+        senderRole: {
+          type: String,
+          enum: ["user", "admin"],
+          required: true,
+        },
+        senderName: { type: String, default: "" },
+        senderEmail: { type: String, default: "" },
+        body: { type: String, required: true, trim: true, maxlength: 3000 },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   {
     timestamps: true,

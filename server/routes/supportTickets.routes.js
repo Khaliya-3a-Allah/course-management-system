@@ -5,6 +5,8 @@ import {
   createSupportTicket,
   updateSupportTicket,
   deleteSupportTicket,
+  getSupportTicketMessages,
+  addSupportTicketMessage,
 } from "../controllers/supportTickets.controller.js";
 import {
   authenticateRequest,
@@ -16,6 +18,8 @@ const router = Router();
 
 // Public ticket submission. Admin review happens through /admin/support-tickets.
 router.post("/", asyncHandler(createSupportTicket));
+router.get("/:id/messages", asyncHandler(getSupportTicketMessages));
+router.post("/:id/messages", asyncHandler(addSupportTicketMessage));
 
 router.get("/", asyncHandler(getAllSupportTickets));
 router.get("/:id", asyncHandler(getSupportTicketById));

@@ -167,6 +167,12 @@ export const replyToSupportTicket = asyncHandler(async (req, res) => {
   ticket.repliedAt = new Date();
   ticket.repliedBy = req.user.id;
   ticket.emailSentAt = new Date();
+  ticket.messages.push({
+    senderRole: "admin",
+    senderName: req.user.name,
+    senderEmail: req.user.email,
+    body,
+  });
   await ticket.save();
 
   await writeAudit(req, {
@@ -178,6 +184,35 @@ export const replyToSupportTicket = asyncHandler(async (req, res) => {
   });
 
   res.status(200).json({ success: true, data: ticket });
+});
+
+export const addSupportChatMessage = asyncHandler(async (req, res) => {
+  const ticketId = objectIdOrFail(req.params.ticketId, "ticketId");
+  const { body } = req.body || {};
+  if (!body || String(body).trim().length < 1) {
+    throw new ApiError(400, "Message body is required");
+  }
+
+  const ticket = await SupportTicket.findById(ticketId);
+  if (!ticket) throw new ApiError(404, "Support ticket not found");
+
+  ticket.messages.push({
+    senderRole: "admin",
+    senderName: req.user.name,
+    senderEmail: req.user.email,
+    body,
+  });
+  ticket.status = "in-progress";
+  await ticket.save();
+
+  await writeAudit(req, {
+    action: "support.chat_message_sent",
+    targetType: "support-ticket",
+    targetId: ticketId,
+    summary: `Admin chat reply sent to ${ticket.requesterEmail}`,
+  });
+
+  res.status(201).json({ success: true, data: ticket.messages[ticket.messages.length - 1] });
 });
 
 export const listAdminUsers = asyncHandler(async (req, res) => {
