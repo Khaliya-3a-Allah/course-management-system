@@ -324,17 +324,17 @@ export default function AiCourseChat() {
   }
 
   return (
-    <div className={`fixed inset-0 z-[999] pointer-events-none ${isOpen ? "flex items-center justify-center p-3 sm:p-5" : ""}`}>
+    <div className={`fixed inset-0 z-[999] pointer-events-none ${isOpen ? "flex items-center justify-center p-3 sm:block sm:p-0" : ""}`}>
       {isOpen && (
         <>
           <button
             type="button"
             aria-label="Close AI chat overlay"
             onClick={() => setIsOpen(false)}
-            className="pointer-events-auto absolute inset-0 bg-black/55 backdrop-blur-[2px]"
+            className="pointer-events-auto absolute inset-0 bg-black/55 backdrop-blur-[2px] sm:hidden"
           />
           <section
-            className="ai-chat-panel pointer-events-auto relative flex h-[min(620px,calc(100dvh-1.5rem))] w-full max-w-[440px] flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.14)] bg-[#111114] shadow-[0_26px_80px_rgba(0,0,0,0.5)] ring-1 ring-brand/10 sm:h-[min(660px,calc(100vh-2.5rem))]"
+            className="ai-chat-panel pointer-events-auto relative flex h-[min(620px,calc(100dvh-1.5rem))] w-full max-w-[440px] flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.14)] bg-[#111114] shadow-[0_26px_80px_rgba(0,0,0,0.5)] ring-1 ring-brand/10 sm:fixed sm:bottom-[92px] sm:right-5 sm:h-[min(620px,calc(100vh-7rem))] sm:w-[390px]"
             aria-label="AI course recommendation chat"
           >
           <header className="flex min-h-[74px] items-center justify-between gap-3 border-b border-[rgba(255,255,255,0.08)] bg-[#16161a] px-4 py-3">
