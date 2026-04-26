@@ -5,9 +5,11 @@ import Thread from "../models/Thread.js";
 import Comment from "../models/Comment.js";
 import AbuseReport from "../models/AbuseReport.js";
 import AuditLog from "../models/AuditLog.js";
+import SupportTicket from "../models/SupportTicket.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { invalidateCachedResponses } from "../utils/responseCache.js";
+import { sendSupportReplyEmail } from "../utils/mailer.js";
 
 function clientIp(req) {
   return String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "");
@@ -90,6 +92,7 @@ export const getAdminOverview = asyncHandler(async (req, res) => {
     deletedCourses,
     pendingCourses,
     openReports,
+    openSupportTickets,
     pendingThreads,
     pendingComments,
     recentAuditLogs,
@@ -100,6 +103,7 @@ export const getAdminOverview = asyncHandler(async (req, res) => {
     Course.countDocuments({ isDeleted: true }),
     Course.countDocuments({ approvalStatus: "pending", isDeleted: { $ne: true } }),
     AbuseReport.countDocuments({ status: { $in: ["open", "reviewing"] } }),
+    SupportTicket.countDocuments({ status: { $in: ["open", "in-progress"] } }),
     Thread.countDocuments({ status: "pending" }),
     Comment.countDocuments({ status: "pending" }),
     AuditLog.find({}).sort({ createdAt: -1 }).limit(8).lean({ virtuals: true }),
@@ -117,11 +121,63 @@ export const getAdminOverview = asyncHandler(async (req, res) => {
         deletedCourses,
         pendingCourses,
         openReports,
+        openSupportTickets,
         pendingCommunityItems: pendingThreads + pendingComments,
       },
       recentAuditLogs,
     },
   });
+});
+
+export const listSupportTickets = asyncHandler(async (req, res) => {
+  const limit = parseLimit(req.query.limit, 40, 100);
+  const tickets = await SupportTicket.find({})
+    .populate("userId", "name email role")
+    .populate("repliedBy", "name email role")
+    .sort({ status: 1, createdAt: -1 })
+    .limit(limit)
+    .lean({ virtuals: true });
+
+  res.status(200).json({ success: true, count: tickets.length, data: tickets });
+});
+
+export const replyToSupportTicket = asyncHandler(async (req, res) => {
+  const ticketId = objectIdOrFail(req.params.ticketId, "ticketId");
+  const { body, status = "resolved" } = req.body || {};
+
+  if (!body || String(body).trim().length < 5) {
+    throw new ApiError(400, "Reply body must be at least 5 characters");
+  }
+
+  const ticket = await SupportTicket.findById(ticketId);
+  if (!ticket) throw new ApiError(404, "Support ticket not found");
+  if (!ticket.requesterEmail) {
+    throw new ApiError(400, "This ticket has no requester email");
+  }
+
+  await sendSupportReplyEmail({
+    toEmail: ticket.requesterEmail,
+    requesterName: ticket.requesterName,
+    subject: `Courseware support: ${ticket.title}`,
+    message: body,
+  });
+
+  ticket.adminReply = body;
+  ticket.status = status;
+  ticket.repliedAt = new Date();
+  ticket.repliedBy = req.user.id;
+  ticket.emailSentAt = new Date();
+  await ticket.save();
+
+  await writeAudit(req, {
+    action: "support.reply_sent",
+    targetType: "support-ticket",
+    targetId: ticketId,
+    summary: `Support reply sent to ${ticket.requesterEmail}`,
+    metadata: { status },
+  });
+
+  res.status(200).json({ success: true, data: ticket });
 });
 
 export const listAdminUsers = asyncHandler(async (req, res) => {

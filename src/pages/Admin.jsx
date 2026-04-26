@@ -8,6 +8,7 @@ const tabs = [
   { id: "overview", label: "Overview" },
   { id: "users", label: "Users" },
   { id: "courses", label: "Courses" },
+  { id: "support", label: "Support" },
   { id: "reports", label: "Reports" },
   { id: "audit", label: "Audit" },
 ];
@@ -62,7 +63,7 @@ function IconButton({ children, icon, tone = "default", ...props }) {
   return (
     <button
       type="button"
-      className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border px-2.5 text-[0.78rem] font-semibold transition ${toneClass}`}
+      className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border px-2.5 text-[0.78rem] font-semibold transition disabled:cursor-not-allowed disabled:opacity-45 ${toneClass}`}
       {...props}
     >
       {icon}
@@ -80,23 +81,27 @@ export default function Admin() {
   const [users, setUsers] = useState([]);
   const [courses, setCourses] = useState([]);
   const [reports, setReports] = useState([]);
+  const [supportTickets, setSupportTickets] = useState([]);
+  const [supportReplies, setSupportReplies] = useState({});
   const [auditLogs, setAuditLogs] = useState([]);
   const [query, setQuery] = useState("");
 
   async function loadAdminData() {
     setLoading(true);
     try {
-      const [overviewRes, usersRes, coursesRes, reportsRes, auditRes] = await Promise.all([
+      const [overviewRes, usersRes, coursesRes, reportsRes, supportRes, auditRes] = await Promise.all([
         apiGet("/admin/overview", { token }),
         apiGet("/admin/users?limit=60", { token }),
         apiGet("/admin/courses?limit=60", { token }),
         apiGet("/admin/reports?limit=60", { token }),
+        apiGet("/admin/support-tickets?limit=60", { token }),
         apiGet("/admin/audit-logs?limit=60", { token }),
       ]);
       setOverview(overviewRes?.data || null);
       setUsers(usersRes?.data || []);
       setCourses(coursesRes?.data || []);
       setReports(reportsRes?.data || []);
+      setSupportTickets(supportRes?.data || []);
       setAuditLogs(auditRes?.data || []);
     } catch (error) {
       addToast(error.message || "Could not load admin data", "error");
@@ -181,6 +186,7 @@ export default function Admin() {
               <Stat label="Active Users" value={metrics.activeUsers} />
               <Stat label="Active Courses" value={metrics.activeCourses} />
               <Stat label="Pending Courses" value={metrics.pendingCourses} tone="warn" />
+              <Stat label="Open Support" value={metrics.openSupportTickets} tone={metrics.openSupportTickets ? "warn" : "default"} />
               <Stat label="Open Reports" value={metrics.openReports} tone={metrics.openReports ? "danger" : "default"} />
             </section>
             <section className="rounded-lg border border-[rgba(255,255,255,0.08)] bg-surface p-4">
@@ -381,6 +387,81 @@ export default function Admin() {
               </article>
             ))}
             {reports.length === 0 ? <p className="rounded-lg border border-[rgba(255,255,255,0.08)] bg-surface p-6 text-text-dim">No reports yet.</p> : null}
+          </section>
+        ) : null}
+
+        {!loading && activeTab === "support" ? (
+          <section className="space-y-3">
+            {supportTickets.map((ticket) => {
+              const ticketId = getId(ticket);
+              const replyBody = supportReplies[ticketId] || "";
+              return (
+                <article key={ticketId} className="rounded-lg border border-[rgba(255,255,255,0.08)] bg-surface p-4">
+                  <div className="grid gap-4 lg:grid-cols-[1fr,420px]">
+                    <div className="min-w-0">
+                      <div className="mb-2 flex flex-wrap gap-2">
+                        <span className="rounded-md bg-[rgba(217,119,6,0.14)] px-2 py-1 text-[0.72rem] font-bold text-brand">{ticket.status}</span>
+                        <span className="rounded-md bg-[rgba(255,255,255,0.05)] px-2 py-1 text-[0.72rem] text-text-dim">{ticket.topic || "Other"}</span>
+                      </div>
+                      <p className="font-bold text-text-primary">{ticket.title}</p>
+                      <p className="mt-1 break-words text-[0.84rem] text-text-dim">
+                        From {ticket.requesterName || "Unknown"} - {ticket.requesterEmail}
+                      </p>
+                      <p className="mt-3 whitespace-pre-wrap break-words rounded-md border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.03)] p-3 text-[0.88rem] leading-6 text-text-secondary">
+                        {ticket.description}
+                      </p>
+                      {ticket.adminReply ? (
+                        <p className="mt-3 whitespace-pre-wrap break-words rounded-md border border-[rgba(52,211,153,0.25)] bg-[rgba(52,211,153,0.08)] p-3 text-[0.82rem] leading-6 text-[#bbf7d0]">
+                          Last reply: {ticket.adminReply}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-2">
+                      <label className="text-[0.78rem] font-semibold uppercase tracking-[0.12em] text-text-faint">
+                        Admin email reply
+                      </label>
+                      <textarea
+                        value={replyBody}
+                        onChange={(event) =>
+                          setSupportReplies((prev) => ({ ...prev, [ticketId]: event.target.value }))
+                        }
+                        rows={6}
+                        className="min-h-[140px] resize-y rounded-md border border-[rgba(255,255,255,0.12)] bg-base px-3 py-2 text-sm leading-6 text-text-primary outline-none placeholder:text-text-faint"
+                        placeholder="Write the email body to send to this requester..."
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <IconButton
+                          icon={<ClockIcon size={14} />}
+                          disabled={!replyBody.trim()}
+                          onClick={() =>
+                            runAction(
+                              () => apiPost(`/admin/support-tickets/${ticketId}/reply`, { body: replyBody, status: "in-progress" }, { token }),
+                              "Support reply sent"
+                            )
+                          }
+                        >
+                          Send Reply
+                        </IconButton>
+                        <IconButton
+                          icon={<CheckIcon size={14} />}
+                          tone="success"
+                          disabled={!replyBody.trim()}
+                          onClick={() =>
+                            runAction(
+                              () => apiPost(`/admin/support-tickets/${ticketId}/reply`, { body: replyBody, status: "resolved" }, { token }),
+                              "Support reply sent and ticket resolved"
+                            )
+                          }
+                        >
+                          Send & Resolve
+                        </IconButton>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+            {supportTickets.length === 0 ? <p className="rounded-lg border border-[rgba(255,255,255,0.08)] bg-surface p-6 text-text-dim">No support tickets yet.</p> : null}
           </section>
         ) : null}
 

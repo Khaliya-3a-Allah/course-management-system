@@ -85,3 +85,45 @@ export async function sendPasswordCodeEmail(toEmail, code, purpose = "reset") {
     `,
   });
 }
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+export async function sendSupportReplyEmail({ toEmail, requesterName = "", subject, message }) {
+  ensureMailerConfigured();
+  const safeName = requesterName ? ` ${escapeHtml(requesterName)}` : "";
+  const safeMessage = escapeHtml(message).replace(/\n/g, "<br />");
+
+  await transporter.sendMail({
+    from: `"Courseware Support" <${env.GMAIL_USER}>`,
+    to: toEmail,
+    subject: subject || "Reply from Courseware Support",
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head><meta charset="utf-8"></head>
+        <body style="margin:0;padding:0;background:#0c0c0e;font-family:'Segoe UI',Arial,sans-serif;">
+          <div style="max-width:560px;margin:40px auto;background:#16161a;border:1px solid rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;">
+            <div style="height:4px;background:linear-gradient(90deg,#d97706,#f59e0b);"></div>
+            <div style="padding:32px;">
+              <h1 style="margin:0 0 12px;font-size:1.45rem;color:#f5f2ec;font-weight:700;">Courseware Support Reply</h1>
+              <p style="margin:0 0 20px;color:#9ca3af;font-size:0.95rem;line-height:1.6;">Hi${safeName},</p>
+              <div style="margin:0 0 24px;color:#e8e6e0;font-size:0.95rem;line-height:1.7;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;">
+                ${safeMessage}
+              </div>
+              <p style="margin:0;color:#6b7280;font-size:0.82rem;line-height:1.6;">
+                If you still need help, reply to this email or submit another support request from Courseware.
+              </p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  });
+}

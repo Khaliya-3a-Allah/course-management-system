@@ -4,13 +4,25 @@ const supportTicketSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true },
     description: { type: String, required: true },
+    requesterName: { type: String, default: "", trim: true },
+    requesterEmail: { type: String, default: "", trim: true, lowercase: true },
+    topic: { type: String, default: "Other", trim: true },
     status: {
       type: String,
       enum: ["open", "in-progress", "resolved", "closed"],
       default: "open",
     },
+    priority: {
+      type: String,
+      enum: ["low", "normal", "high"],
+      default: "normal",
+    },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    adminReply: { type: String, default: "" },
+    repliedAt: { type: Date, default: null },
+    repliedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    emailSentAt: { type: Date, default: null },
   },
   {
     timestamps: true,

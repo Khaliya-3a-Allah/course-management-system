@@ -1,6 +1,7 @@
 import { useId, useMemo, useState } from "react";
 import { useAppContext } from "../context/AppContext";
 import EmailAutocompleteInput from "../components/EmailAutocompleteInput";
+import { apiPost } from "../utils/api";
 
 const supportTopics = [
   "Account Access",
@@ -78,7 +79,7 @@ export default function Support() {
     }
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     if (submitting) return;
 
@@ -99,11 +100,21 @@ export default function Support() {
     setErrors({});
     setSubmitting(true);
 
-    setTimeout(() => {
+    try {
+      await apiPost("/support-tickets", {
+        title: `${form.topic} support request`,
+        description: form.message.trim(),
+        requesterName: form.name.trim(),
+        requesterEmail: form.email.trim().toLowerCase(),
+        topic: form.topic,
+      });
       setSubmitting(false);
-      addToast("Message sent successfully. Support will contact you soon.", "success");
+      addToast("Message sent successfully. Admin support can now review it.", "success");
       setForm((prev) => ({ ...prev, message: "" }));
-    }, 550);
+    } catch (error) {
+      setSubmitting(false);
+      addToast(error.message || "Could not send support request.", "error");
+    }
   }
 
   const nameInputId = `${formId}-name`;

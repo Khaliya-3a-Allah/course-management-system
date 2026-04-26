@@ -6,6 +6,8 @@ import {
   listAdminCourses,
   listReports,
   listAuditLogs,
+  listSupportTickets,
+  replyToSupportTicket,
   updateUserRole,
   softDeleteUser,
   restoreUser,
@@ -28,6 +30,7 @@ router.get("/overview", getAdminOverview);
 router.get("/users", listAdminUsers);
 router.get("/courses", listAdminCourses);
 router.get("/reports", listReports);
+router.get("/support-tickets", listSupportTickets);
 router.get("/audit-logs", listAuditLogs);
 
 router.patch("/users/:userId/role", updateUserRole);
@@ -40,5 +43,6 @@ router.post("/courses/:courseId/soft-delete", softDeleteCourse);
 router.post("/courses/:courseId/restore", restoreCourse);
 
 router.patch("/reports/:reportId", resolveReport);
+router.post("/support-tickets/:ticketId/reply", replyToSupportTicket);
 
 export { router as adminRouter };

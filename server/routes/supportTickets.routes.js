@@ -1,3 +1,4 @@
+import { Router } from "express";
 import {
   getAllSupportTickets,
   getSupportTicketById,
@@ -5,27 +6,20 @@ import {
   updateSupportTicket,
   deleteSupportTicket,
 } from "../controllers/supportTickets.controller.js";
-import { createCrudRouter } from "../utils/createCrudRouter.js";
 import {
   authenticateRequest,
   authorizeOwner,
 } from "../middleware/authPlaceholder.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
-// GET /support-tickets        — public
-// GET /support-tickets/:id    — public
-// POST /support-tickets       — authenticated
-// PUT /support-tickets/:id    — authenticated + must be creator
-// DELETE /support-tickets/:id — authenticated + must be creator
-export const supportTicketsRouter = createCrudRouter(
-  {
-    getAll: getAllSupportTickets,
-    getById: getSupportTicketById,
-    create: createSupportTicket,
-    update: updateSupportTicket,
-    delete: deleteSupportTicket,
-  },
-  {
-    authMiddleware: [authenticateRequest],
-    ownerMiddleware: [authorizeOwner("supportTickets")],
-  }
-);
+const router = Router();
+
+// Public ticket submission. Admin review happens through /admin/support-tickets.
+router.post("/", asyncHandler(createSupportTicket));
+
+router.get("/", asyncHandler(getAllSupportTickets));
+router.get("/:id", asyncHandler(getSupportTicketById));
+router.put("/:id", authenticateRequest, authorizeOwner("supportTickets"), asyncHandler(updateSupportTicket));
+router.delete("/:id", authenticateRequest, authorizeOwner("supportTickets"), asyncHandler(deleteSupportTicket));
+
+export { router as supportTicketsRouter };
