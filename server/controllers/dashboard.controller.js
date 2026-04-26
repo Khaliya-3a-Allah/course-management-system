@@ -1,6 +1,7 @@
 import Course from "../models/Course.js";
 import Enrollment from "../models/Enrollment.js";
 import Progress from "../models/Progress.js";
+import mongoose from "mongoose";
 import { ApiError } from "../utils/ApiError.js";
 import { buildDashboardAnalytics } from "../utils/dashboardAnalytics.js";
 
@@ -28,6 +29,16 @@ export async function getMyDashboard(req, res) {
   }
 
   const userId = req.user.id;
+  const createdCourseIds = (req.user.createdCourseIds || [])
+    .map((id) => String(id))
+    .filter((id) => mongoose.isValidObjectId(id));
+
+  const ownershipFilter = {
+    $or: [
+      { instructorId: userId },
+      ...(createdCourseIds.length > 0 ? [{ _id: { $in: createdCourseIds } }] : []),
+    ],
+  };
 
   const [user, enrollments, progress, courses, createdCourses] = await Promise.all([
     Promise.resolve(req.user),
@@ -43,17 +54,15 @@ export async function getMyDashboard(req, res) {
       .select(DASHBOARD_COURSE_SELECT)
       .sort({ enrolled: -1, rating: -1, createdAt: -1 })
       .lean({ virtuals: true }),
-    req.user.role === "instructor"
-      ? Course.find({ instructorId: userId })
-        .select(DASHBOARD_COURSE_SELECT)
-        .sort({ updatedAt: -1, createdAt: -1 })
-        .lean({ virtuals: true })
-      : Promise.resolve([]),
+    Course.find(ownershipFilter)
+      .select(DASHBOARD_COURSE_SELECT)
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .lean({ virtuals: true }),
   ]);
 
   const dashboard = buildDashboardAnalytics({ user, enrollments, progress, courses });
 
-  if (req.user.role === "instructor") {
+  if (createdCourses.length > 0 || req.user.role === "instructor") {
     dashboard.instructor = {
       createdCount: createdCourses.length,
       publishedCount: createdCourses.filter((course) => course.isPublished).length,

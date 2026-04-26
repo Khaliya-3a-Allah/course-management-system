@@ -109,6 +109,7 @@ export default function Dashboard() {
     createdCourses: [],
   };
   const isInstructor = currentUser?.role === "instructor";
+  const canManageCreatedCourses = isInstructor || (instructor.createdCourses?.length || 0) > 0;
   const isLoading = dashboardStatus === RESOURCE_STATUS.LOADING || dashboardStatus === RESOURCE_STATUS.IDLE;
   const hasError = dashboardStatus === RESOURCE_STATUS.ERROR;
 
@@ -546,16 +547,18 @@ export default function Dashboard() {
               )}
             </section>
 
-            {isInstructor && (
+            {canManageCreatedCourses && (
               <section>
                 <div className="flex items-end justify-between gap-3 mb-4">
                   <div>
                     <p className="text-[0.72rem] tracking-[0.18em] uppercase text-[#f6c56b] mb-1">Instructor studio</p>
                     <h2 className="font-['Playfair_Display',serif] text-[1.3rem] text-[#f5f2ec]">Your created courses</h2>
                   </div>
-                  <Link to="/course-form" className="text-[0.88rem] font-semibold text-[#f6c56b] no-underline">
-                    + Add new course
-                  </Link>
+                  {isInstructor && (
+                    <Link to="/course-form" className="text-[0.88rem] font-semibold text-[#f6c56b] no-underline">
+                      + Add new course
+                    </Link>
+                  )}
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-3 mb-4">
