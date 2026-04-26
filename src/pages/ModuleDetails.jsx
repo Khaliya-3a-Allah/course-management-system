@@ -332,7 +332,7 @@ const vStyles = {
 export default function ModuleDetails() {
   const { courseId, moduleId } = useParams();
   const navigate = useNavigate();
-  const { courses, coursesStatus, submitReview, currentUser, lessonProgress, markLessonComplete, markCourseComplete, completedCourses, addToast } = useAppContext();
+  const { courses, coursesStatus, submitReview, currentUser, lessonProgress, markLessonComplete, completedCourses, addToast } = useAppContext();
 
   const course = courses.find((c) => c.id === courseId);
   const allModules = course?.modules || [];
@@ -462,7 +462,6 @@ export default function ModuleDetails() {
     const newCount = Object.keys(newCompleted).filter((k) => newCompleted[k]).length;
     const newPct = totalLessons > 0 ? Math.round((newCount / totalLessons) * 100) : 0;
     if (newPct === 100 && !completionShown && !completedCourses.has(courseId)) {
-      markCourseComplete(courseId);
       setTimeout(() => { setShowCompletion(true); setCompletionShown(true); }, 600);
     }
   };

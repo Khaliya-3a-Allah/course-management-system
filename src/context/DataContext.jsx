@@ -81,6 +81,10 @@ function isMongoId(id) {
   return typeof id === "string" && /^[0-9a-f]{24}$/i.test(id);
 }
 
+function toIdString(ref) {
+  return String(ref?._id || ref?.id || ref || "");
+}
+
 export function DataProvider({ children }) {
   const { currentUser, setCurrentUser, authStatus } = useAuthContext();
   const { setIsBackendWaking } = useUiContext();
@@ -115,17 +119,17 @@ export function DataProvider({ children }) {
 
   // Sync completedCourses from currentUser
   useEffect(() => {
-    setCompletedCourses(new Set(currentUser?.completedCourseIds || []));
+    setCompletedCourses(new Set((currentUser?.completedCourseIds || []).map(toIdString).filter(Boolean)));
   }, [currentUser?.id, currentUser?.completedCourseIds]);
 
   const lessonProgress = useMemo(() => {
     const lookup = {};
     progress.forEach((row) => {
-      const courseId = row.courseId?._id || row.courseId;
+      const courseId = toIdString(row.courseId);
       if (!courseId) return;
       lookup[courseId] = {};
       (row.completedLessonIds || []).forEach((lessonRef) => {
-        const lessonId = lessonRef?._id || lessonRef;
+        const lessonId = toIdString(lessonRef);
         if (lessonId) lookup[courseId][String(lessonId)] = true;
       });
     });
@@ -239,7 +243,7 @@ export function DataProvider({ children }) {
         .filter(Boolean);
       const completedIds = myProgress
         .filter((row) => row.completed)
-        .map((row) => String(row.courseId?._id || row.courseId || ""))
+        .map((row) => toIdString(row.courseId))
         .filter(Boolean);
 
       const reviewsByCourseId = {};
@@ -258,7 +262,7 @@ export function DataProvider({ children }) {
           ...prev,
           enrolledCourseIds: [...new Set([...(prev.enrolledCourseIds || []), ...enrolledIds])],
           purchasedCourseIds: [...new Set([...(prev.purchasedCourseIds || []), ...purchasedIds])],
-          completedCourseIds: [...new Set([...(prev.completedCourseIds || []), ...completedIds])],
+          completedCourseIds: [...new Set([...(prev.completedCourseIds || []).map(toIdString), ...completedIds])],
           reviews: reviewsByCourseId,
         });
       });
@@ -434,7 +438,7 @@ export function DataProvider({ children }) {
         enrolledCourseIds: (prev.enrolledCourseIds || []).filter((id) => id !== courseId),
         purchasedCourseIds: (prev.purchasedCourseIds || []).filter((id) => id !== courseId),
         savedCourseIds: (prev.savedCourseIds || []).filter((id) => id !== courseId),
-        completedCourseIds: (prev.completedCourseIds || []).filter((id) => id !== courseId),
+        completedCourseIds: (prev.completedCourseIds || []).filter((id) => toIdString(id) !== String(courseId)),
       });
     });
 
@@ -453,7 +457,7 @@ export function DataProvider({ children }) {
 
     setCompletedCourses((prev) => {
       const next = new Set(prev);
-      next.delete(courseId);
+      next.delete(String(courseId));
       return next;
     });
 
@@ -680,12 +684,12 @@ export function DataProvider({ children }) {
       return normalizeUserCollections({
         ...prev,
         enrolledCourseIds: (prev.enrolledCourseIds || []).filter((id) => id !== courseId),
-        completedCourseIds: (prev.completedCourseIds || []).filter((id) => id !== courseId),
+        completedCourseIds: (prev.completedCourseIds || []).filter((id) => toIdString(id) !== String(courseId)),
       });
     });
     setCompletedCourses((prev) => {
       const next = new Set(prev);
-      next.delete(courseId);
+      next.delete(String(courseId));
       return next;
     });
   }
@@ -726,7 +730,7 @@ export function DataProvider({ children }) {
 
   function findProgressRow(courseId) {
     return progress.find((row) => {
-      const rowCourseId = row.courseId?._id || row.courseId;
+      const rowCourseId = toIdString(row.courseId);
       return String(rowCourseId) === String(courseId);
     });
   }
@@ -771,7 +775,7 @@ export function DataProvider({ children }) {
 
     const existing = findProgressRow(courseId);
     const currentCompleted = (existing?.completedLessonIds || []).map((ref) =>
-      String(ref?._id || ref)
+      toIdString(ref)
     );
     const lessonKey = String(lessonId);
     if (currentCompleted.includes(lessonKey)) return existing;
@@ -790,7 +794,16 @@ export function DataProvider({ children }) {
     });
 
     if (completed) {
-      await markCourseComplete(courseId);
+      setCurrentUser((prev) => {
+        if (!prev) return prev;
+        const completedCourseIds = (prev.completedCourseIds || []).map(toIdString);
+        if (completedCourseIds.includes(String(courseId))) return prev;
+        return normalizeUserCollections({
+          ...prev,
+          completedCourseIds: [...completedCourseIds, courseId],
+        });
+      });
+      setCompletedCourses((prev) => new Set([...prev, String(courseId)]));
     }
 
     return row;
@@ -803,14 +816,14 @@ export function DataProvider({ children }) {
 
     setCurrentUser((prev) => {
       if (!prev) return prev;
-      const completedCourseIds = prev.completedCourseIds || [];
-      if (completedCourseIds.includes(courseId)) return prev;
+      const completedCourseIds = (prev.completedCourseIds || []).map(toIdString);
+      if (completedCourseIds.includes(String(courseId))) return prev;
       return normalizeUserCollections({
         ...prev,
         completedCourseIds: [...completedCourseIds, courseId],
       });
     });
-    setCompletedCourses((prev) => new Set([...prev, courseId]));
+    setCompletedCourses((prev) => new Set([...prev, String(courseId)]));
   }
 
   function getCourseProgress(courseId) {

@@ -171,7 +171,7 @@ function ShareModal({ isOpen, certId, courseName, onClose }) {
 }
 
 export default function Certificates() {
-  const { currentUser, courses, completedCourses } = useAppContext();
+  const { currentUser, courses, completedCourses, progress } = useAppContext();
   const [selectedCertId, setSelectedCertId] = useState(null);
   const [showQRModal, setShowQRModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -179,8 +179,20 @@ export default function Certificates() {
   const [issuedCertByCourse, setIssuedCertByCourse] = useState({});
 
   const completedCourseList = useMemo(
-    () => courses.filter((course) => completedCourses.has(course.id)),
-    [courses, completedCourses]
+    () => {
+      const completedProgressIds = new Set(
+        progress
+          .filter((row) => row.completed || Number(row.percentage || 0) >= 100)
+          .map((row) => String(row.courseId?._id || row.courseId?.id || row.courseId || ""))
+          .filter(Boolean)
+      );
+
+      return courses.filter((course) => {
+        const courseId = String(course.id);
+        return completedCourses.has(courseId) || completedProgressIds.has(courseId);
+      });
+    },
+    [courses, completedCourses, progress]
   );
 
   async function ensureCertificateId(course) {
