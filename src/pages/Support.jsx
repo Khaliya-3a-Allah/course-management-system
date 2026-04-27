@@ -112,6 +112,7 @@ export default function Support() {
         requesterName: form.name.trim(),
         requesterEmail: form.email.trim().toLowerCase(),
         topic: form.topic,
+        supportMode,
       });
       const ticket = response?.data;
       setSubmitting(false);

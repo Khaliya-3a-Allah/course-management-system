@@ -7,6 +7,11 @@ const supportTicketSchema = new mongoose.Schema(
     requesterName: { type: String, default: "", trim: true },
     requesterEmail: { type: String, default: "", trim: true, lowercase: true },
     topic: { type: String, default: "Other", trim: true },
+    supportMode: {
+      type: String,
+      enum: ["email", "live"],
+      default: "email",
+    },
     status: {
       type: String,
       enum: ["open", "in-progress", "resolved", "closed"],

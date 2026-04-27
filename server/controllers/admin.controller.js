@@ -134,7 +134,7 @@ export const listSupportTickets = asyncHandler(async (req, res) => {
   const tickets = await SupportTicket.find({})
     .populate("userId", "name email role")
     .populate("repliedBy", "name email role")
-    .sort({ status: 1, createdAt: -1 })
+    .sort({ createdAt: -1 })
     .limit(limit)
     .lean({ virtuals: true });
 
@@ -151,6 +151,9 @@ export const replyToSupportTicket = asyncHandler(async (req, res) => {
 
   const ticket = await SupportTicket.findById(ticketId);
   if (!ticket) throw new ApiError(404, "Support ticket not found");
+  if (ticket.supportMode !== "email") {
+    throw new ApiError(400, "This ticket is set to live chat support");
+  }
   if (!ticket.requesterEmail) {
     throw new ApiError(400, "This ticket has no requester email");
   }
@@ -195,6 +198,9 @@ export const addSupportChatMessage = asyncHandler(async (req, res) => {
 
   const ticket = await SupportTicket.findById(ticketId);
   if (!ticket) throw new ApiError(404, "Support ticket not found");
+  if (ticket.supportMode !== "live") {
+    throw new ApiError(400, "This ticket is set to email support");
+  }
 
   ticket.messages.push({
     senderRole: "admin",

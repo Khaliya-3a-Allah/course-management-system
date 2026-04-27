@@ -405,6 +405,8 @@ export default function Admin() {
             {supportTickets.map((ticket) => {
               const ticketId = getId(ticket);
               const replyBody = supportReplies[ticketId] || "";
+              const supportMode = ticket.supportMode || "email";
+              const isLiveTicket = supportMode === "live";
               return (
                 <article key={ticketId} className="rounded-lg border border-[rgba(255,255,255,0.08)] bg-surface p-4">
                   <div className="grid gap-4 lg:grid-cols-[1fr,420px]">
@@ -412,6 +414,9 @@ export default function Admin() {
                       <div className="mb-2 flex flex-wrap gap-2">
                         <span className="rounded-md bg-[rgba(217,119,6,0.14)] px-2 py-1 text-[0.72rem] font-bold text-brand">{ticket.status}</span>
                         <span className="rounded-md bg-[rgba(255,255,255,0.05)] px-2 py-1 text-[0.72rem] text-text-dim">{ticket.topic || "Other"}</span>
+                        <span className="rounded-md bg-[rgba(255,255,255,0.05)] px-2 py-1 text-[0.72rem] text-text-dim">
+                          {isLiveTicket ? "Live chat" : "Email"}
+                        </span>
                       </div>
                       <p className="font-bold text-text-primary">{ticket.title}</p>
                       <p className="mt-1 break-words text-[0.84rem] text-text-dim">
@@ -427,102 +432,106 @@ export default function Admin() {
                       ) : null}
                     </div>
                     <div className="flex min-w-0 flex-col gap-3">
-                      <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-base p-3">
-                        <p className="mb-2 text-[0.78rem] font-semibold uppercase tracking-[0.12em] text-text-faint">
-                          Live chat
-                        </p>
-                        <div className="mb-3 max-h-[240px] overflow-y-auto">
-                          {(ticket.messages || []).map((message, index) => {
-                            const isAdmin = message.senderRole === "admin";
-                            return (
-                              <div key={message.id || message._id || index} className={`mb-2 flex ${isAdmin ? "justify-end" : "justify-start"}`}>
-                                <div
-                                  className={`max-w-[86%] whitespace-pre-wrap break-words rounded-lg px-3 py-2 text-[0.82rem] leading-5 ${
-                                    isAdmin
-                                      ? "bg-brand text-base"
-                                      : "border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-text-secondary"
-                                  }`}
-                                >
-                                  <p className="mb-1 text-[0.65rem] font-bold uppercase tracking-[0.1em] opacity-70">
-                                    {isAdmin ? "Admin" : "User"}
-                                  </p>
-                                  {message.body}
+                      {isLiveTicket ? (
+                        <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-base p-3">
+                          <p className="mb-2 text-[0.78rem] font-semibold uppercase tracking-[0.12em] text-text-faint">
+                            Live chat
+                          </p>
+                          <div className="mb-3 max-h-[240px] overflow-y-auto">
+                            {(ticket.messages || []).map((message, index) => {
+                              const isAdmin = message.senderRole === "admin";
+                              return (
+                                <div key={message.id || message._id || index} className={`mb-2 flex ${isAdmin ? "justify-end" : "justify-start"}`}>
+                                  <div
+                                    className={`max-w-[86%] whitespace-pre-wrap break-words rounded-lg px-3 py-2 text-[0.82rem] leading-5 ${
+                                      isAdmin
+                                        ? "bg-brand text-base"
+                                        : "border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-text-secondary"
+                                    }`}
+                                  >
+                                    <p className="mb-1 text-[0.65rem] font-bold uppercase tracking-[0.1em] opacity-70">
+                                      {isAdmin ? "Admin" : "User"}
+                                    </p>
+                                    {message.body}
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <form
-                          onSubmit={(event) => {
-                            event.preventDefault();
-                            const body = (supportChatInputs[ticketId] || "").trim();
-                            if (!body) return;
-                            runAction(
-                              () => apiPost(`/admin/support-tickets/${ticketId}/messages`, { body }, { token }),
-                              "Chat message sent"
-                            );
-                            setSupportChatInputs((prev) => ({ ...prev, [ticketId]: "" }));
-                          }}
-                          className="flex items-end gap-2"
-                        >
-                          <textarea
-                            value={supportChatInputs[ticketId] || ""}
-                            onChange={(event) =>
-                              setSupportChatInputs((prev) => ({ ...prev, [ticketId]: event.target.value }))
-                            }
-                            rows={2}
-                            className="min-h-[48px] flex-1 resize-none rounded-md border border-[rgba(255,255,255,0.12)] bg-surface px-3 py-2 text-sm leading-5 text-text-primary outline-none placeholder:text-text-faint"
-                            placeholder="Send a live chat reply..."
-                          />
-                          <IconButton
-                            type="submit"
-                            icon={<ClockIcon size={14} />}
-                            disabled={!(supportChatInputs[ticketId] || "").trim()}
+                              );
+                            })}
+                          </div>
+                          <form
+                            onSubmit={(event) => {
+                              event.preventDefault();
+                              const body = (supportChatInputs[ticketId] || "").trim();
+                              if (!body) return;
+                              runAction(
+                                () => apiPost(`/admin/support-tickets/${ticketId}/messages`, { body }, { token }),
+                                "Chat message sent"
+                              );
+                              setSupportChatInputs((prev) => ({ ...prev, [ticketId]: "" }));
+                            }}
+                            className="flex items-end gap-2"
                           >
-                            Chat
-                          </IconButton>
-                        </form>
-                      </div>
-
-                      <label className="text-[0.78rem] font-semibold uppercase tracking-[0.12em] text-text-faint">
-                        Email reply
-                      </label>
-                      <textarea
-                        value={replyBody}
-                        onChange={(event) =>
-                          setSupportReplies((prev) => ({ ...prev, [ticketId]: event.target.value }))
-                        }
-                        rows={6}
-                        className="min-h-[140px] resize-y rounded-md border border-[rgba(255,255,255,0.12)] bg-base px-3 py-2 text-sm leading-6 text-text-primary outline-none placeholder:text-text-faint"
-                        placeholder="Write the email body to send to this requester..."
-                      />
-                      <div className="flex flex-wrap gap-2">
-                        <IconButton
-                          icon={<ClockIcon size={14} />}
-                          disabled={!replyBody.trim()}
-                          onClick={() =>
-                            runAction(
-                              () => apiPost(`/admin/support-tickets/${ticketId}/reply`, { body: replyBody, status: "in-progress" }, { token }),
-                              "Support reply sent"
-                            )
-                          }
-                        >
-                          Send Reply
-                        </IconButton>
-                        <IconButton
-                          icon={<CheckIcon size={14} />}
-                          tone="success"
-                          disabled={!replyBody.trim()}
-                          onClick={() =>
-                            runAction(
-                              () => apiPost(`/admin/support-tickets/${ticketId}/reply`, { body: replyBody, status: "resolved" }, { token }),
-                              "Support reply sent and ticket resolved"
-                            )
-                          }
-                        >
-                          Send & Resolve
-                        </IconButton>
-                      </div>
+                            <textarea
+                              value={supportChatInputs[ticketId] || ""}
+                              onChange={(event) =>
+                                setSupportChatInputs((prev) => ({ ...prev, [ticketId]: event.target.value }))
+                              }
+                              rows={2}
+                              className="min-h-[48px] flex-1 resize-none rounded-md border border-[rgba(255,255,255,0.12)] bg-surface px-3 py-2 text-sm leading-5 text-text-primary outline-none placeholder:text-text-faint"
+                              placeholder="Send a live chat reply..."
+                            />
+                            <IconButton
+                              type="submit"
+                              icon={<ClockIcon size={14} />}
+                              disabled={!(supportChatInputs[ticketId] || "").trim()}
+                            >
+                              Chat
+                            </IconButton>
+                          </form>
+                        </div>
+                      ) : (
+                        <>
+                          <label className="text-[0.78rem] font-semibold uppercase tracking-[0.12em] text-text-faint">
+                            Email reply
+                          </label>
+                          <textarea
+                            value={replyBody}
+                            onChange={(event) =>
+                              setSupportReplies((prev) => ({ ...prev, [ticketId]: event.target.value }))
+                            }
+                            rows={6}
+                            className="min-h-[140px] resize-y rounded-md border border-[rgba(255,255,255,0.12)] bg-base px-3 py-2 text-sm leading-6 text-text-primary outline-none placeholder:text-text-faint"
+                            placeholder="Write the email body to send to this requester..."
+                          />
+                          <div className="flex flex-wrap gap-2">
+                            <IconButton
+                              icon={<ClockIcon size={14} />}
+                              disabled={!replyBody.trim()}
+                              onClick={() =>
+                                runAction(
+                                  () => apiPost(`/admin/support-tickets/${ticketId}/reply`, { body: replyBody, status: "in-progress" }, { token }),
+                                  "Support reply sent"
+                                )
+                              }
+                            >
+                              Send Reply
+                            </IconButton>
+                            <IconButton
+                              icon={<CheckIcon size={14} />}
+                              tone="success"
+                              disabled={!replyBody.trim()}
+                              onClick={() =>
+                                runAction(
+                                  () => apiPost(`/admin/support-tickets/${ticketId}/reply`, { body: replyBody, status: "resolved" }, { token }),
+                                  "Support reply sent and ticket resolved"
+                                )
+                              }
+                            >
+                              Send & Resolve
+                            </IconButton>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </article>

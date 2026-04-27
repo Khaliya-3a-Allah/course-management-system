@@ -15,11 +15,15 @@ export const createSupportTicket = asyncHandler(async (req, res) => {
     requesterName = "",
     requesterEmail,
     topic = "Other",
+    supportMode = "email",
     createdBy,
   } = req.body || {};
 
   if (!title || !description) {
     throw new ApiError(400, "title and description are required");
+  }
+  if (!["email", "live"].includes(supportMode)) {
+    throw new ApiError(400, "supportMode must be email or live");
   }
 
   const userId = req.user?.id || createdBy || null;
@@ -36,6 +40,7 @@ export const createSupportTicket = asyncHandler(async (req, res) => {
     requesterName: requesterName || user?.name || "",
     requesterEmail: email,
     topic,
+    supportMode,
     userId,
     createdBy: userId,
     messages: [
@@ -75,6 +80,7 @@ export const getSupportTicketMessages = asyncHandler(async (req, res) => {
         title: ticket.title,
         status: ticket.status,
         requesterEmail: ticket.requesterEmail,
+        supportMode: ticket.supportMode,
       },
       messages: ticket.messages || [],
     },
@@ -92,6 +98,9 @@ export const addSupportTicketMessage = asyncHandler(async (req, res) => {
 
   if (!canReadTicket(ticket, { email: requesterEmail, user: req.user })) {
     throw new ApiError(403, "You are not allowed to reply to this support chat");
+  }
+  if (ticket.supportMode !== "live") {
+    throw new ApiError(400, "This ticket is set to email support");
   }
 
   ticket.messages.push({
