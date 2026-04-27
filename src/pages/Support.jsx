@@ -1,7 +1,8 @@
-import { useEffect, useId, useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useAppContext } from "../context/AppContext";
 import EmailAutocompleteInput from "../components/EmailAutocompleteInput";
-import { apiGet, apiPost } from "../utils/api";
+import { apiPost } from "../utils/api";
+import { writeActiveSupportChat } from "../utils/supportChatStorage";
 
 const supportTopics = [
   "Account Access",
@@ -48,10 +49,6 @@ export default function Support() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [supportMode, setSupportMode] = useState("email");
-  const [activeTicket, setActiveTicket] = useState(null);
-  const [chatMessages, setChatMessages] = useState([]);
-  const [chatInput, setChatInput] = useState("");
-  const [sendingChat, setSendingChat] = useState(false);
 
   const channels = useMemo(
     () => [
@@ -123,61 +120,12 @@ export default function Support() {
         "success"
       );
       if (supportMode === "live") {
-        setActiveTicket(ticket);
-        setChatMessages(ticket?.messages || []);
-      } else {
-        setActiveTicket(null);
-        setChatMessages([]);
+        writeActiveSupportChat(ticket);
       }
       setForm((prev) => ({ ...prev, message: "" }));
     } catch (error) {
       setSubmitting(false);
       addToast(error.message || "Could not send support request.", "error");
-    }
-  }
-
-  async function fetchChatMessages() {
-    if (!activeTicket?.id || !activeTicket?.requesterEmail) return;
-    try {
-      const response = await apiGet(
-        `/support-tickets/${activeTicket.id}/messages?email=${encodeURIComponent(activeTicket.requesterEmail)}`
-      );
-      setChatMessages(response?.data?.messages || []);
-      if (response?.data?.ticket) {
-        setActiveTicket((prev) => (prev ? { ...prev, ...response.data.ticket } : prev));
-      }
-    } catch {
-      // Polling should stay quiet unless the user actively sends.
-    }
-  }
-
-  useEffect(() => {
-    if (!activeTicket?.id) return undefined;
-    fetchChatMessages();
-    const timer = window.setInterval(fetchChatMessages, 5000);
-    return () => window.clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTicket?.id]);
-
-  async function sendChatMessage(event) {
-    event.preventDefault();
-    const body = chatInput.trim();
-    if (!body || !activeTicket?.id || sendingChat) return;
-
-    setSendingChat(true);
-    try {
-      const response = await apiPost(`/support-tickets/${activeTicket.id}/messages`, {
-        body,
-        requesterName: activeTicket.requesterName || form.name,
-        requesterEmail: activeTicket.requesterEmail || form.email,
-      });
-      setChatMessages((prev) => [...prev, response?.data].filter(Boolean));
-      setChatInput("");
-      await fetchChatMessages();
-    } catch (error) {
-      addToast(error.message || "Could not send chat message.", "error");
-    } finally {
-      setSendingChat(false);
     }
   }
 
@@ -377,62 +325,7 @@ export default function Support() {
           </form>
         </article>
 
-        {activeTicket ? (
-          <article className="rounded-2xl border border-[rgba(217,119,6,0.28)] bg-surface px-6 py-6" aria-label="Live support chat">
-            <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-[0.72rem] uppercase tracking-[0.18em] text-brand">Live Chat</p>
-                <h2 className="font-heading text-[1.35rem] text-text-primary">Ticket Chat</h2>
-              </div>
-              <span className="self-start rounded-md border border-[rgba(255,255,255,0.1)] px-2 py-1 text-[0.75rem] text-text-dim sm:self-auto">
-                {activeTicket.status || "open"}
-              </span>
-            </div>
-
-            <div className="mb-4 h-[340px] overflow-y-auto rounded-xl border border-[rgba(255,255,255,0.08)] bg-base p-3">
-              {chatMessages.map((message, index) => {
-                const isAdmin = message.senderRole === "admin";
-                return (
-                  <div key={message.id || message._id || index} className={`mb-3 flex ${isAdmin ? "justify-start" : "justify-end"}`}>
-                    <div
-                      className={`max-w-[86%] whitespace-pre-wrap break-words rounded-lg px-3 py-2 text-[0.88rem] leading-6 ${
-                        isAdmin
-                          ? "border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] text-text-secondary"
-                          : "bg-brand text-base"
-                      }`}
-                    >
-                      <p className="mb-1 text-[0.68rem] font-bold uppercase tracking-[0.1em] opacity-70">
-                        {isAdmin ? "Admin" : "You"}
-                      </p>
-                      {message.body}
-                    </div>
-                  </div>
-                );
-              })}
-              {chatMessages.length === 0 ? (
-                <p className="text-sm text-text-dim">No chat messages yet.</p>
-              ) : null}
-            </div>
-
-            <form onSubmit={sendChatMessage} className="flex items-end gap-2">
-              <textarea
-                value={chatInput}
-                onChange={(event) => setChatInput(event.target.value)}
-                rows={2}
-                className="min-h-[52px] flex-1 resize-none rounded-lg border border-[rgba(255,255,255,0.12)] bg-surface-muted px-3 py-2 text-sm leading-5 text-text-primary outline-none placeholder:text-text-faint"
-                placeholder="Write a live chat message..."
-              />
-              <button
-                type="submit"
-                disabled={!chatInput.trim() || sendingChat}
-                className="h-[52px] rounded-lg bg-brand px-4 text-sm font-bold text-base disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Send
-              </button>
-            </form>
-          </article>
-        ) : (
-          <article className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-surface px-6 py-6" aria-labelledby={faqHeadingId}>
+        <article className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-surface px-6 py-6" aria-labelledby={faqHeadingId}>
           <h2 id={faqHeadingId} className="font-heading text-[1.45rem] text-text-primary mb-5">Frequently Asked Questions</h2>
           <ul className="flex flex-col gap-3" role="list">
             {faqItems.map((item) => (
@@ -445,7 +338,6 @@ export default function Support() {
             ))}
           </ul>
         </article>
-        )}
       </section>
     </main>
   );

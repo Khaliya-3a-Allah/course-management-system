@@ -28,6 +28,10 @@ const supportTicketSchema = new mongoose.Schema(
     repliedAt: { type: Date, default: null },
     repliedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     emailSentAt: { type: Date, default: null },
+    resolutionRequestedAt: { type: Date, default: null },
+    resolutionRequestedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    resolvedAt: { type: Date, default: null },
+    resolvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     messages: [
       {
         senderRole: {

@@ -151,7 +151,7 @@ export const replyToSupportTicket = asyncHandler(async (req, res) => {
 
   const ticket = await SupportTicket.findById(ticketId);
   if (!ticket) throw new ApiError(404, "Support ticket not found");
-  if (ticket.supportMode !== "email") {
+  if ((ticket.supportMode || "email") !== "email") {
     throw new ApiError(400, "This ticket is set to live chat support");
   }
   if (!ticket.requesterEmail) {
@@ -191,14 +191,14 @@ export const replyToSupportTicket = asyncHandler(async (req, res) => {
 
 export const addSupportChatMessage = asyncHandler(async (req, res) => {
   const ticketId = objectIdOrFail(req.params.ticketId, "ticketId");
-  const { body } = req.body || {};
+  const { body, askResolution = false } = req.body || {};
   if (!body || String(body).trim().length < 1) {
     throw new ApiError(400, "Message body is required");
   }
 
   const ticket = await SupportTicket.findById(ticketId);
   if (!ticket) throw new ApiError(404, "Support ticket not found");
-  if (ticket.supportMode !== "live") {
+  if ((ticket.supportMode || "email") !== "live") {
     throw new ApiError(400, "This ticket is set to email support");
   }
 
@@ -209,6 +209,10 @@ export const addSupportChatMessage = asyncHandler(async (req, res) => {
     body,
   });
   ticket.status = "in-progress";
+  if (askResolution) {
+    ticket.resolutionRequestedAt = new Date();
+    ticket.resolutionRequestedBy = req.user.id;
+  }
   await ticket.save();
 
   await writeAudit(req, {
@@ -219,6 +223,37 @@ export const addSupportChatMessage = asyncHandler(async (req, res) => {
   });
 
   res.status(201).json({ success: true, data: ticket.messages[ticket.messages.length - 1] });
+});
+
+export const resolveSupportTicket = asyncHandler(async (req, res) => {
+  const ticketId = objectIdOrFail(req.params.ticketId, "ticketId");
+  const { body = "This support ticket was marked resolved by admin." } = req.body || {};
+
+  const ticket = await SupportTicket.findById(ticketId);
+  if (!ticket) throw new ApiError(404, "Support ticket not found");
+
+  ticket.status = "resolved";
+  ticket.resolvedAt = new Date();
+  ticket.resolvedBy = req.user.id;
+  ticket.resolutionRequestedAt = null;
+  if (body) {
+    ticket.messages.push({
+      senderRole: "admin",
+      senderName: req.user.name,
+      senderEmail: req.user.email,
+      body,
+    });
+  }
+  await ticket.save();
+
+  await writeAudit(req, {
+    action: "support.ticket_resolved",
+    targetType: "support-ticket",
+    targetId: ticketId,
+    summary: `Support ticket resolved for ${ticket.requesterEmail}`,
+  });
+
+  res.status(200).json({ success: true, data: ticket });
 });
 
 export const listAdminUsers = asyncHandler(async (req, res) => {

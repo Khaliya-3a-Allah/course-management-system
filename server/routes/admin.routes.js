@@ -9,6 +9,7 @@ import {
   listSupportTickets,
   replyToSupportTicket,
   addSupportChatMessage,
+  resolveSupportTicket,
   updateUserRole,
   softDeleteUser,
   restoreUser,
@@ -46,5 +47,6 @@ router.post("/courses/:courseId/restore", restoreCourse);
 router.patch("/reports/:reportId", resolveReport);
 router.post("/support-tickets/:ticketId/reply", replyToSupportTicket);
 router.post("/support-tickets/:ticketId/messages", addSupportChatMessage);
+router.post("/support-tickets/:ticketId/resolve", resolveSupportTicket);
 
 export { router as adminRouter };

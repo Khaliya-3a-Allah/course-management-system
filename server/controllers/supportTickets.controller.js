@@ -5,6 +5,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const supportTicketsController = buildCrudControllers("supportTickets");
+const RESOLVED_REPLY_PATTERN = /^(yes|y|resolved|fixed|done|thank you|thanks)\b/i;
 
 export const getAllSupportTickets = supportTicketsController.getAll;
 export const getSupportTicketById = supportTicketsController.getById;
@@ -80,7 +81,8 @@ export const getSupportTicketMessages = asyncHandler(async (req, res) => {
         title: ticket.title,
         status: ticket.status,
         requesterEmail: ticket.requesterEmail,
-        supportMode: ticket.supportMode,
+        supportMode: ticket.supportMode || "email",
+        resolutionRequestedAt: ticket.resolutionRequestedAt,
       },
       messages: ticket.messages || [],
     },
@@ -99,7 +101,7 @@ export const addSupportTicketMessage = asyncHandler(async (req, res) => {
   if (!canReadTicket(ticket, { email: requesterEmail, user: req.user })) {
     throw new ApiError(403, "You are not allowed to reply to this support chat");
   }
-  if (ticket.supportMode !== "live") {
+  if ((ticket.supportMode || "email") !== "live") {
     throw new ApiError(400, "This ticket is set to email support");
   }
 
@@ -109,7 +111,17 @@ export const addSupportTicketMessage = asyncHandler(async (req, res) => {
     senderEmail: req.user?.email || requesterEmail || ticket.requesterEmail,
     body,
   });
-  if (ticket.status === "open") ticket.status = "in-progress";
+  const userConfirmedResolved =
+    ticket.resolutionRequestedAt &&
+    req.user?.role !== "admin" &&
+    RESOLVED_REPLY_PATTERN.test(String(body).trim());
+  if (userConfirmedResolved) {
+    ticket.status = "resolved";
+    ticket.resolvedAt = new Date();
+    ticket.resolutionRequestedAt = null;
+  } else if (ticket.status === "open") {
+    ticket.status = "in-progress";
+  }
   await ticket.save();
 
   res.status(201).json({ success: true, data: ticket.messages[ticket.messages.length - 1] });
