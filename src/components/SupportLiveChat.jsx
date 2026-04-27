@@ -109,25 +109,29 @@ export default function SupportLiveChat() {
   if (!canUseChat) return null;
 
   return (
-    <div className="pointer-events-none fixed bottom-3 left-3 z-40 sm:bottom-5 sm:left-5">
+    <div className="pointer-events-none fixed bottom-3 left-3 z-[70] sm:bottom-5 sm:left-5">
       {isOpen ? (
-        <section className="pointer-events-auto flex h-[min(560px,calc(100dvh-1.5rem))] w-[min(390px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.14)] bg-[#111114] text-[#f5f2ec] shadow-[0_26px_80px_rgba(0,0,0,0.5)] ring-1 ring-brand/10">
-          <header className="flex items-center justify-between border-b border-[rgba(255,255,255,0.08)] px-4 py-3">
-            <div>
-              <p className="text-[0.68rem] uppercase tracking-[0.16em] text-brand">Support</p>
-              <h2 className="text-sm font-bold">Live Chat</h2>
+        <section className="pointer-events-auto flex h-[min(580px,calc(100dvh-1.5rem))] w-[min(410px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.16)] bg-[#101113] text-[#f5f2ec] shadow-[0_26px_80px_rgba(0,0,0,0.56)] ring-1 ring-brand/10">
+          <header className="flex items-center justify-between border-b border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.035)] px-4 py-3">
+            <div className="min-w-0">
+              <div className="mb-1 flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#34d399] shadow-[0_0_0_4px_rgba(52,211,153,0.12)]" />
+                <p className="text-[0.68rem] uppercase tracking-[0.16em] text-brand">Support</p>
+              </div>
+              <h2 className="truncate text-sm font-bold">Live Chat</h2>
+              <p className="truncate text-xs text-[#9ca3af]">{ticket.title || "Support ticket"}</p>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="grid h-9 w-9 place-items-center rounded-lg border border-[rgba(255,255,255,0.1)] text-[#d1d5db] transition hover:bg-[rgba(255,255,255,0.06)]"
+              className="relative z-10 grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[rgba(255,255,255,0.16)] bg-[rgba(255,255,255,0.04)] text-[#f5f2ec] transition hover:bg-[rgba(255,255,255,0.1)]"
               aria-label="Close support chat"
             >
-              <CloseIcon size={16} />
+              <CloseIcon size={18} />
             </button>
           </header>
 
-          <div className="flex-1 overflow-y-auto p-3">
+          <div className="flex-1 overflow-y-auto bg-[#0b0c0e] p-3">
             {messages.map((message, index) => {
               const isAdmin = message.senderRole === "admin";
               return (
@@ -147,11 +151,16 @@ export default function SupportLiveChat() {
                 </div>
               );
             })}
-            {messages.length === 0 ? <p className="text-sm text-[#9ca3af]">No chat messages yet.</p> : null}
+            {messages.length === 0 ? (
+              <div className="rounded-lg border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] p-3 text-sm text-[#9ca3af]">
+                No chat messages yet.
+              </div>
+            ) : null}
           </div>
 
           {hasResolutionPrompt ? (
-            <div className="border-t border-[rgba(255,255,255,0.08)] px-3 py-2">
+            <div className="border-t border-[rgba(255,255,255,0.08)] bg-[rgba(217,119,6,0.08)] px-3 py-3">
+              <p className="mb-2 text-xs leading-5 text-[#f6c56b]">Admin asked if this issue is resolved.</p>
               <button
                 type="button"
                 onClick={() => sendMessage("Yes, this is resolved.")}
@@ -169,7 +178,7 @@ export default function SupportLiveChat() {
               event.preventDefault();
               sendMessage(chatInput.trim());
             }}
-            className="flex items-end gap-2 border-t border-[rgba(255,255,255,0.08)] p-3"
+            className="flex items-end gap-2 border-t border-[rgba(255,255,255,0.08)] bg-[#101113] p-3"
           >
             <textarea
               value={chatInput}
