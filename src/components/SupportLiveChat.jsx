@@ -178,20 +178,20 @@ export default function SupportLiveChat() {
               event.preventDefault();
               sendMessage(chatInput.trim());
             }}
-            className="flex items-end gap-2 border-t border-[rgba(255,255,255,0.08)] bg-[#101113] p-3"
+            className="flex items-center gap-2 border-t border-[rgba(255,255,255,0.08)] bg-[#101113] p-2.5"
           >
-            <textarea
+            <input
+              type="text"
               value={chatInput}
               onChange={(event) => setChatInput(event.target.value)}
-              rows={2}
               disabled={isResolved}
-              className="min-h-[48px] flex-1 resize-none rounded-lg border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.04)] px-3 py-2 text-sm leading-5 text-[#f5f2ec] outline-none placeholder:text-[#8b8b8b] disabled:opacity-50"
+              className="h-10 min-w-0 flex-1 rounded-lg border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.04)] px-3 text-sm leading-5 text-[#f5f2ec] outline-none placeholder:text-[#8b8b8b] disabled:opacity-50"
               placeholder={isResolved ? "This ticket is resolved." : "Write a live chat message..."}
             />
             <button
               type="submit"
               disabled={!chatInput.trim() || sending || isResolved}
-              className="h-[48px] rounded-lg bg-brand px-4 text-sm font-bold text-base disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-10 rounded-lg bg-brand px-4 text-sm font-bold text-base disabled:cursor-not-allowed disabled:opacity-50"
             >
               Send
             </button>
