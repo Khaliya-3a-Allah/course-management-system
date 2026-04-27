@@ -405,8 +405,9 @@ export default function Admin() {
             {supportTickets.map((ticket) => {
               const ticketId = getId(ticket);
               const replyBody = supportReplies[ticketId] || "";
-              const supportMode = ticket.supportMode || "email";
-              const isLiveTicket = supportMode === "live";
+              const supportMode = String(ticket.supportMode || "").toLowerCase();
+              const isLiveTicket = supportMode === "live" || supportMode === "chat" || supportMode === "live-chat";
+              const isResolvedTicket = ticket.status === "resolved" || ticket.status === "closed";
               return (
                 <article key={ticketId} className="rounded-lg border border-[rgba(255,255,255,0.08)] bg-surface p-4">
                   <div className="grid gap-4 lg:grid-cols-[1fr,420px]">
@@ -438,7 +439,7 @@ export default function Admin() {
                             <p className="text-[0.78rem] font-semibold uppercase tracking-[0.12em] text-text-faint">
                               Live chat
                             </p>
-                            {ticket.resolutionRequestedAt && ticket.status !== "resolved" ? (
+                            {ticket.resolutionRequestedAt && !isResolvedTicket ? (
                               <span className="rounded-md border border-[rgba(217,119,6,0.3)] px-2 py-1 text-[0.7rem] text-brand">
                                 Resolution asked
                               </span>
@@ -484,14 +485,14 @@ export default function Admin() {
                                 setSupportChatInputs((prev) => ({ ...prev, [ticketId]: event.target.value }))
                               }
                               rows={2}
-                              disabled={ticket.status === "resolved"}
+                              disabled={isResolvedTicket}
                               className="min-h-[48px] flex-1 resize-none rounded-md border border-[rgba(255,255,255,0.12)] bg-surface px-3 py-2 text-sm leading-5 text-text-primary outline-none placeholder:text-text-faint"
-                              placeholder={ticket.status === "resolved" ? "This ticket is resolved." : "Send a live chat reply..."}
+                              placeholder={isResolvedTicket ? "This ticket is resolved." : "Send a live chat reply..."}
                             />
                             <IconButton
                               type="submit"
                               icon={<ClockIcon size={14} />}
-                              disabled={ticket.status === "resolved" || !(supportChatInputs[ticketId] || "").trim()}
+                              disabled={isResolvedTicket || !(supportChatInputs[ticketId] || "").trim()}
                             >
                               Chat
                             </IconButton>
@@ -499,7 +500,7 @@ export default function Admin() {
                           <div className="mt-3 flex flex-wrap gap-2">
                             <IconButton
                               icon={<CheckIcon size={14} />}
-                              disabled={ticket.status === "resolved"}
+                              disabled={isResolvedTicket}
                               onClick={() =>
                                 runAction(
                                   () =>
@@ -520,7 +521,7 @@ export default function Admin() {
                             <IconButton
                               icon={<CheckIcon size={14} />}
                               tone="success"
-                              disabled={ticket.status === "resolved"}
+                              disabled={isResolvedTicket}
                               onClick={() =>
                                 runAction(
                                   () =>
@@ -576,6 +577,24 @@ export default function Admin() {
                               }
                             >
                               Send & Resolve
+                            </IconButton>
+                            <IconButton
+                              icon={<CheckIcon size={14} />}
+                              tone="success"
+                              disabled={isResolvedTicket}
+                              onClick={() =>
+                                runAction(
+                                  () =>
+                                    apiPost(
+                                      `/admin/support-tickets/${ticketId}/resolve`,
+                                      { body: "No response received, so this support ticket has been marked resolved." },
+                                      { token }
+                                    ),
+                                  "Support ticket resolved"
+                                )
+                              }
+                            >
+                              Force Resolve
                             </IconButton>
                           </div>
                         </>
