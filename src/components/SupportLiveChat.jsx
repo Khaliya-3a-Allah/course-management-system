@@ -111,8 +111,8 @@ export default function SupportLiveChat() {
   return (
     <div className="pointer-events-none fixed bottom-3 left-3 z-[70] sm:bottom-5 sm:left-5">
       {isOpen ? (
-        <section className="pointer-events-auto flex h-[min(580px,calc(100dvh-1.5rem))] w-[min(410px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.16)] bg-[#101113] text-[#f5f2ec] shadow-[0_26px_80px_rgba(0,0,0,0.56)] ring-1 ring-brand/10">
-          <header className="flex items-center justify-between border-b border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.035)] px-4 py-3">
+        <section className="pointer-events-auto flex h-[420px] max-h-[calc(100dvh-1rem)] w-[340px] max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-lg border border-[rgba(255,255,255,0.12)] bg-surface text-text-primary shadow-[0_18px_48px_rgba(0,0,0,0.26)] ring-1 ring-brand/10">
+          <header className="flex items-center justify-between border-b border-[rgba(255,255,255,0.08)] bg-surface-muted px-3 py-2.5">
             <div className="min-w-0">
               <div className="mb-1 flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#34d399] shadow-[0_0_0_4px_rgba(52,211,153,0.12)]" />
@@ -124,22 +124,22 @@ export default function SupportLiveChat() {
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="relative z-10 grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[rgba(255,255,255,0.16)] bg-[rgba(255,255,255,0.04)] text-[#f5f2ec] transition hover:bg-[rgba(255,255,255,0.1)]"
+              className="relative z-10 grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[rgba(255,255,255,0.12)] bg-transparent text-text-secondary transition hover:bg-[rgba(255,255,255,0.06)] hover:text-text-primary"
               aria-label="Close support chat"
             >
               <CloseIcon size={18} />
             </button>
           </header>
 
-          <div className="flex-1 overflow-y-auto bg-[#0b0c0e] p-3">
+          <div className="flex-1 overflow-y-auto bg-base p-3">
             {messages.map((message, index) => {
               const isAdmin = message.senderRole === "admin";
               return (
                 <div key={message.id || message._id || index} className={`mb-3 flex ${isAdmin ? "justify-start" : "justify-end"}`}>
                   <div
-                    className={`max-w-[86%] whitespace-pre-wrap break-words rounded-lg px-3 py-2 text-[0.86rem] leading-5 ${
+                    className={`max-w-[86%] whitespace-pre-wrap break-all rounded-lg px-3 py-2 text-[0.84rem] leading-5 ${
                       isAdmin
-                        ? "border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.05)] text-[#e5e7eb]"
+                        ? "border border-[rgba(255,255,255,0.08)] bg-surface-muted text-text-secondary"
                         : "bg-brand text-base"
                     }`}
                   >
@@ -152,14 +152,14 @@ export default function SupportLiveChat() {
               );
             })}
             {messages.length === 0 ? (
-              <div className="rounded-lg border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] p-3 text-sm text-[#9ca3af]">
+              <div className="rounded-md border border-[rgba(255,255,255,0.08)] bg-surface-muted p-3 text-sm text-text-dim">
                 No chat messages yet.
               </div>
             ) : null}
           </div>
 
           {hasResolutionPrompt ? (
-            <div className="border-t border-[rgba(255,255,255,0.08)] bg-[rgba(217,119,6,0.08)] px-3 py-3">
+            <div className="border-t border-[rgba(255,255,255,0.08)] bg-[rgba(217,119,6,0.08)] px-3 py-2.5">
               <p className="mb-2 text-xs leading-5 text-[#f6c56b]">Admin asked if this issue is resolved.</p>
               <button
                 type="button"
@@ -178,20 +178,20 @@ export default function SupportLiveChat() {
               event.preventDefault();
               sendMessage(chatInput.trim());
             }}
-            className="flex items-center gap-2 border-t border-[rgba(255,255,255,0.08)] bg-[#101113] p-2.5"
+            className="flex items-center gap-2 border-t border-[rgba(255,255,255,0.08)] bg-surface p-2.5"
           >
             <input
               type="text"
               value={chatInput}
               onChange={(event) => setChatInput(event.target.value)}
               disabled={isResolved}
-              className="h-10 min-w-0 flex-1 rounded-lg border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.04)] px-3 text-sm leading-5 text-[#f5f2ec] outline-none placeholder:text-[#8b8b8b] disabled:opacity-50"
+              className="h-9 min-w-0 flex-1 rounded-md border border-[rgba(255,255,255,0.12)] bg-base px-3 text-sm leading-5 text-text-primary outline-none placeholder:text-text-faint disabled:opacity-50"
               placeholder={isResolved ? "This ticket is resolved." : "Write a live chat message..."}
             />
             <button
               type="submit"
               disabled={!chatInput.trim() || sending || isResolved}
-              className="h-10 rounded-lg bg-brand px-4 text-sm font-bold text-base disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-9 rounded-md bg-brand px-3 text-sm font-bold text-base disabled:cursor-not-allowed disabled:opacity-50"
             >
               Send
             </button>
