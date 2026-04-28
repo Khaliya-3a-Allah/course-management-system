@@ -2,14 +2,19 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import swaggerUi from "swagger-ui-express";
 import { env } from "./config/env.js";
 import { apiRouter } from "./routes/index.js";
 import { notFound } from "./middleware/notFound.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { swaggerSpec } from "./swagger.js";
 
 const app = express();
 
 app.set("trust proxy", 1);
+
+// Swagger UI — mounted before global Helmet so CSP does not block its assets
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
 
 app.use(helmet());
 app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true }));
